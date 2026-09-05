@@ -39,10 +39,43 @@ export function getAvatarUrl(user: User | null): string | null {
   return firstString(metadataSources(user), ['avatar_url', 'picture']);
 }
 
-/** Nome de exibição do provedor, com o e-mail como último recurso. */
+/**
+ * Fonte de imagem da foto para uso como ícone de aba nativa.
+ *
+ * A tab bar nativa desenha a imagem no tamanho que ela declara, então o
+ * `scale` é fixado: uma foto de 96px vira ~32pt, próximo do tamanho padrão de
+ * um ícone de aba. URLs do Google aceitam o sufixo `=s<px>-c` (quadrado e
+ * recortado), então o tamanho é pedido direto na origem em vez de baixar a
+ * imagem cheia. Retorna `null` quando não há foto.
+ *
+ * Recebe a URL (e não o usuário) para o resultado poder ser memoizado por uma
+ * string estável: o objeto devolvido vira prop de ícone da aba nativa, e uma
+ * identidade nova a cada render reconfigura a aba e recarrega a imagem.
+ */
+export function getAvatarIconSource(url: string | null, pixelSize = 96) {
+  if (!url) return null;
+
+  const sized = url.includes('googleusercontent.com')
+    ? `${url.replace(/=s\d+(-c)?$/, '')}=s${pixelSize}-c`
+    : url;
+
+  return { uri: sized, scale: 3 } as const;
+}
+
+/**
+ * Nome de exibição, com o e-mail como último recurso.
+ *
+ * `display_name` vem do cadastro por e-mail (é o campo que o painel do Supabase
+ * mostra com esse nome); `full_name` e `name` vêm dos provedores OAuth.
+ */
 export function getDisplayName(user: User | null): string {
   return (
-    firstString(metadataSources(user), ['full_name', 'name', 'preferred_username']) ??
+    firstString(metadataSources(user), [
+      'display_name',
+      'full_name',
+      'name',
+      'preferred_username',
+    ]) ??
     user?.email ??
     'Usuário'
   );

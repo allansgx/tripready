@@ -2,8 +2,10 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
+import { PassportsProvider, usePassports } from '@/features/passports/passports-context';
 import { colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -16,28 +18,46 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="dark" />
-      <RootNavigator />
+      <PassportsProvider>
+        <StatusBar style="dark" />
+        <RootNavigator />
+      </PassportsProvider>
     </AuthProvider>
   );
 }
 
 /**
- * Proteção de rotas: os grupos são montados conforme a sessão.
- * Sem sessão, `(app)` nem existe na árvore de navegação — não há como
- * navegar para dentro dela por link, deep link ou histórico.
+ * Proteção de rotas em duas etapas.
+ *
+ * 1. Sem sessão, só existe o grupo `(auth)`.
+ * 2. Com sessão mas sem nenhum passaporte, só existe o onboarding — é o que
+ *    garante a pergunta sobre o passaporte antes da Home, sem depender de flag
+ *    ou de armazenamento local: a própria ausência de passaporte é o estado.
+ *
+ * Como os grupos são montados condicionalmente, não há tela intermediária
+ * piscando nem como burlar por deep link.
  */
 function RootNavigator() {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading: isLoadingSession } = useAuth();
+  const { hasPassport, isLoading: isLoadingPassports } = usePassports();
+
+  const isReady = !isLoadingSession && !(session && isLoadingPassports);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (isReady) {
       void SplashScreen.hideAsync();
     }
-  }, [isLoading]);
+  }, [isReady]);
 
-  if (isLoading) {
-    return null;
+  if (!isReady) {
+    // Acontece na entrada do app e logo após o login, enquanto os passaportes
+    // decidem entre onboarding e área principal. Sem isso a tela ficaria em
+    // branco nesse intervalo.
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
@@ -46,8 +66,22 @@ function RootNavigator() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!session && hasPassport}>
         <Stack.Screen name="(app)" />
+        {/* `modal` usa o card nativo do iOS (o pai fica visível atrás, cantos
+            arredondados) e entrega altura definida ao conteúdo. `formSheet`
+            com detents deixava a lista sem altura e a tela saía em branco. */}
+        <Stack.Screen
+          name="passport-picker"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!!session && !hasPassport}>
+        <Stack.Screen name="onboarding" />
       </Stack.Protected>
 
       <Stack.Protected guard={!session}>
@@ -60,3 +94,12 @@ function RootNavigator() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+});

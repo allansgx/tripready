@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui/card';
@@ -10,50 +9,15 @@ import { ListRow } from '@/components/ui/list-row';
 import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
 import { getAvatarUrl, getDisplayName } from '@/features/auth/user-profile';
-import { passportsService } from '@/services';
-import type { Passport } from '@/types/models';
+import { PassportsSection } from '@/features/passports/passports-section';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
-/**
- * Tela provisória (sem design final): valida sessão, leitura/escrita em
- * `passports` e logout. O layout definitivo do Figma virá em outra etapa.
- */
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
-  const [passports, setPassports] = useState<Passport[]>([]);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
   const avatarUrl = getAvatarUrl(user);
   const showAvatar = Boolean(avatarUrl) && !avatarFailed;
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setPassports(await passportsService.listByUser(user.id));
-    } catch (error) {
-      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha ao carregar.');
-    }
-  }, [user]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
-  );
-
-  async function addTestPassport() {
-    if (!user) return;
-    try {
-      await passportsService.create({
-        userId: user.id,
-        countryCode: passports.length === 0 ? 'BR' : 'IT',
-        isPrimary: passports.length === 0,
-      });
-      await load();
-    } catch (error) {
-      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha ao criar.');
-    }
-  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -85,36 +49,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View>
-          <SectionLabel>Passaportes</SectionLabel>
-          <Card>
-            {passports.map((passport) => (
-              <ListRow
-                key={passport.id}
-                label={passport.country_code}
-                description={passport.is_primary ? 'Principal' : undefined}
-                right={
-                  <Ionicons
-                    name="trash-outline"
-                    size={18}
-                    color={colors.textSecondary}
-                    onPress={async () => {
-                      await passportsService.remove(passport.id);
-                      await load();
-                    }}
-                  />
-                }
-              />
-            ))}
-            <ListRow
-              label="Adicionar passaporte"
-              tone="primary"
-              icon={<Ionicons name="add" size={18} color={colors.primary} />}
-              right={null}
-              onPress={addTestPassport}
-            />
-          </Card>
-        </View>
+        <PassportsSection />
 
         <View>
           <SectionLabel>Conta</SectionLabel>

@@ -2,6 +2,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { toAuthMessage } from '@/features/auth/auth-errors';
 import {
   AuthCancelledError,
   authService,
@@ -20,6 +21,18 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Métodos de e-mail/senha (temporários, para testes no Expo Go).
+   * Diferente dos de OAuth, estes **lançam** o erro: cada tela de formulário
+   * mostra a mensagem no seu próprio contexto, em vez do erro global.
+   */
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<'signed-in' | 'confirm-email'>;
+  sendPasswordReset: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -86,6 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       signInWithGoogle: () => run(() => authService.signInWithGoogle()),
       signInWithApple: () => run(() => authService.signInWithApple()),
+      signInWithEmail: async (email, password) => {
+        setError(null);
+        await authService.signInWithEmail(email, password);
+      },
+      signUpWithEmail: (email, password, name) =>
+        authService.signUpWithEmail(email, password, name),
+      sendPasswordReset: (email) => authService.sendPasswordReset(email),
       signOut: async () => {
         setError(null);
         try {
@@ -109,5 +129,5 @@ export function useAuth() {
 }
 
 function toMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Erro inesperado na autenticação.';
+  return toAuthMessage(error);
 }

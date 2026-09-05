@@ -148,6 +148,68 @@ export const authService = {
     }
   },
 
+  // ---------------------------------------------------------------------------
+  // TEMPORÁRIO — login por e-mail/senha.
+  //
+  // Existe para conseguir usar o app autenticado no Expo Go (iPhone) enquanto o
+  // retorno do OAuth não funciona nesse ambiente. É JS puro sobre o Supabase
+  // Auth, sem módulo nativo, então roda no Expo Go sem build.
+  // Para remover: apague estes três métodos, as telas em `src/app/(auth)/`
+  // (email-login, sign-up, forgot-password) e a linha "Entrar com e-mail" da
+  // tela de login.
+  // ---------------------------------------------------------------------------
+
+  async signInWithEmail(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) throw error;
+    return data.session;
+  },
+
+  /**
+   * Retorna `'signed-in'` quando a sessão já veio pronta (confirmação de e-mail
+   * desligada no projeto) e `'confirm-email'` quando o Supabase enviou o link
+   * de confirmação e ainda não há sessão.
+   */
+  async signUpWithEmail(
+    email: string,
+    password: string,
+    name: string,
+  ): Promise<'signed-in' | 'confirm-email'> {
+    const displayName = name.trim();
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: authRedirectUri,
+        // Vira `raw_user_meta_data` em auth.users. `display_name` é o campo que
+        // o painel do Supabase mostra na coluna "Display name"; `full_name`
+        // mantém o mesmo formato que o Google devolve, para o app ler o nome
+        // do mesmo jeito nos dois provedores.
+        data: { display_name: displayName, full_name: displayName },
+      },
+    });
+    if (error) throw error;
+
+    // Quando o e-mail já existe, o Supabase devolve um usuário com `identities`
+    // vazio em vez de erro (proteção contra enumeração de contas).
+    if (data.user && data.user.identities?.length === 0) {
+      throw new Error('User already registered');
+    }
+
+    return data.session ? 'signed-in' : 'confirm-email';
+  },
+
+  async sendPasswordReset(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: authRedirectUri,
+    });
+    if (error) throw error;
+  },
+
   async signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
