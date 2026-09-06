@@ -136,10 +136,7 @@ export function DateRangePicker({
               onPress={() => handlePress(day)}
               style={[styles.cell, inRange && styles.cellInRange]}>
               <View style={[styles.dayCircle, (isStart || isEnd) && styles.dayCircleSelected]}>
-                <Text
-                  style={[styles.day, (isStart || isEnd) && styles.daySelected]}>
-                  {day}
-                </Text>
+                <Text style={[styles.day, (isStart || isEnd) && styles.daySelected]}>{day}</Text>
               </View>
             </Pressable>
           );

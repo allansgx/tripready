@@ -46,9 +46,7 @@ export default function TripsScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic">
+      <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
         <Text style={styles.title}>Minhas viagens</Text>
 
         {isLoading ? (
@@ -67,9 +65,7 @@ export default function TripsScreen() {
           <>
             <TripSections
               summaries={summaries}
-              onOpen={(tripId) =>
-                router.push({ pathname: '/trips/[id]', params: { id: tripId } })
-              }
+              onOpen={(tripId) => router.push({ pathname: '/trips/[id]', params: { id: tripId } })}
             />
 
             <Pressable

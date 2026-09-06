@@ -34,8 +34,7 @@ export const authRedirectUri = AuthSession.makeRedirectUri({
  * cadastrada no Supabase.
  */
 export function getRedirectDiagnostics() {
-  const isLoopback =
-    Platform.OS !== 'web' && /:\/\/(localhost|127\.0\.0\.1)/.test(authRedirectUri);
+  const isLoopback = Platform.OS !== 'web' && /:\/\/(localhost|127\.0\.0\.1)/.test(authRedirectUri);
 
   return {
     uri: authRedirectUri,
@@ -51,8 +50,7 @@ export function getRedirectDiagnostics() {
 if (__DEV__) {
   const { uri, warning } = getRedirectDiagnostics();
   console.log(
-    `[auth] redirect_to = ${uri}` +
-      (isExpoGo ? ' (Expo Go — cadastre exp://** no Supabase)' : ''),
+    `[auth] redirect_to = ${uri}` + (isExpoGo ? ' (Expo Go — cadastre exp://** no Supabase)' : ''),
   );
   if (warning) {
     console.warn(`[auth] ${warning}`);

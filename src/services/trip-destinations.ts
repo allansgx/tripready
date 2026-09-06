@@ -38,9 +38,7 @@ export const tripDestinationsService = {
     return unwrapRequired(
       await supabase
         .from('trip_countries')
-        .insert(
-          countryCodes.map((code) => ({ trip_id: tripId, country_code: code.toUpperCase() })),
-        )
+        .insert(countryCodes.map((code) => ({ trip_id: tripId, country_code: code.toUpperCase() })))
         .select('*'),
       'Tente adicionar os países novamente',
     );

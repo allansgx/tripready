@@ -55,9 +55,7 @@ export function CountryPickerList({
           <SearchField placeholder="Buscar país..." value={query} onChangeText={setQuery} />
         </View>
       }
-      ListEmptyComponent={
-        <Text style={styles.empty}>Nenhum país encontrado para “{query}”.</Text>
-      }
+      ListEmptyComponent={<Text style={styles.empty}>Nenhum país encontrado para “{query}”.</Text>}
       renderItem={({ item }) => (
         <CountryRow
           country={item}

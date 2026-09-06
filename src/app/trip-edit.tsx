@@ -23,7 +23,10 @@ import { getCountryName, type Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { CityStep } from '@/features/trips/city-step';
 import { formatTripDates } from '@/features/trips/trip-format';
-import { updateTripWithDestinations, type TripEditBaseline } from '@/features/trips/trip-persistence';
+import {
+  updateTripWithDestinations,
+  type TripEditBaseline,
+} from '@/features/trips/trip-persistence';
 import { useTripDraft } from '@/features/trips/use-trip-draft';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';

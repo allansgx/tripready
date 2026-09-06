@@ -61,10 +61,7 @@ const COUNTDOWN_WINDOW_DAYS = 30;
  * Aviso contextual de proximidade, só para viagens futuras dentro da janela.
  * `null` quando a viagem ainda está distante, já começou ou não tem data.
  */
-export function formatStartCountdown(
-  trip: DateRange,
-  today: string = todayISO(),
-): string | null {
+export function formatStartCountdown(trip: DateRange, today: string = todayISO()): string | null {
   if (getTripStatus(trip, today) !== 'upcoming' || !trip.start_date) return null;
 
   const days = daysBetween(today, trip.start_date);

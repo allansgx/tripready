@@ -76,9 +76,7 @@ export function suggestTripName(countryCodes: readonly string[]): string {
   if (codes.length === 0) return 'Minha viagem';
   if (codes.length === 1) return getCountryName(codes[0]);
 
-  const region = REGIONS.find((candidate) =>
-    codes.every((code) => candidate.codes.includes(code)),
-  );
+  const region = REGIONS.find((candidate) => codes.every((code) => candidate.codes.includes(code)));
   if (region) return region.label;
 
   const names = codes.map(getCountryName);

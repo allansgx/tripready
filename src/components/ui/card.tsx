@@ -7,13 +7,7 @@ import { colors, radius, shadow } from '@/theme/tokens';
  * Cartão branco agrupando linhas, com divisória entre elas — o mesmo padrão
  * dos grupos da tela de Perfil da referência.
  */
-export function Card({
-  children,
-  style,
-}: {
-  children: ReactNode;
-  style?: StyleProp<ViewStyle>;
-}) {
+export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const items = Children.toArray(children);
 
   return (

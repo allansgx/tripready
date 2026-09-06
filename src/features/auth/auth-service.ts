@@ -115,8 +115,7 @@ export const authService = {
    * identity token para o Supabase. Nas demais plataformas cai no fluxo OAuth.
    */
   async signInWithApple() {
-    const nativeAvailable =
-      Platform.OS === 'ios' && (await AppleAuthentication.isAvailableAsync());
+    const nativeAvailable = Platform.OS === 'ios' && (await AppleAuthentication.isAvailableAsync());
 
     if (!nativeAvailable) {
       return signInWithOAuthBrowser('apple');

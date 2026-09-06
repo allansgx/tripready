@@ -50,7 +50,10 @@ export const tripRequirementsService = {
     if (inserts.length === 0) return [];
 
     return unwrapRequired(
-      await supabase.from('trip_requirements').insert([...inserts]).select('*'),
+      await supabase
+        .from('trip_requirements')
+        .insert([...inserts])
+        .select('*'),
       'Tente preparar a checklist novamente',
     );
   },

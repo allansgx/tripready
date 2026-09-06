@@ -11,12 +11,7 @@ export function ProgressBar({ percent, height = 6 }: { percent: number; height?:
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: clamped }}
       style={[styles.track, { height, borderRadius: height / 2 }]}>
-      <View
-        style={[
-          styles.fill,
-          { width: `${clamped}%`, height, borderRadius: height / 2 },
-        ]}
-      />
+      <View style={[styles.fill, { width: `${clamped}%`, height, borderRadius: height / 2 }]} />
     </View>
   );
 }
