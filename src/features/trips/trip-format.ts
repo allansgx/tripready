@@ -1,4 +1,6 @@
 import { getCountryName } from '@/constants/countries';
+import type { TripStatus } from '@/features/trips/trip-status';
+import type { Season } from '@/types/models';
 
 const MONTHS = [
   'jan',
@@ -82,4 +84,75 @@ export function suggestTripName(countryCodes: readonly string[]): string {
   const names = codes.map(getCountryName);
   if (names.length === 2) return `${names[0]} e ${names[1]}`;
   return `${names[0]}, ${names[1]} e mais ${names.length - 2}`;
+}
+
+/** Como cada estação se apresenta na checklist. */
+const SEASONS: Record<Season, { emoji: string; label: string; complement: string }> = {
+  winter: { emoji: '❄️', label: 'Inverno', complement: 'no inverno' },
+  spring: { emoji: '🌸', label: 'Primavera', complement: 'na primavera' },
+  summer: { emoji: '☀️', label: 'Verão', complement: 'no verão' },
+  autumn: { emoji: '🍂', label: 'Outono', complement: 'no outono' },
+};
+
+/**
+ * Um broto no lugar dos emojis somados: com duas ou mais estações, empilhar os
+ * ícones vira ruído e nenhum deles representa a viagem inteira.
+ */
+const MANY_SEASONS_EMOJI = '🌱';
+
+/** A frase muda de tempo verbal conforme a viagem já começou ou terminou. */
+const TRAVEL_VERB: Record<TripStatus, string> = {
+  upcoming: 'Você vai viajar',
+  ongoing: 'Você está viajando',
+  completed: 'Você viajou',
+};
+
+const CROSSING_VERB: Record<TripStatus, string> = {
+  upcoming: 'Sua viagem passa por',
+  ongoing: 'Sua viagem passa por',
+  completed: 'Sua viagem passou por',
+};
+
+const COUNT_WORDS = ['nenhuma', 'uma', 'duas', 'três', 'quatro'] as const;
+
+export type TripSeasonSummary = {
+  /** Estação que dá a cor do card — a primeira do percurso. */
+  season: Season;
+  emoji: string;
+  headline: string;
+  /** Só existe quando há mais de uma estação: "Inverno → Primavera". */
+  detail: string | null;
+};
+
+/**
+ * O aviso de estação da viagem.
+ *
+ * Uma estação vira uma frase direta; mais de uma vira a contagem seguida do
+ * percurso, porque nesse caso o que interessa é a mudança — arrumar mala para
+ * inverno e primavera não é a mesma coisa que arrumar para uma só.
+ *
+ * `null` quando a viagem não tem datas: sem elas não há estação a afirmar.
+ */
+export function summarizeTripSeasons(
+  seasons: readonly Season[],
+  status: TripStatus,
+): TripSeasonSummary | null {
+  if (seasons.length === 0) return null;
+
+  if (seasons.length === 1) {
+    const season = seasons[0];
+    return {
+      season,
+      emoji: SEASONS[season].emoji,
+      headline: `${TRAVEL_VERB[status]} ${SEASONS[season].complement}`,
+      detail: null,
+    };
+  }
+
+  return {
+    season: seasons[0],
+    emoji: MANY_SEASONS_EMOJI,
+    headline: `${CROSSING_VERB[status]} ${COUNT_WORDS[seasons.length] ?? seasons.length} estações`,
+    detail: seasons.map((season) => SEASONS[season].label).join(' → '),
+  };
 }

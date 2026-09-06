@@ -42,6 +42,36 @@ export const prioritySoftColors = {
   informational: '#EBEFFD',
 } as const;
 
+/** Cor de destaque de cada estação, usada no texto e no ícone. */
+export const seasonColors = {
+  winter: '#3E7FD5',
+  spring: '#D4568F',
+  summer: '#E08A15',
+  autumn: '#B4652F',
+} as const;
+
+/**
+ * Fundos das estações: a mesma cor bem diluída, para o card do progresso
+ * lembrar a estação da viagem sem competir com o conteúdo.
+ */
+export const seasonSoftColors = {
+  winter: '#EDF4FD',
+  spring: '#FCEEF4',
+  summer: '#FDF4E7',
+  autumn: '#F9F0E9',
+} as const;
+
+/**
+ * Bordas das estações: entre o fundo diluído e a cor de destaque, para o card
+ * ganhar contorno sem virar um bloco colorido.
+ */
+export const seasonBorderColors = {
+  winter: '#C9DDF5',
+  spring: '#F2CFDF',
+  summer: '#F5DEB8',
+  autumn: '#EBD5C4',
+} as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,

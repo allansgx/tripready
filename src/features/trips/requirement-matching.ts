@@ -80,23 +80,17 @@ export function seasonAt(countryCode: string, isoDate: string): Season | null {
 const MAX_MONTHS_IN_RANGE = 12;
 
 /**
- * Estações que a viagem atravessa no destino.
+ * Datas a consultar para cobrir a viagem: o dia de partida e o primeiro dia de
+ * cada mês seguinte, em ordem. Um mês é a menor unidade em que a estação muda,
+ * então essa amostragem encontra toda estação atravessada sem percorrer dia a
+ * dia.
  *
- * Sem data de início não há estação: o conjunto volta vazio e todo requisito
- * sazonal deixa de se aplicar, em vez de ser incluído por engano.
+ * Sem data de início não há o que percorrer, e a lista volta vazia.
  */
-export function seasonsInRange(
-  countryCode: string,
-  startDate: string | null,
-  endDate: string | null,
-): Set<Season> {
-  const seasons = new Set<Season>();
-  if (!startDate) return seasons;
+function datesInRange(startDate: string | null, endDate: string | null): string[] {
+  if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return [];
 
-  const start = seasonAt(countryCode, startDate);
-  if (!start) return seasons;
-  seasons.add(start);
-
+  const dates = [startDate];
   const last = endDate && endDate > startDate ? endDate : startDate;
   let year = Number(startDate.slice(0, 4));
   let month = Number(startDate.slice(5, 7));
@@ -108,15 +102,58 @@ export function seasonsInRange(
       year += 1;
     }
 
-    // Primeiro dia do mês seguinte; se já passou do fim da viagem, acabou.
     const cursor = `${year}-${`${month}`.padStart(2, '0')}-01`;
     if (cursor > last) break;
+    dates.push(cursor);
+  }
 
-    const season = seasonAt(countryCode, cursor);
+  return dates;
+}
+
+/**
+ * Estações que a viagem atravessa em um destino.
+ *
+ * Sem data de início não há estação: o conjunto volta vazio e todo requisito
+ * sazonal deixa de se aplicar, em vez de ser incluído por engano.
+ */
+export function seasonsInRange(
+  countryCode: string,
+  startDate: string | null,
+  endDate: string | null,
+): Set<Season> {
+  const seasons = new Set<Season>();
+
+  for (const date of datesInRange(startDate, endDate)) {
+    const season = seasonAt(countryCode, date);
     if (season) seasons.add(season);
   }
 
   return seasons;
+}
+
+/**
+ * Estações da viagem inteira, na ordem em que aparecem.
+ *
+ * Percorre o tempo por fora e os destinos por dentro, então a ordem é
+ * cronológica: uma viagem que começa em novembro na Europa devolve outono antes
+ * de inverno. Destinos em hemisférios opostos entram na mesma lista — quem sai
+ * do inverno europeu para o verão brasileiro atravessa as duas.
+ */
+export function tripSeasons(
+  countryCodes: readonly string[],
+  startDate: string | null,
+  endDate: string | null,
+): Season[] {
+  const seasons = new Set<Season>();
+
+  for (const date of datesInRange(startDate, endDate)) {
+    for (const countryCode of countryCodes) {
+      const season = seasonAt(countryCode, date);
+      if (season) seasons.add(season);
+    }
+  }
+
+  return [...seasons];
 }
 
 // =============================================================================

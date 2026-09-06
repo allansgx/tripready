@@ -25,16 +25,21 @@ import {
 import { FlagRow } from '@/features/trips/flag-row';
 import {
   groupRequirementsByScope,
+  tripSeasons,
   type ChecklistSection,
 } from '@/features/trips/requirement-matching';
-import { formatTripDates } from '@/features/trips/trip-format';
+import { formatTripDates, summarizeTripSeasons } from '@/features/trips/trip-format';
 import { computeTripProgress, formatProgressLabel } from '@/features/trips/trip-progress';
+import { getTripStatus } from '@/features/trips/trip-status';
 import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
 import {
   colors,
   priorityColors,
   prioritySoftColors,
   radius,
+  seasonBorderColors,
+  seasonColors,
+  seasonSoftColors,
   shadow,
   spacing,
   typography,
@@ -67,6 +72,11 @@ export default function TripChecklistScreen() {
 
   const [name, setName] = useState('');
   const [dates, setDates] = useState('');
+  /** Datas como vêm do banco — o texto formatado não serve para calcular estação. */
+  const [range, setRange] = useState<{ start: string | null; end: string | null }>({
+    start: null,
+    end: null,
+  });
   const [countries, setCountries] = useState<TripCountry[]>([]);
   const [cities, setCities] = useState<TripCity[]>([]);
   const [requirements, setRequirements] = useState<TripRequirementWithGroup[]>([]);
@@ -126,6 +136,7 @@ export default function TripChecklistScreen() {
         if (!active || !detail) return;
         setName(detail.name);
         setDates(formatTripDates(detail.start_date, detail.end_date));
+        setRange({ start: detail.start_date, end: detail.end_date });
         setCountries(detail.trip_countries ?? []);
         setCities(detail.trip_cities ?? []);
         setRequirements(detail.trip_requirements ?? []);
@@ -181,6 +192,24 @@ export default function TripChecklistScreen() {
     () =>
       CHECKLIST_CATEGORIES.filter((category) => requirements.some((r) => r.category === category)),
     [requirements],
+  );
+
+  /**
+   * A estação sai dos países da viagem, e não do calendário de quem está
+   * olhando: dezembro é inverno em Viena e verão no Rio. Uma viagem sem datas
+   * não tem estação a mostrar.
+   */
+  const season = useMemo(
+    () =>
+      summarizeTripSeasons(
+        tripSeasons(
+          countries.map((country) => country.country_code),
+          range.start,
+          range.end,
+        ),
+        getTripStatus({ start_date: range.start, end_date: range.end }),
+      ),
+    [countries, range],
   );
 
   /**
@@ -286,7 +315,17 @@ export default function TripChecklistScreen() {
           </View>
         ) : null}
 
-        <View style={styles.progressCard}>
+        <View
+          style={[
+            styles.progressCard,
+            season
+              ? {
+                  backgroundColor: seasonSoftColors[season.season],
+                  borderColor: seasonBorderColors[season.season],
+                  borderWidth: 1,
+                }
+              : null,
+          ]}>
           <ProgressBar percent={progress.percent} />
           <View style={styles.progressRow}>
             <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
@@ -297,6 +336,22 @@ export default function TripChecklistScreen() {
               Próximo passo: verificar {progress.requiredPending}{' '}
               {progress.requiredPending === 1 ? 'item obrigatório' : 'itens obrigatórios'}.
             </Text>
+          ) : null}
+
+          {season ? (
+            <View style={styles.seasonRow}>
+              <View style={styles.seasonBadge}>
+                <Text style={styles.seasonEmoji}>{season.emoji}</Text>
+              </View>
+              <View style={styles.seasonTexts}>
+                <Text style={styles.seasonHeadline}>{season.headline}</Text>
+                {season.detail ? (
+                  <Text style={[styles.seasonDetail, { color: seasonColors[season.season] }]}>
+                    {season.detail}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
           ) : null}
         </View>
 
@@ -509,6 +564,29 @@ const styles = StyleSheet.create({
   progressLabel: { ...typography.caption, color: colors.textSecondary },
   percent: { ...typography.bodyStrong, color: colors.primary },
   nextStep: { ...typography.caption, color: colors.text },
+  seasonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    // A linha se destaca do resto do card por um filete branco, que sobre o
+    // fundo tingido funciona como separador sem introduzir mais uma cor.
+    borderTopWidth: 1,
+    borderTopColor: colors.surface,
+    paddingTop: spacing.md,
+  },
+  seasonBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seasonEmoji: { fontSize: 16, lineHeight: 20 },
+  seasonTexts: { flex: 1, gap: 2 },
+  seasonHeadline: { ...typography.caption, color: colors.text, fontWeight: '600' },
+  seasonDetail: { ...typography.caption, fontWeight: '600' },
+
   chips: {
     gap: spacing.sm,
     paddingRight: spacing.lg,

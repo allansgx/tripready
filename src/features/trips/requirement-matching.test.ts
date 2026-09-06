@@ -7,6 +7,7 @@ import {
   resolveTripRequirements,
   seasonAt,
   seasonsInRange,
+  tripSeasons,
   type CatalogGroup,
   type CatalogTemplate,
   type RequirementCatalog,
@@ -353,4 +354,21 @@ test('a estação segue o hemisfério do destino', () => {
   // Uma viagem longa atravessa mais de uma estação.
   assert.deepEqual([...seasonsInRange('AT', '2026-11-20', '2026-12-05')], ['autumn', 'winter']);
   assert.deepEqual([...seasonsInRange('AT', '2026-12-10', '2026-12-20')], ['winter']);
+});
+
+test('as estações da viagem saem dos destinos, em ordem cronológica', () => {
+  // Um destino, uma estação.
+  assert.deepEqual(tripSeasons(['AT'], '2026-12-10', '2026-12-20'), ['winter']);
+
+  // A virada de estação aparece na ordem em que a viagem a atravessa.
+  assert.deepEqual(tripSeasons(['AT'], '2026-11-20', '2026-12-05'), ['autumn', 'winter']);
+
+  // Hemisférios opostos na mesma viagem: sai do inverno europeu para o verão.
+  assert.deepEqual(tripSeasons(['AT', 'BR'], '2026-12-10', '2026-12-20'), ['winter', 'summer']);
+
+  // Países diferentes no mesmo hemisfério não repetem a estação.
+  assert.deepEqual(tripSeasons(['AT', 'HU', 'CZ'], '2026-12-10', '2026-12-20'), ['winter']);
+
+  // Sem datas não há estação a afirmar.
+  assert.deepEqual(tripSeasons(['AT'], null, null), []);
 });
