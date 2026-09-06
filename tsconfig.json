@@ -2,6 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Os testes de regra rodam direto no Node (`node --test`), que resolve o
+    // arquivo pelo caminho real — daí o import terminar em `.ts`.
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"]
