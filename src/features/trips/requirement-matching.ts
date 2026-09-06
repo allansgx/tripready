@@ -3,6 +3,7 @@ import type {
   RequirementPriority,
   RequirementScope,
   Season,
+  VisaRequirementType,
 } from '@/types/models';
 
 /**
@@ -190,11 +191,33 @@ export type CatalogTemplate = {
   groupIds: readonly string[];
   /** Países aos quais a regra está associada (escopo `country`). */
   countryCodes: readonly string[];
+  /** Resultado de visto ao qual a regra responde (escopo `visa`). */
+  visaRequirementType: VisaRequirementType | null;
+};
+
+/**
+ * Exigência de visto para um par (passaporte, destino).
+ *
+ * É um fato sobre o mundo, com fonte oficial e vigência — separado de como ele
+ * aparece na checklist, que é assunto do template de escopo `visa`. As duas
+ * coisas se encontram por `requirementType`.
+ */
+export type VisaRule = {
+  passportCountryCode: string;
+  destinationCountryCode: string;
+  requirementType: VisaRequirementType;
+  sourceName: string;
+  sourceUrl: string;
+  /** Condição ou observação oficial; vira a descrição do item quando existe. */
+  notes: string | null;
+  validFrom: string | null;
+  validUntil: string | null;
 };
 
 export type RequirementCatalog = {
   groups: readonly CatalogGroup[];
   templates: readonly CatalogTemplate[];
+  visaRules: readonly VisaRule[];
 };
 
 export type TripContext = {
@@ -223,6 +246,9 @@ export type ResolvedRequirement = {
   description: string | null;
   priority: RequirementPriority;
   category: RequirementCategory;
+  /** Órgão oficial que embasa o item; só itens de visto têm um a citar. */
+  source_name: string | null;
+  source_url: string | null;
 };
 
 const MARKER_COUNTRY = '{country}';
@@ -255,30 +281,69 @@ type Target = {
   group: CatalogGroup | null;
   /** Países que respondem pela condição de estação deste alvo. */
   seasonCountries: readonly string[];
+  /** Regra de visto que originou o alvo; nula nos demais escopos. */
+  rule: VisaRule | null;
 };
 
-function targetsFor(
-  template: CatalogTemplate,
-  tripCountries: readonly string[],
-  groups: readonly CatalogGroup[],
+/**
+ * O que a resolução já apurou da viagem, antes de percorrer os templates.
+ *
+ * Existe para `targetsFor` não crescer numa fila de parâmetros posicionais a
+ * cada condição nova — é um agrupamento local, não uma abstração exportada.
+ */
+type Resolution = {
+  tripCountries: readonly string[];
+  groups: readonly CatalogGroup[];
+  referenceDate: string;
+  /** Regra de visto por destino, já filtrada pelo passaporte e pela data. */
+  visaRuleByCountry: ReadonlyMap<string, VisaRule>;
+};
+
+/**
+ * Regras que valem para este viajante nesta data, indexadas pelo destino.
+ *
+ * O filtro por passaporte fica aqui, e não só na consulta ao banco: o módulo é
+ * puro e não pode supor que quem carregou o catálogo já filtrou. Sem passaporte
+ * principal não há regra aplicável, e o mapa volta vazio — nenhum item de visto
+ * é gerado, que é o comportamento seguro.
+ */
+function visaRulesByCountry(
+  rules: readonly VisaRule[],
+  passportCountryCode: string | null,
   referenceDate: string,
-): Target[] {
+): Map<string, VisaRule> {
+  const byCountry = new Map<string, VisaRule>();
+  if (!passportCountryCode) return byCountry;
+
+  for (const rule of rules) {
+    if (upper(rule.passportCountryCode) !== passportCountryCode) continue;
+    if (!isWithinPeriod(referenceDate, rule.validFrom, rule.validUntil)) continue;
+    byCountry.set(upper(rule.destinationCountryCode), rule);
+  }
+
+  return byCountry;
+}
+
+function targetsFor(template: CatalogTemplate, resolution: Resolution): Target[] {
+  const { tripCountries, groups, referenceDate } = resolution;
+
   switch (template.scope) {
     case 'global':
-      return [{ countryCode: null, group: null, seasonCountries: tripCountries }];
+      return [{ countryCode: null, group: null, seasonCountries: tripCountries, rule: null }];
 
     case 'each_country':
       return tripCountries.map((code) => ({
         countryCode: code,
         group: null,
         seasonCountries: [code],
+        rule: null,
       }));
 
     case 'country': {
       const linked = new Set(template.countryCodes.map(upper));
       return tripCountries
         .filter((code) => linked.has(code))
-        .map((code) => ({ countryCode: code, group: null, seasonCountries: [code] }));
+        .map((code) => ({ countryCode: code, group: null, seasonCountries: [code], rule: null }));
     }
 
     case 'group': {
@@ -299,7 +364,30 @@ function targetsFor(
         .find((candidate) => candidate.countries.length > 0);
 
       if (!match) return [];
-      return [{ countryCode: null, group: match.group, seasonCountries: match.countries }];
+      return [
+        {
+          countryCode: null,
+          group: match.group,
+          seasonCountries: match.countries,
+          rule: null,
+        },
+      ];
+    }
+
+    // Um item por país cuja regra de visto seja deste tipo. Destino sem regra
+    // cadastrada não gera item nenhum: o silêncio nunca vira "não precisa de
+    // visto" — quem cobre esse caso é o requisito genérico de exigências de
+    // entrada, que vale para todo país da viagem.
+    case 'visa': {
+      const type = template.visaRequirementType;
+      if (!type) return [];
+
+      return tripCountries.flatMap((code) => {
+        const rule = resolution.visaRuleByCountry.get(code);
+        if (!rule || rule.requirementType !== type) return [];
+
+        return [{ countryCode: code, group: null, seasonCountries: [code], rule }];
+      });
     }
   }
 }
@@ -340,6 +428,13 @@ export function resolveTripRequirements(
   const tripCountries = unique(trip.countryCodes);
   const passport = trip.passportCountryCode ? upper(trip.passportCountryCode) : null;
 
+  const resolution: Resolution = {
+    tripCountries,
+    groups: catalog.groups,
+    referenceDate,
+    visaRuleByCountry: visaRulesByCountry(catalog.visaRules, passport, referenceDate),
+  };
+
   const resolved: ResolvedRequirement[] = [];
 
   for (const template of catalog.templates) {
@@ -347,7 +442,7 @@ export function resolveTripRequirements(
     if (!isWithinPeriod(referenceDate, template.validFrom, template.validUntil)) continue;
     if (template.passportCountryCode && upper(template.passportCountryCode) !== passport) continue;
 
-    for (const target of targetsFor(template, tripCountries, catalog.groups, referenceDate)) {
+    for (const target of targetsFor(template, resolution)) {
       if (!matchesSeason(template, target, trip)) continue;
 
       resolved.push({
@@ -356,9 +451,14 @@ export function resolveTripRequirements(
         group_id: target.group?.id ?? null,
         country_code: target.countryCode,
         title: renderTitle(template, target.countryCode, options.countryName),
-        description: template.description,
+        // A observação oficial da regra é mais específica que o texto genérico
+        // do template — "permanência de até 90 dias para turismo" diz mais do
+        // que "solicite o visto". Sem observação, vale o texto do template.
+        description: target.rule?.notes ?? template.description,
         priority: template.priority,
         category: template.category,
+        source_name: target.rule?.sourceName ?? null,
+        source_url: target.rule?.sourceUrl ?? null,
       });
     }
   }

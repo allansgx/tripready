@@ -11,6 +11,7 @@ import type {
   RequirementPriority,
   RequirementScope,
   Season,
+  VisaRequirementType,
 } from '@/types/models';
 
 const FAILURE_MESSAGE = 'Tente preparar a checklist novamente';
@@ -35,6 +36,7 @@ type TemplateRow = {
   scope: RequirementScope;
   season: Season | null;
   passport_country_code: string | null;
+  visa_requirement_type: VisaRequirementType | null;
   valid_from: string | null;
   valid_until: string | null;
   active: boolean;
@@ -108,6 +110,7 @@ async function loadTemplates(): Promise<CatalogTemplate[]> {
     scope: row.scope,
     season: row.season,
     passportCountryCode: row.passport_country_code,
+    visaRequirementType: row.visa_requirement_type,
     validFrom: row.valid_from,
     validUntil: row.valid_until,
     active: row.active,
@@ -131,6 +134,10 @@ export const requirementCatalogService = {
     const codes = [...new Set(countryCodes.map((code) => code.toUpperCase()))];
     const [groups, templates] = await Promise.all([loadGroups(codes), loadTemplates()]);
 
-    return { groups, templates };
+    // As regras de visto dependem do passaporte do viajante, que este serviço
+    // ainda não recebe; a carga entra junto com essa mudança de assinatura.
+    // Enquanto isso o motor não encontra regra e não gera item de visto, que é
+    // o mesmo resultado de um destino sem regra cadastrada.
+    return { groups, templates, visaRules: [] };
   },
 };

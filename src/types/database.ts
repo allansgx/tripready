@@ -19,9 +19,17 @@ export type RequirementCategory =
   | 'connectivity'
   | 'luggage';
 
-export type RequirementScope = 'global' | 'each_country' | 'group' | 'country';
+export type RequirementScope = 'global' | 'each_country' | 'group' | 'country' | 'visa';
 
 export type Season = 'winter' | 'spring' | 'summer' | 'autumn';
+
+export type VisaRequirementType =
+  | 'visa_free'
+  | 'visa_required'
+  | 'evisa'
+  | 'eta'
+  | 'visa_on_arrival'
+  | 'conditional';
 
 export type Database = {
   public: {
@@ -196,6 +204,8 @@ export type Database = {
           completed: boolean;
           template_id: string | null;
           group_id: string | null;
+          source_name: string | null;
+          source_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -210,6 +220,8 @@ export type Database = {
           completed?: boolean;
           template_id?: string | null;
           group_id?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -224,6 +236,8 @@ export type Database = {
           completed?: boolean;
           template_id?: string | null;
           group_id?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -11,6 +11,7 @@ import type {
   RequirementPriority,
   RequirementScope,
   Season,
+  VisaRequirementType,
 } from '@/types/database';
 
 type Tables = Database['public']['Tables'];
@@ -43,7 +44,13 @@ export type DestinationGroup = Tables['destination_groups']['Row'];
 export type DestinationGroupMember = Tables['destination_group_members']['Row'];
 export type RequirementTemplate = Tables['requirement_templates']['Row'];
 
-export type { RequirementCategory, RequirementPriority, RequirementScope, Season };
+export type {
+  RequirementCategory,
+  RequirementPriority,
+  RequirementScope,
+  Season,
+  VisaRequirementType,
+};
 
 export const REQUIREMENT_PRIORITIES: readonly RequirementPriority[] = [
   'required',

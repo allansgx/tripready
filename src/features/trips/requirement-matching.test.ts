@@ -10,8 +10,8 @@ import {
   tripSeasons,
   type CatalogGroup,
   type CatalogTemplate,
-  type RequirementCatalog,
   type TripContext,
+  type VisaRule,
 } from './requirement-matching.ts';
 
 /**
@@ -56,6 +56,7 @@ function template(overrides: Partial<CatalogTemplate> & Pick<CatalogTemplate, 'i
     scope: 'global',
     season: null,
     passportCountryCode: null,
+    visaRequirementType: null,
     validFrom: null,
     validUntil: null,
     active: true,
@@ -63,6 +64,20 @@ function template(overrides: Partial<CatalogTemplate> & Pick<CatalogTemplate, 'i
     countryCodes: [],
     ...overrides,
   } satisfies CatalogTemplate;
+}
+
+function visaRule(
+  overrides: Partial<VisaRule> &
+    Pick<VisaRule, 'passportCountryCode' | 'destinationCountryCode' | 'requirementType'>,
+): VisaRule {
+  return {
+    sourceName: 'Órgão oficial',
+    sourceUrl: 'https://exemplo.gov/vistos',
+    notes: null,
+    validFrom: null,
+    validUntil: null,
+    ...overrides,
+  };
 }
 
 function trip(overrides: Partial<TripContext> = {}): TripContext {
@@ -76,11 +91,28 @@ function trip(overrides: Partial<TripContext> = {}): TripContext {
   };
 }
 
-function resolve(catalog: RequirementCatalog, context: TripContext = trip()) {
-  return resolveTripRequirements(context, catalog, {
-    countryName: (code) => `País ${code}`,
-    today: TODAY,
-  });
+/**
+ * Completa o catálogo com o que o caso não declara, para cada teste citar
+ * apenas a parte que exercita — um caso de estação não precisa dizer que a
+ * viagem não tem regra de visto.
+ */
+function resolve(
+  catalog: {
+    groups?: readonly CatalogGroup[];
+    templates: readonly CatalogTemplate[];
+    visaRules?: readonly VisaRule[];
+  },
+  context: TripContext = trip(),
+) {
+  return resolveTripRequirements(
+    context,
+    {
+      groups: catalog.groups ?? [],
+      templates: catalog.templates,
+      visaRules: catalog.visaRules ?? [],
+    },
+    { countryName: (code) => `País ${code}`, today: TODAY },
+  );
 }
 
 test('requisito global entra uma única vez, mesmo com vários países', () => {
@@ -245,6 +277,248 @@ test('a validade é avaliada na data da viagem, não na de hoje', () => {
 
   assert.equal(resolve(catalog, trip({ startDate: '2026-12-10' })).length, 1);
   assert.deepEqual(resolve(catalog, trip({ startDate: '2026-10-01' })), []);
+});
+
+// =============================================================================
+// Regras de visto
+//
+// O catálogo destes casos tem sempre os dois lados: o template de escopo `visa`
+// diz como o item aparece, e a regra diz o que vale para aquele par
+// (passaporte, destino). Nenhum caso depende dos dados reais do Supabase.
+// =============================================================================
+
+/** Templates de apresentação, um por resultado de visto. */
+const visaTemplates = [
+  template({
+    id: 'visa-required',
+    title: 'Solicitar o visto de entrada — {country}',
+    description: 'Confira o prazo de emissão.',
+    scope: 'visa',
+    visaRequirementType: 'visa_required',
+  }),
+  template({
+    id: 'visa-free',
+    title: 'Entrada sem visto — {country}',
+    priority: 'informational',
+    scope: 'visa',
+    visaRequirementType: 'visa_free',
+  }),
+];
+
+test('destino com visto exigido vira item do país, com a fonte oficial junto', () => {
+  const items = resolve(
+    {
+      templates: visaTemplates,
+      visaRules: [
+        visaRule({
+          passportCountryCode: 'BR',
+          destinationCountryCode: 'CZ',
+          requirementType: 'visa_required',
+          sourceName: 'Imigração da Tchéquia',
+          sourceUrl: 'https://exemplo.gov.cz/vistos',
+        }),
+      ],
+    },
+    trip({ countryCodes: ['HU', 'CZ'] }),
+  );
+
+  assert.equal(items.length, 1);
+  assert.equal(items[0].country_code, 'CZ');
+  assert.equal(items[0].title, 'Solicitar o visto de entrada — País CZ');
+  assert.equal(items[0].priority, 'required');
+  assert.equal(items[0].source_name, 'Imigração da Tchéquia');
+  assert.equal(items[0].source_url, 'https://exemplo.gov.cz/vistos');
+});
+
+test('cada resultado de visto usa o seu próprio template', () => {
+  const items = resolve(
+    {
+      templates: visaTemplates,
+      visaRules: [
+        visaRule({
+          passportCountryCode: 'BR',
+          destinationCountryCode: 'CZ',
+          requirementType: 'visa_required',
+        }),
+        visaRule({
+          passportCountryCode: 'BR',
+          destinationCountryCode: 'HU',
+          requirementType: 'visa_free',
+        }),
+      ],
+    },
+    trip({ countryCodes: ['HU', 'CZ'] }),
+  );
+
+  assert.deepEqual(
+    items.map((item) => [item.country_code, item.priority]),
+    [
+      ['CZ', 'required'],
+      ['HU', 'informational'],
+    ],
+  );
+});
+
+test('a observação da regra vira a descrição do item', () => {
+  const [semNota, comNota] = [null, 'Permanência de até 90 dias para turismo.'].map(
+    (notes) =>
+      resolve(
+        {
+          templates: visaTemplates,
+          visaRules: [
+            visaRule({
+              passportCountryCode: 'BR',
+              destinationCountryCode: 'CZ',
+              requirementType: 'visa_required',
+              notes,
+            }),
+          ],
+        },
+        trip({ countryCodes: ['CZ'] }),
+      )[0],
+  );
+
+  // Sem observação vale o texto do template; com observação, o texto oficial.
+  assert.equal(semNota.description, 'Confira o prazo de emissão.');
+  assert.equal(comNota.description, 'Permanência de até 90 dias para turismo.');
+});
+
+test('destino sem regra cadastrada não gera item de visto', () => {
+  const items = resolve(
+    {
+      templates: visaTemplates,
+      visaRules: [
+        visaRule({
+          passportCountryCode: 'BR',
+          destinationCountryCode: 'CZ',
+          requirementType: 'visa_required',
+        }),
+      ],
+    },
+    trip({ countryCodes: ['HU'] }),
+  );
+
+  // O silêncio não vira "não precisa de visto": simplesmente não há item.
+  assert.deepEqual(items, []);
+});
+
+test('sem passaporte principal nenhuma regra de visto se aplica', () => {
+  const items = resolve(
+    {
+      templates: visaTemplates,
+      visaRules: [
+        visaRule({
+          passportCountryCode: 'BR',
+          destinationCountryCode: 'CZ',
+          requirementType: 'visa_required',
+        }),
+      ],
+    },
+    trip({ countryCodes: ['CZ'], passportCountryCode: null }),
+  );
+
+  assert.deepEqual(items, []);
+});
+
+/**
+ * O teste que sustenta a promessa da arquitetura: o mesmo destino, o mesmo
+ * catálogo de templates e o mesmo motor produzem itens diferentes só porque o
+ * passaporte é outro. Acrescentar um país de passaporte é acrescentar regras.
+ */
+test('o mesmo destino gera itens diferentes conforme o passaporte', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CZ',
+        requirementType: 'visa_required',
+      }),
+      visaRule({
+        passportCountryCode: 'PT',
+        destinationCountryCode: 'CZ',
+        requirementType: 'visa_free',
+      }),
+    ],
+  };
+
+  const brasileiro = resolve(catalog, trip({ countryCodes: ['CZ'], passportCountryCode: 'BR' }));
+  const portugues = resolve(catalog, trip({ countryCodes: ['CZ'], passportCountryCode: 'PT' }));
+
+  assert.deepEqual(
+    [brasileiro[0].title, brasileiro[0].priority],
+    ['Solicitar o visto de entrada — País CZ', 'required'],
+  );
+  assert.deepEqual(
+    [portugues[0].title, portugues[0].priority],
+    ['Entrada sem visto — País CZ', 'informational'],
+  );
+});
+
+test('regra fora do período de vigência não gera item', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CZ',
+        requirementType: 'visa_required',
+        validFrom: '2026-11-01',
+        validUntil: '2026-11-30',
+      }),
+    ],
+  };
+
+  const dentro = resolve(catalog, trip({ countryCodes: ['CZ'], startDate: '2026-11-10' }));
+  const depois = resolve(catalog, trip({ countryCodes: ['CZ'], startDate: '2026-12-10' }));
+
+  assert.equal(dentro.length, 1);
+  assert.deepEqual(depois, []);
+});
+
+test('template de escopo `visa` sem tipo não gera item', () => {
+  const items = resolve(
+    {
+      templates: [template({ id: 'visa-sem-tipo', scope: 'visa' })],
+      visaRules: [
+        visaRule({
+          passportCountryCode: 'BR',
+          destinationCountryCode: 'CZ',
+          requirementType: 'visa_required',
+        }),
+      ],
+    },
+    trip({ countryCodes: ['CZ'] }),
+  );
+
+  assert.deepEqual(items, []);
+});
+
+test('o item de visto sai da checklist quando o país deixa a viagem', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CZ',
+        requirementType: 'visa_required',
+      }),
+    ],
+  };
+
+  const current = resolve(catalog, trip({ countryCodes: ['CZ'] })).map((item, index) => ({
+    id: `req-${index}`,
+    template_id: item.template_id,
+    group_id: item.group_id,
+    country_code: item.country_code,
+    completed: false,
+  }));
+
+  const desired = resolve(catalog, trip({ countryCodes: ['HU'] }));
+  const diff = diffTripRequirements(current, desired);
+
+  assert.deepEqual(diff.toInsert, []);
+  assert.deepEqual(diff.toRemoveIds, ['req-0']);
 });
 
 test('edição não recria o que já existe e limpa só o que deixou de valer', () => {
