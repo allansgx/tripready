@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { useAuth } from '@/features/auth/auth-context';
+import { rebuildChecklistsForPassport } from '@/features/trips/trip-persistence';
 import { passportsService } from '@/services';
 import type { Passport } from '@/types/models';
 
@@ -117,10 +118,28 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
         return created;
       },
 
+      /**
+       * Promove um passaporte a principal e recalcula as checklists.
+       *
+       * As regras de visto dependem do passaporte, então a troca muda o que
+       * vale para as viagens que ainda não aconteceram.
+       *
+       * O recálculo é o melhor esforço: se ele falhar, o passaporte continua
+       * trocado — que é o que a pessoa pediu — e as checklists se acertam na
+       * próxima edição da viagem, que já recalcula tudo. Levantar erro aqui
+       * diria "não foi possível concluir" sobre uma troca que aconteceu.
+       */
       async setPrimary(passportId) {
         if (!userId) return;
-        await passportsService.setPrimary(userId, passportId);
+
+        const promoted = await passportsService.setPrimary(userId, passportId);
         await refresh();
+
+        try {
+          await rebuildChecklistsForPassport(userId, promoted.country_code);
+        } catch {
+          // Sem ação: a próxima edição de cada viagem refaz a checklist.
+        }
       },
 
       /**

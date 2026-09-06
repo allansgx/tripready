@@ -36,6 +36,21 @@ export type TripDetail = Trip & {
   trip_requirements: TripRequirementWithGroup[];
 };
 
+/**
+ * O mínimo para recalcular a checklist de uma viagem: os países, as datas e a
+ * origem dos itens que já existem.
+ */
+export type TripForRebuild = Pick<Trip, 'id' | 'start_date' | 'end_date'> & {
+  trip_countries: { country_code: string }[];
+  trip_requirements: {
+    id: string;
+    template_id: string | null;
+    group_id: string | null;
+    country_code: string | null;
+    completed: boolean;
+  }[];
+};
+
 /** Espaço para paginação futura sem mudar as chamadas existentes. */
 export type ListOptions = {
   limit?: number;
@@ -73,6 +88,32 @@ export const tripsService = {
 
     const rows = unwrapRequired(await query, 'Tente carregar suas viagens novamente');
     return rows as unknown as TripWithRelations[];
+  },
+
+  /**
+   * Viagens que ainda podem ter a checklist recalculada.
+   *
+   * Viagens concluídas ficam de fora: elas são o registro do que a pessoa de
+   * fato preparou, e reescrevê-las com as regras de outro passaporte apagaria
+   * esse registro.
+   *
+   * O filtro é o mesmo critério de `getTripStatus` — concluída é a viagem cuja
+   * data de término já passou —, então alcança as em andamento, as futuras e as
+   * sem data, que o app trata como futuras.
+   */
+  async listForRebuild(userId: string, today: string): Promise<TripForRebuild[]> {
+    const rows = unwrapRequired(
+      await supabase
+        .from('trips')
+        .select(
+          'id, start_date, end_date, trip_countries(country_code), trip_requirements(id, template_id, group_id, country_code, completed)',
+        )
+        .eq('user_id', userId)
+        .or(`end_date.is.null,end_date.gte.${today}`),
+      'Tente atualizar suas checklists novamente',
+    );
+
+    return rows as unknown as TripForRebuild[];
   },
 
   async getDetail(tripId: string): Promise<TripDetail | null> {

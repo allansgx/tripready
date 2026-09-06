@@ -56,6 +56,51 @@ export async function resolveChecklist(input: ChecklistInput): Promise<ResolvedR
 }
 
 /**
+ * Recalcula as checklists depois de uma troca de passaporte principal.
+ *
+ * As regras de visto dependem do passaporte, então trocar o principal muda o
+ * que vale para viagens já criadas. Sem isto, quem cadastrasse um segundo
+ * passaporte e o promovesse continuaria vendo os itens do passaporte anterior.
+ *
+ * Viagens concluídas não entram: são registro do que a pessoa já preparou.
+ * Entre as demais, `diffTripRequirements` preserva o que ela marcou — só saem
+ * os itens gerados pelo catálogo que deixaram de valer e ainda não foram
+ * verificados.
+ *
+ * O catálogo é carregado por viagem, e não uma vez só, porque cada uma tem os
+ * seus países. É uma ação rara e deliberada do usuário, então o custo cabe;
+ * se um dia incomodar, o passo a mudar é este, sem tocar na regra.
+ */
+export async function rebuildChecklistsForPassport(
+  userId: string,
+  passportCountryCode: string | null,
+): Promise<void> {
+  const trips = await tripsService.listForRebuild(userId, todayISO());
+
+  const removeIds: string[] = [];
+  const inserts: ResolvedRequirement[] = [];
+
+  for (const trip of trips) {
+    const desired = await resolveChecklist({
+      tripId: trip.id,
+      countryCodes: (trip.trip_countries ?? []).map((country) => country.country_code),
+      startDate: trip.start_date,
+      endDate: trip.end_date,
+      passportCountryCode,
+    });
+
+    const diff = diffTripRequirements(trip.trip_requirements ?? [], desired);
+
+    removeIds.push(...diff.toRemoveIds);
+    inserts.push(...diff.toInsert);
+  }
+
+  // Uma escrita só para todas as viagens: a troca de passaporte ou vale
+  // inteira, ou não vale — nunca deixa metade das checklists atualizadas.
+  await tripRequirementsService.applyDiff(removeIds, inserts);
+}
+
+/**
  * Cria a viagem e seus destinos.
  *
  * A checklist não entra aqui: ela é montada na tela de preparação, para a
@@ -161,6 +206,5 @@ export async function updateTripWithDestinations(
 
   const { toInsert, toRemoveIds } = diffTripRequirements(current, desired);
 
-  await tripRequirementsService.removeMany(toRemoveIds);
-  await tripRequirementsService.createMany(toInsert);
+  await tripRequirementsService.applyDiff(toRemoveIds, toInsert);
 }

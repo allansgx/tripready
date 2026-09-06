@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { unwrap, unwrapRequired } from '@/services/errors';
+import type { Json } from '@/types/database';
 import type {
   RequirementCategory,
   RequirementPriority,
@@ -91,6 +92,30 @@ export const tripRequirementsService = {
         .in('id', [...requirementIds])
         .select('id'),
       'Falha ao remover requisitos',
+    );
+  },
+
+  /**
+   * Aplica de uma vez o que sai e o que entra na checklist.
+   *
+   * Remoção e inserção precisam valer juntas: separadas, uma falha no meio
+   * deixaria a viagem sem os itens antigos e sem os novos. Como o PostgREST
+   * trata cada chamada como a sua própria transação, a atomicidade vem da
+   * função `apply_requirement_diff`, no banco — que só aplica o que
+   * `diffTripRequirements` já decidiu aqui.
+   */
+  async applyDiff(
+    removeIds: readonly string[],
+    inserts: readonly TripRequirementInsert[],
+  ): Promise<void> {
+    if (removeIds.length === 0 && inserts.length === 0) return;
+
+    unwrap(
+      await supabase.rpc('apply_requirement_diff', {
+        p_remove_ids: [...removeIds],
+        p_inserts: inserts as unknown as Json,
+      }),
+      'Tente atualizar a checklist novamente',
     );
   },
 };

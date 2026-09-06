@@ -497,12 +497,18 @@ export type Database = {
       };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      apply_requirement_diff: {
+        Args: { p_remove_ids: string[]; p_inserts: Json };
+        Returns: undefined;
+      };
+    };
     Enums: {
       requirement_priority: RequirementPriority;
       requirement_category: RequirementCategory;
       requirement_scope: RequirementScope;
       season: Season;
+      visa_requirement_type: VisaRequirementType;
     };
     CompositeTypes: Record<never, never>;
   };
