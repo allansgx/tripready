@@ -11,6 +11,7 @@ import {
   CHECKLIST_CATEGORIES,
   buildBaseChecklist,
 } from '@/features/trips/checklist-catalog';
+import { USE_NATIVE_DRIVER } from '@/lib/animation';
 import { tripDestinationsService, tripRequirementsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
@@ -143,7 +144,7 @@ function CategoryRow({
     if (!done) return;
     Animated.spring(progress, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
       speed: 14,
       bounciness: 10,
     }).start();

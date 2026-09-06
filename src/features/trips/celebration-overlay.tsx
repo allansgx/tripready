@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
@@ -9,19 +9,25 @@ import {
   Text,
   View,
   useWindowDimensions,
-} from 'react-native';
+} from "react-native";
 
-import { Button } from '@/components/ui/button';
-import { colors, priorityColors, radius, shadow, spacing, typography } from '@/theme/tokens';
+import { Button } from "@/components/ui/button";
+import { USE_NATIVE_DRIVER } from "@/lib/animation";
+import {
+  colors,
+  priorityColors,
+  radius,
+  shadow,
+  spacing,
+  typography,
+} from "@/theme/tokens";
 
-/** Tempo até fechar sozinho — comemora sem prender o usuário. */
-const AUTO_DISMISS = 2800;
 const CONFETTI_COUNT = 14;
 const CONFETTI_COLORS = [
   colors.primary,
   priorityColors.recommended,
   priorityColors.informational,
-  '#34C759',
+  "#34C759",
 ] as const;
 
 export type Celebration = {
@@ -33,8 +39,10 @@ export type Celebration = {
  * Comemoração exibida quando a viagem fica pronta.
  *
  * Usa `Modal` nativo em vez de uma rota: é um momento sobre a checklist, e o
- * usuário continua exatamente onde estava ao fechar. Respeita "reduzir
- * movimento": nesse caso o conteúdo aparece direto, sem confete nem molas.
+ * usuário continua exatamente onde estava ao fechar. O fechamento é sempre uma
+ * ação dele — "Continuar", toque no fundo ou o voltar do Android —, nunca por
+ * tempo. Respeita "reduzir movimento": nesse caso o conteúdo aparece direto,
+ * sem confete nem molas.
  */
 export function CelebrationOverlay({
   celebration,
@@ -89,11 +97,11 @@ export function CelebrationOverlay({
         Animated.timing(backdrop, {
           toValue: 1,
           duration: 180,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.spring(card, {
           toValue: 1,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
           speed: 13,
           bounciness: 9,
         }),
@@ -101,7 +109,7 @@ export function CelebrationOverlay({
           Animated.delay(120),
           Animated.spring(badge, {
             toValue: 1,
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
             speed: 10,
             bounciness: 16,
           }),
@@ -110,31 +118,38 @@ export function CelebrationOverlay({
           toValue: 1,
           duration: 1900,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]).start();
     }
-
-    const timer = setTimeout(onDismiss, AUTO_DISMISS);
-    return () => clearTimeout(timer);
-  }, [celebration, reduceMotion, backdrop, card, badge, confetti, onDismiss]);
+    // Sem fechamento automático: a comemoração fica na tela até o usuário
+    // confirmar em "Continuar".
+  }, [celebration, reduceMotion, backdrop, card, badge, confetti]);
 
   if (!celebration) return null;
 
   return (
-    <Modal transparent visible animationType="none" statusBarTranslucent onRequestClose={onDismiss}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Fechar comemoração"
-        style={StyleSheet.absoluteFill}
-        onPress={onDismiss}>
-        <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
+    <Modal
+      transparent
+      visible
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onDismiss}
+    >
+      <View style={styles.root}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Fechar comemoração"
+          style={styles.backdropArea}
+          onPress={onDismiss}
+        >
+          <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
+        </Pressable>
 
         {!reduceMotion
           ? pieces.map((piece) => (
               <Animated.View
                 key={piece.key}
-                pointerEvents="none"
                 style={[
                   styles.confetti,
                   {
@@ -162,7 +177,7 @@ export function CelebrationOverlay({
                       {
                         rotate: confetti.interpolate({
                           inputRange: [0, 1],
-                          outputRange: ['0deg', `${piece.spin * 540}deg`],
+                          outputRange: ["0deg", `${piece.spin * 540}deg`],
                         }),
                       },
                     ],
@@ -172,7 +187,7 @@ export function CelebrationOverlay({
             ))
           : null}
 
-        <View style={styles.center} pointerEvents="box-none">
+        <View style={styles.center}>
           <Animated.View
             accessibilityViewIsModal
             accessibilityLiveRegion="polite"
@@ -181,19 +196,31 @@ export function CelebrationOverlay({
               {
                 opacity: card,
                 transform: [
-                  { scale: card.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
+                  {
+                    scale: card.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.85, 1],
+                    }),
+                  },
                 ],
               },
-            ]}>
+            ]}
+          >
             <Animated.Text
               style={[
                 styles.badge,
                 {
                   transform: [
-                    { scale: badge.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+                    {
+                      scale: badge.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.4, 1],
+                      }),
+                    },
                   ],
                 },
-              ]}>
+              ]}
+            >
               🎉
             </Animated.Text>
 
@@ -205,30 +232,41 @@ export function CelebrationOverlay({
             </View>
           </Animated.View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    position: 'absolute',
+  root: {
+    flex: 1,
+  },
+  backdropArea: {
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(17, 17, 20, 0.45)',
+  },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(17, 17, 20, 0.45)",
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    pointerEvents: "box-none",
+    alignItems: "center",
+    justifyContent: "center",
     padding: spacing.xl,
   },
   card: {
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -243,19 +281,20 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title,
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   message: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   action: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     marginTop: spacing.lg,
   },
   confetti: {
-    position: 'absolute',
+    position: "absolute",
+    pointerEvents: "none",
     top: 0,
     borderRadius: 2,
   },
