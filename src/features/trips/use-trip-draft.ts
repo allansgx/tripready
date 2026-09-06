@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { DateRange } from '@/components/ui/date-range-picker';
 import type { SelectedCity } from '@/features/trips/city-step';
@@ -27,9 +27,7 @@ function normalize(draft: TripDraft) {
   return JSON.stringify({
     name: draft.name.trim(),
     countryCodes: [...draft.countryCodes].sort(),
-    cities: [...draft.cities]
-      .map((city) => `${city.countryCode}:${city.cityName}`)
-      .sort(),
+    cities: [...draft.cities].map((city) => `${city.countryCode}:${city.cityName}`).sort(),
     range: draft.range,
   });
 }
@@ -44,7 +42,7 @@ function normalize(draft: TripDraft) {
  * vazia.
  */
 export function useTripDraft(initial?: TripDraft) {
-  const [name, setName] = useState(initial?.name ?? EMPTY.name);
+  const [typedName, setTypedName] = useState(initial?.name ?? EMPTY.name);
   const [nameEdited, setNameEdited] = useState(Boolean(initial?.name));
   const [countryCodes, setCountryCodes] = useState<string[]>(
     initial?.countryCodes ?? EMPTY.countryCodes,
@@ -55,12 +53,14 @@ export function useTripDraft(initial?: TripDraft) {
   /** Snapshot para comparar o que mudou; trocado a cada hidratação/salvamento. */
   const [baseline, setBaseline] = useState(() => normalize(initial ?? EMPTY));
 
-  // Enquanto o usuário não escrever um nome, ele acompanha os destinos.
-  useEffect(() => {
-    if (!nameEdited) {
-      setName(suggestTripName(countryCodes));
-    }
-  }, [countryCodes, nameEdited]);
+  /**
+   * Enquanto o usuário não escrever um nome, ele acompanha os destinos.
+   *
+   * A sugestão é derivada aqui, e não guardada em estado por um efeito: assim
+   * o nome exibido já sai correto na mesma renderização em que o país muda,
+   * sem o passo intermediário mostrando o nome antigo.
+   */
+  const name = nameEdited ? typedName : suggestTripName(countryCodes);
 
   const toggleCountry = useCallback((code: string) => {
     setCountryCodes((current) => {
@@ -87,12 +87,12 @@ export function useTripDraft(initial?: TripDraft) {
 
   const changeName = useCallback((value: string) => {
     setNameEdited(true);
-    setName(value);
+    setTypedName(value);
   }, []);
 
   /** Preenche o rascunho com os dados carregados e zera o "alterado". */
   const hydrate = useCallback((draft: TripDraft) => {
-    setName(draft.name);
+    setTypedName(draft.name);
     setNameEdited(Boolean(draft.name));
     setCountryCodes(draft.countryCodes);
     setCities(draft.cities);

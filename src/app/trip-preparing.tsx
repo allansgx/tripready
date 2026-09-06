@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,13 @@ export default function TripPreparingScreen() {
   /** Impede execução dupla do efeito para a mesma tentativa. */
   const runRef = useRef(-1);
 
+  const openTrip = useCallback(() => {
+    if (router.canDismiss()) {
+      router.dismissAll();
+    }
+    router.push({ pathname: '/trips/[id]', params: { id: tripId } });
+  }, [router, tripId]);
+
   useEffect(() => {
     if (!tripId || runRef.current === attempt) return;
     runRef.current = attempt;
@@ -70,26 +77,10 @@ export default function TripPreparingScreen() {
         setNeedsRetry(true);
       }
     }
-  }, [tripId, attempt, router]);
+  }, [tripId, attempt, openTrip]);
 
   function retry() {
     setAttempt((current) => current + 1);
-  }
-
-  /**
-   * Fecha os modais da criação **antes** de abrir a viagem.
-   *
-   * Trocar este modal diretamente pela rota do detalhe (`replace`) deixava a
-   * pilha da aba Viagens contendo só o detalhe, sem a listagem embaixo — daí o
-   * botão voltar cair na aba Início e a aba Viagens reabrir na checklist.
-   * Dispensando os modais primeiro, o `push` empilha o detalhe sobre a
-   * listagem, que é a hierarquia correta.
-   */
-  function openTrip() {
-    if (router.canDismiss()) {
-      router.dismissAll();
-    }
-    router.push({ pathname: '/trips/[id]', params: { id: tripId } });
   }
 
   return (
@@ -129,16 +120,8 @@ export default function TripPreparingScreen() {
   );
 }
 
-function CategoryRow({
-  label,
-  icon,
-  done,
-}: {
-  label: string;
-  icon: string;
-  done: boolean;
-}) {
-  const progress = useRef(new Animated.Value(0)).current;
+function CategoryRow({ label, icon, done }: { label: string; icon: string; done: boolean }) {
+  const [progress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!done) return;

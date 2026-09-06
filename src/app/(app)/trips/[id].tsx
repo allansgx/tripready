@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,16 +16,15 @@ import { Button } from '@/components/ui/button';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { getCountryName } from '@/constants/countries';
 import { CelebrationOverlay, type Celebration } from '@/features/trips/celebration-overlay';
-import { FlagRow } from '@/features/trips/flag-row';
 import {
   CATEGORY_LABELS,
   CHECKLIST_CATEGORIES,
   PRIORITY_LABELS,
 } from '@/features/trips/checklist-catalog';
+import { FlagRow } from '@/features/trips/flag-row';
 import { formatTripDates } from '@/features/trips/trip-format';
 import { computeTripProgress, formatProgressLabel } from '@/features/trips/trip-progress';
 import { tripRequirementsService, tripsService } from '@/services';
-import type { RequirementCategory, TripCity, TripCountry, TripRequirement } from '@/types/models';
 import {
   colors,
   priorityColors,
@@ -35,6 +34,7 @@ import {
   spacing,
   typography,
 } from '@/theme/tokens';
+import type { RequirementCategory, TripCity, TripCountry, TripRequirement } from '@/types/models';
 
 type Filter = RequirementCategory | 'all';
 
@@ -108,26 +108,35 @@ export default function TripChecklistScreen() {
     );
   }
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    try {
-      const detail = await tripsService.getDetail(id);
-      if (!detail) return;
-      setName(detail.name);
-      setDates(formatTripDates(detail.start_date, detail.end_date));
-      setCountries(detail.trip_countries ?? []);
-      setCities(detail.trip_cities ?? []);
-      setRequirements(detail.trip_requirements ?? []);
-    } catch {
-      setNotice('Sua conexão oscilou. Toque em atualizar para ver a checklist.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    if (!id) return;
+
+    let active = true;
+
+    async function load() {
+      try {
+        const detail = await tripsService.getDetail(id);
+        if (!active || !detail) return;
+        setName(detail.name);
+        setDates(formatTripDates(detail.start_date, detail.end_date));
+        setCountries(detail.trip_countries ?? []);
+        setCities(detail.trip_cities ?? []);
+        setRequirements(detail.trip_requirements ?? []);
+      } catch {
+        if (active) setNotice('Sua conexão oscilou. Toque em atualizar para ver a checklist.');
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
     void load();
-  }, [load]);
+
+    return () => {
+      active = false;
+    };
+  }, [id, reloadToken]);
 
   const progress = useMemo(() => computeTripProgress(requirements), [requirements]);
 
@@ -164,7 +173,8 @@ export default function TripChecklistScreen() {
   }, [isLoading, progress]);
 
   const categoriesInUse = useMemo(
-    () => CHECKLIST_CATEGORIES.filter((category) => requirements.some((r) => r.category === category)),
+    () =>
+      CHECKLIST_CATEGORIES.filter((category) => requirements.some((r) => r.category === category)),
     [requirements],
   );
 
@@ -314,7 +324,11 @@ export default function TripChecklistScreen() {
         </View>
 
         {progress.total === 0 ? (
-          <Button label="Atualizar checklist" variant="ghost" onPress={() => void load()} />
+          <Button
+            label="Atualizar checklist"
+            variant="ghost"
+            onPress={() => setReloadToken((token) => token + 1)}
+          />
         ) : null}
       </ScrollView>
 

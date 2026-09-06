@@ -37,6 +37,9 @@ type PassportsContextValue = {
 
 const PassportsContext = createContext<PassportsContextValue | null>(null);
 
+/** Referência estável para o caso "sem usuário", que não deve refazer memos. */
+const NO_PASSPORTS: Passport[] = [];
+
 /**
  * Fonte única dos passaportes do usuário logado.
  *
@@ -49,35 +52,38 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
-  const [passports, setPassports] = useState<Passport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  /**
+   * A leitura guarda de qual usuário ela é.
+   *
+   * Com o dono junto, "sem usuário", "carregando" e "os passaportes de outra
+   * conta" saem todos de uma comparação na renderização — não é preciso um
+   * efeito zerando estado no logout, que faria uma renderização a mais
+   * mostrando a lista da sessão anterior.
+   */
+  const [loaded, setLoaded] = useState<{ userId: string; rows: Passport[] } | null>(null);
+
+  const isCurrent = loaded !== null && loaded.userId === userId;
+  const passports = isCurrent ? loaded.rows : NO_PASSPORTS;
+  const isLoading = userId !== null && !isCurrent;
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      setPassports([]);
-      setIsLoading(false);
-      return;
-    }
-    setPassports(await passportsService.listByUser(userId));
+    if (!userId) return;
+    setLoaded({ userId, rows: await passportsService.listByUser(userId) });
   }, [userId]);
 
   useEffect(() => {
+    if (!userId) return;
+
     let active = true;
 
-    if (!userId) {
-      setPassports([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
     passportsService
       .listByUser(userId)
       .then((rows) => {
-        if (active) setPassports(rows);
+        if (active) setLoaded({ userId, rows });
       })
-      .finally(() => {
-        if (active) setIsLoading(false);
+      // Sem passaportes é um estado válido: o onboarding assume daqui.
+      .catch(() => {
+        if (active) setLoaded({ userId, rows: [] });
       });
 
     return () => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -9,26 +9,38 @@ import {
   Text,
   View,
   useWindowDimensions,
-} from "react-native";
+} from 'react-native';
 
-import { Button } from "@/components/ui/button";
-import { USE_NATIVE_DRIVER } from "@/lib/animation";
-import {
-  colors,
-  priorityColors,
-  radius,
-  shadow,
-  spacing,
-  typography,
-} from "@/theme/tokens";
+import { Button } from '@/components/ui/button';
+import { USE_NATIVE_DRIVER } from '@/lib/animation';
+import { colors, priorityColors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 const CONFETTI_COUNT = 14;
 const CONFETTI_COLORS = [
   colors.primary,
   priorityColors.recommended,
   priorityColors.informational,
-  "#34C759",
+  '#34C759',
 ] as const;
+
+/**
+ * Sorteia o confete.
+ *
+ * `leftFraction` guarda a posição como fração da largura, e não em pixels: o
+ * sorteio deixa de depender da tela e pode acontecer uma única vez, fora da
+ * renderização. A conversão para pixel fica no `style`.
+ */
+function createPieces() {
+  return Array.from({ length: CONFETTI_COUNT }, (_, index) => ({
+    key: index,
+    leftFraction: Math.random(),
+    color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+    distance: 0.6 + Math.random() * 0.6,
+    drift: (Math.random() - 0.5) * 80,
+    size: 7 + Math.random() * 6,
+    spin: Math.random() > 0.5 ? 1 : -1,
+  }));
+}
 
 export type Celebration = {
   title: string;
@@ -54,24 +66,14 @@ export function CelebrationOverlay({
   const { width } = useWindowDimensions();
   const [reduceMotion, setReduceMotion] = useState(false);
 
-  const backdrop = useRef(new Animated.Value(0)).current;
-  const card = useRef(new Animated.Value(0)).current;
-  const badge = useRef(new Animated.Value(0)).current;
-  const confetti = useRef(new Animated.Value(0)).current;
+  // Inicializador de `useState`: cada valor nasce uma vez e nunca é trocado,
+  // então a animação sobrevive a qualquer re-renderização.
+  const [backdrop] = useState(() => new Animated.Value(0));
+  const [card] = useState(() => new Animated.Value(0));
+  const [badge] = useState(() => new Animated.Value(0));
+  const [confetti] = useState(() => new Animated.Value(0));
 
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: CONFETTI_COUNT }, (_, index) => ({
-        key: index,
-        left: Math.random() * width,
-        color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
-        distance: 0.6 + Math.random() * 0.6,
-        drift: (Math.random() - 0.5) * 80,
-        size: 7 + Math.random() * 6,
-        spin: Math.random() > 0.5 ? 1 : -1,
-      })),
-    [width],
-  );
+  const [pieces] = useState(createPieces);
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled()
@@ -129,20 +131,13 @@ export function CelebrationOverlay({
   if (!celebration) return null;
 
   return (
-    <Modal
-      transparent
-      visible
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={onDismiss}
-    >
+    <Modal transparent visible animationType="none" statusBarTranslucent onRequestClose={onDismiss}>
       <View style={styles.root}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Fechar comemoração"
           style={styles.backdropArea}
-          onPress={onDismiss}
-        >
+          onPress={onDismiss}>
           <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
         </Pressable>
 
@@ -153,7 +148,7 @@ export function CelebrationOverlay({
                 style={[
                   styles.confetti,
                   {
-                    left: piece.left,
+                    left: piece.leftFraction * width,
                     width: piece.size,
                     height: piece.size * 1.6,
                     backgroundColor: piece.color,
@@ -177,7 +172,7 @@ export function CelebrationOverlay({
                       {
                         rotate: confetti.interpolate({
                           inputRange: [0, 1],
-                          outputRange: ["0deg", `${piece.spin * 540}deg`],
+                          outputRange: ['0deg', `${piece.spin * 540}deg`],
                         }),
                       },
                     ],
@@ -204,8 +199,7 @@ export function CelebrationOverlay({
                   },
                 ],
               },
-            ]}
-          >
+            ]}>
             <Animated.Text
               style={[
                 styles.badge,
@@ -219,8 +213,7 @@ export function CelebrationOverlay({
                     },
                   ],
                 },
-              ]}
-            >
+              ]}>
               🎉
             </Animated.Text>
 
@@ -242,31 +235,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backdropArea: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   backdrop: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(17, 17, 20, 0.45)",
+    backgroundColor: 'rgba(17, 17, 20, 0.45)',
   },
   center: {
     flex: 1,
-    pointerEvents: "box-none",
-    alignItems: "center",
-    justifyContent: "center",
+    pointerEvents: 'box-none',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.xl,
   },
   card: {
-    width: "100%",
+    width: '100%',
     maxWidth: 360,
-    alignItems: "center",
+    alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -281,20 +274,20 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title,
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
   },
   message: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   action: {
-    alignSelf: "stretch",
+    alignSelf: 'stretch',
     marginTop: spacing.lg,
   },
   confetti: {
-    position: "absolute",
-    pointerEvents: "none",
+    position: 'absolute',
+    pointerEvents: 'none',
     top: 0,
     borderRadius: 2,
   },
