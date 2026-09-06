@@ -315,9 +315,15 @@ create table public.visa_rules (
   )
 );
 
-create index visa_rules_lookup_idx
-  on public.visa_rules (passport_country_code, destination_country_code);
 ```
+
+**Correção feita na Etapa 1:** o plano previa aqui um
+`create index visa_rules_lookup_idx (passport_country_code,
+destination_country_code)`. Ele foi descartado por ser **redundante** — a
+constraint `visa_rules_pair_unique` já cria um índice btree exatamente sobre
+esse par, nessa ordem, e ele cobre o único padrão de consulta da feature
+(igualdade no passaporte, `in` nos destinos). Um segundo índice idêntico seria
+pago em toda escrita e nunca escolhido pelo planejador.
 
 Decisões que valem explicação:
 
