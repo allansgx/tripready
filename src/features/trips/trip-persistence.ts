@@ -37,7 +37,10 @@ export type ChecklistInput = {
  * o catálogo é carregado nem como a aplicabilidade é decidida.
  */
 export async function resolveChecklist(input: ChecklistInput): Promise<ResolvedRequirement[]> {
-  const catalog = await requirementCatalogService.loadForCountries(input.countryCodes);
+  const catalog = await requirementCatalogService.loadForTrip(
+    input.countryCodes,
+    input.passportCountryCode,
+  );
 
   return resolveTripRequirements(
     {

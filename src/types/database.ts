@@ -272,6 +272,51 @@ export type Database = {
           },
         ];
       };
+      visa_rules: {
+        Row: {
+          id: string;
+          passport_country_code: string;
+          destination_country_code: string;
+          requirement_type: VisaRequirementType;
+          source_name: string;
+          source_url: string;
+          verified_at: string;
+          notes: string | null;
+          valid_from: string | null;
+          valid_until: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          passport_country_code: string;
+          destination_country_code: string;
+          requirement_type: VisaRequirementType;
+          source_name: string;
+          source_url: string;
+          verified_at: string;
+          notes?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          passport_country_code?: string;
+          destination_country_code?: string;
+          requirement_type?: VisaRequirementType;
+          source_name?: string;
+          source_url?: string;
+          verified_at?: string;
+          notes?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       destination_groups: {
         Row: {
           id: string;
@@ -348,6 +393,7 @@ export type Database = {
           scope: RequirementScope;
           season: Season | null;
           passport_country_code: string | null;
+          visa_requirement_type: VisaRequirementType | null;
           source_name: string | null;
           source_url: string | null;
           valid_from: string | null;
@@ -366,6 +412,7 @@ export type Database = {
           scope: RequirementScope;
           season?: Season | null;
           passport_country_code?: string | null;
+          visa_requirement_type?: VisaRequirementType | null;
           source_name?: string | null;
           source_url?: string | null;
           valid_from?: string | null;
@@ -384,6 +431,7 @@ export type Database = {
           scope?: RequirementScope;
           season?: Season | null;
           passport_country_code?: string | null;
+          visa_requirement_type?: VisaRequirementType | null;
           source_name?: string | null;
           source_url?: string | null;
           valid_from?: string | null;

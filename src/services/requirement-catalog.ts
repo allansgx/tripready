@@ -3,6 +3,7 @@ import type {
   CatalogGroupMember,
   CatalogTemplate,
   RequirementCatalog,
+  VisaRule,
 } from '@/features/trips/requirement-matching';
 import { supabase } from '@/lib/supabase/client';
 import { unwrapRequired } from '@/services/errors';
@@ -42,6 +43,18 @@ type TemplateRow = {
   active: boolean;
   requirement_template_groups: { group_id: string }[];
   requirement_template_countries: { country_code: string }[];
+};
+
+/** Linha de `visa_rules`. */
+type VisaRuleRow = {
+  passport_country_code: string;
+  destination_country_code: string;
+  requirement_type: VisaRequirementType;
+  source_name: string;
+  source_url: string;
+  notes: string | null;
+  valid_from: string | null;
+  valid_until: string | null;
 };
 
 /**
@@ -120,6 +133,46 @@ async function loadTemplates(): Promise<CatalogTemplate[]> {
 }
 
 /**
+ * Regras de visto do viajante para os destinos da viagem.
+ *
+ * Sem passaporte principal não há o que consultar, e a lista volta vazia — o
+ * mesmo resultado de um destino sem regra cadastrada.
+ *
+ * O filtro por passaporte e por destino fica na consulta para o app não baixar
+ * a tabela inteira a cada checklist. A vigência de cada regra vem junto e é
+ * avaliada no motor, contra a data da viagem: é lá que a decisão mora, e é lá
+ * que ela pode ser testada sem banco.
+ */
+async function loadVisaRules(
+  countryCodes: readonly string[],
+  passportCountryCode: string | null,
+): Promise<VisaRule[]> {
+  if (!passportCountryCode || countryCodes.length === 0) return [];
+
+  const rows = unwrapRequired(
+    await supabase
+      .from('visa_rules')
+      .select(
+        'passport_country_code, destination_country_code, requirement_type, source_name, source_url, notes, valid_from, valid_until',
+      )
+      .eq('passport_country_code', passportCountryCode.toUpperCase())
+      .in('destination_country_code', [...countryCodes]),
+    FAILURE_MESSAGE,
+  ) as unknown as VisaRuleRow[];
+
+  return rows.map((row) => ({
+    passportCountryCode: row.passport_country_code,
+    destinationCountryCode: row.destination_country_code,
+    requirementType: row.requirement_type,
+    sourceName: row.source_name,
+    sourceUrl: row.source_url,
+    notes: row.notes,
+    validFrom: row.valid_from,
+    validUntil: row.valid_until,
+  }));
+}
+
+/**
  * Catálogo de requisitos.
  *
  * O serviço só carrega e traduz linhas; quem decide o que se aplica é
@@ -130,14 +183,18 @@ async function loadTemplates(): Promise<CatalogTemplate[]> {
  * as mesmas linhas e ninguém escreve por aqui.
  */
 export const requirementCatalogService = {
-  async loadForCountries(countryCodes: readonly string[]): Promise<RequirementCatalog> {
+  async loadForTrip(
+    countryCodes: readonly string[],
+    passportCountryCode: string | null,
+  ): Promise<RequirementCatalog> {
     const codes = [...new Set(countryCodes.map((code) => code.toUpperCase()))];
-    const [groups, templates] = await Promise.all([loadGroups(codes), loadTemplates()]);
 
-    // As regras de visto dependem do passaporte do viajante, que este serviço
-    // ainda não recebe; a carga entra junto com essa mudança de assinatura.
-    // Enquanto isso o motor não encontra regra e não gera item de visto, que é
-    // o mesmo resultado de um destino sem regra cadastrada.
-    return { groups, templates, visaRules: [] };
+    const [groups, templates, visaRules] = await Promise.all([
+      loadGroups(codes),
+      loadTemplates(),
+      loadVisaRules(codes, passportCountryCode),
+    ]);
+
+    return { groups, templates, visaRules };
   },
 };
