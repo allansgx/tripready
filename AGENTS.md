@@ -83,3 +83,4 @@ O TripReady é simples, claro, mobile-first, orientado à ação e positivo.
 
 - O commit não é feito automatico após uma alteração, mas quando for solicitado para fazer um commit, utilize o convetional commits, em português.
 - Sempre claro, objetivo e curto, mas não deixe faltar informação.
+- Pode usar tópicos se necessário.
