@@ -60,6 +60,8 @@ Ordenação:
 2. Próximas, pela data de início
 3. Concluídas, pela data de término mais recente
 
+Nunca assumir que o passaporte do usuário é brasileiro. O passaporte usado deve ser determinado pelo passaporte principal cadastrado pelo usuário. Atualmente o catálogo de regras de visto possui dados para BR, mas a arquitetura deve suportar outros países.
+
 ### Checklist
 
 Prioridades: `required`, `recommended`, `informational`.

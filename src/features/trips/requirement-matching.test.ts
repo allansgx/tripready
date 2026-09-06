@@ -318,19 +318,35 @@ test('edição insere apenas o requisito do país que entrou', () => {
   assert.deepEqual(diff.toRemoveIds, []);
 });
 
+/** Item de checklist reduzido ao que o agrupamento enxerga. */
+function scoped(
+  overrides: Partial<{
+    country_code: string | null;
+    group_id: string | null;
+    priority: 'required' | 'recommended' | 'informational';
+    created_at: string;
+    destination_groups: { name: string } | null;
+  }> = {},
+) {
+  return {
+    country_code: null,
+    group_id: null,
+    priority: 'required' as const,
+    created_at: '2026-09-01T12:00:00Z',
+    destination_groups: null,
+    ...overrides,
+  };
+}
+
 test('a checklist é agrupada por viagem, grupo e país, sem seção vazia', () => {
   const sections = groupRequirementsByScope(
     [
-      { country_code: null, group_id: null },
-      { country_code: 'HU', group_id: null },
-      {
-        country_code: null,
-        group_id: 'g-schengen',
-        destination_groups: { name: 'Espaço Schengen' },
-      },
-      { country_code: 'AT', group_id: null },
+      scoped(),
+      scoped({ country_code: 'HU' }),
+      scoped({ group_id: 'g-schengen', destination_groups: { name: 'Espaço Schengen' } }),
+      scoped({ country_code: 'AT' }),
       // Sem o nome do grupo carregado, cai na seção da viagem inteira.
-      { country_code: null, group_id: 'g-desconhecido', destination_groups: null },
+      scoped({ group_id: 'g-desconhecido' }),
     ],
     (code) => (code === 'HU' ? 'Hungria' : 'Áustria'),
   );
@@ -342,6 +358,30 @@ test('a checklist é agrupada por viagem, grupo e país, sem seção vazia', () 
       ['group', 'Espaço Schengen', 1],
       ['country', 'Áustria', 1],
       ['country', 'Hungria', 1],
+    ],
+  );
+});
+
+test('dentro da seção, os itens saem por prioridade e depois por criação', () => {
+  const [section] = groupRequirementsByScope(
+    [
+      scoped({ priority: 'informational', created_at: '2026-09-01T12:00:00Z' }),
+      scoped({ priority: 'recommended', created_at: '2026-09-01T12:00:03Z' }),
+      scoped({ priority: 'required', created_at: '2026-09-01T12:00:02Z' }),
+      scoped({ priority: 'recommended', created_at: '2026-09-01T12:00:01Z' }),
+      scoped({ priority: 'required', created_at: '2026-09-01T12:00:04Z' }),
+    ],
+    (code) => code,
+  );
+
+  assert.deepEqual(
+    section.items.map((item) => [item.priority, item.created_at.slice(-3)]),
+    [
+      ['required', '02Z'],
+      ['required', '04Z'],
+      ['recommended', '01Z'],
+      ['recommended', '03Z'],
+      ['informational', '00Z'],
     ],
   );
 });

@@ -435,17 +435,44 @@ export type ChecklistSection<T> = {
 export type ScopedRequirement = {
   country_code: string | null;
   group_id: string | null;
+  priority: RequirementPriority;
+  created_at: string;
   destination_groups?: { name: string } | null;
 };
 
 const TRIP_SECTION_LABEL = 'Toda a viagem';
 
 /**
+ * Ordem dos itens dentro de uma seção: o que impede a viagem primeiro.
+ *
+ * É a mesma hierarquia que decide o progresso — obrigatório define se a viagem
+ * está pronta, recomendado soma, informativo não conta —, então a leitura da
+ * lista bate com o que a barra de cima diz.
+ */
+const PRIORITY_ORDER: Record<RequirementPriority, number> = {
+  required: 0,
+  recommended: 1,
+  informational: 2,
+};
+
+/**
+ * Empate dentro da prioridade fica com a ordem de criação, que é a ordem das
+ * categorias em que a checklist foi montada — estável entre uma abertura e
+ * outra, ao contrário da ordem em que o banco devolve as linhas.
+ */
+function byPriorityThenCreation(a: ScopedRequirement, b: ScopedRequirement): number {
+  const priority = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+  if (priority !== 0) return priority;
+  return a.created_at.localeCompare(b.created_at);
+}
+
+/**
  * Agrupa a checklist por origem: viagem inteira, grupo de destinos e país.
  *
  * Seções nascem dos itens, então nunca existe seção vazia. Um item de grupo
  * sem o nome do grupo carregado cai na seção da viagem inteira — melhor do que
- * abrir uma seção sem título.
+ * abrir uma seção sem título. Dentro de cada seção os itens saem ordenados por
+ * prioridade.
  */
 export function groupRequirementsByScope<T extends ScopedRequirement>(
   requirements: readonly T[],
@@ -497,9 +524,15 @@ export function groupRequirementsByScope<T extends ScopedRequirement>(
   const byLabel = (a: ChecklistSection<T>, b: ChecklistSection<T>) =>
     a.label.localeCompare(b.label, 'pt-BR');
 
-  return [
+  const sections = [
     ...(trip.items.length > 0 ? [trip] : []),
     ...[...groups.values()].sort(byLabel),
     ...[...countries.values()].sort(byLabel),
   ];
+
+  for (const section of sections) {
+    section.items.sort(byPriorityThenCreation);
+  }
+
+  return sections;
 }
