@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -460,6 +461,11 @@ function RequirementRow({
 }) {
   const tone = priorityColors[requirement.priority];
 
+  // Em consts, e não lidos direto do objeto, para o TypeScript manter o
+  // estreitamento de nulo dentro do `onPress`.
+  const sourceName = requirement.source_name;
+  const sourceUrl = requirement.source_url;
+
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -492,9 +498,47 @@ function RequirementRow({
             {requirement.description}
           </Text>
         ) : null}
+
+        {/*
+          Só os itens vindos de uma regra de visto têm fonte a citar. O link
+          fica dentro do próprio item, e não numa tela à parte, porque é ele que
+          transforma a afirmação em algo que o viajante pode conferir.
+
+          É um Pressable aninhado: quem toca no link não marca o item como
+          verificado, porque o responsável pelo toque é sempre o alvo mais
+          interno.
+        */}
+        {sourceName && sourceUrl ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={`Abrir a fonte oficial: ${sourceName}`}
+            onPress={() => openSource(sourceUrl)}
+            hitSlop={8}
+            style={styles.source}>
+            <Ionicons name="open-outline" size={13} color={colors.primary} />
+            <Text style={styles.sourceText} numberOfLines={1}>
+              {sourceName}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </Pressable>
   );
+}
+
+/**
+ * Abre a fonte oficial no navegador do sistema.
+ *
+ * Falha em silêncio de propósito: não conseguir abrir o navegador não muda o
+ * que o item diz, e interromper a checklist com um aviso seria pior do que
+ * simplesmente não abrir.
+ */
+async function openSource(url: string) {
+  try {
+    await WebBrowser.openBrowserAsync(url);
+  } catch {
+    // Sem ação: o item continua legível e correto sem o link.
+  }
 }
 
 const styles = StyleSheet.create({
@@ -661,4 +705,11 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: radius.pill },
   priority: { ...typography.caption, fontWeight: '600' },
   description: { ...typography.caption, color: colors.textSecondary },
+  source: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+  },
+  sourceText: { ...typography.caption, color: colors.primary, fontWeight: '600', flexShrink: 1 },
 });
