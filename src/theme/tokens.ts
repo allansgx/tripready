@@ -24,6 +24,22 @@ export const colors = {
   contrast: '#111114',
   contrastText: '#FFFFFF',
   danger: '#D93025',
+  /** Trilho cinza das barras de progresso. */
+  progressTrack: '#ECEBF2',
+} as const;
+
+/** Cores por prioridade de requisito, usadas nos pontos e etiquetas. */
+export const priorityColors = {
+  required: '#E5484D',
+  recommended: '#F5A524',
+  informational: '#3E63DD',
+} as const;
+
+/** Fundos claros das etiquetas de prioridade. */
+export const prioritySoftColors = {
+  required: '#FDECEC',
+  recommended: '#FDF3E0',
+  informational: '#EBEFFD',
 } as const;
 
 export const spacing = {

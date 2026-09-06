@@ -78,6 +78,30 @@ function RootNavigator() {
             contentStyle: { backgroundColor: colors.surface },
           }}
         />
+        <Stack.Screen
+          name="trip-new"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        <Stack.Screen
+          name="trip-edit"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        {/* Sem gesto de fechar: a preparação da checklist é curta e termina
+            navegando sozinha para a viagem. */}
+        <Stack.Screen
+          name="trip-preparing"
+          options={{
+            presentation: 'modal',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
       </Stack.Protected>
 
       <Stack.Protected guard={!!session && !hasPassport}>

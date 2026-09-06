@@ -165,7 +165,14 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'trip_cities_trip_id_country_code_fkey';
+            foreignKeyName: 'trip_cities_trip_id_fkey';
+            columns: ['trip_id'];
+            isOneToOne: false;
+            referencedRelation: 'trips';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trip_cities_trip_country_fkey';
             columns: ['trip_id', 'country_code'];
             isOneToOne: false;
             referencedRelation: 'trip_countries';
@@ -219,7 +226,7 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'trip_requirements_trip_id_country_code_fkey';
+            foreignKeyName: 'trip_requirements_trip_country_fkey';
             columns: ['trip_id', 'country_code'];
             isOneToOne: false;
             referencedRelation: 'trip_countries';

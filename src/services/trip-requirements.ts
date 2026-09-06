@@ -4,6 +4,7 @@ import type {
   RequirementCategory,
   RequirementPriority,
   TripRequirement,
+  TripRequirementInsert,
 } from '@/types/models';
 
 export const tripRequirementsService = {
@@ -41,6 +42,16 @@ export const tripRequirementsService = {
         .select('*')
         .single(),
       'Falha ao criar requisito',
+    );
+  },
+
+  /** Insere um lote de requisitos — usado ao preparar a checklist da viagem. */
+  async createMany(inserts: readonly TripRequirementInsert[]): Promise<TripRequirement[]> {
+    if (inserts.length === 0) return [];
+
+    return unwrapRequired(
+      await supabase.from('trip_requirements').insert([...inserts]).select('*'),
+      'Tente preparar a checklist novamente',
     );
   },
 

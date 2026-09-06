@@ -11,6 +11,11 @@ type CountryPickerListProps = {
   onSelect: (country: Country) => void;
   /** Códigos já usados: aparecem marcados e não são selecionáveis. */
   disabledCodes?: readonly string[];
+  /**
+   * Códigos selecionados no momento. Diferente de `disabledCodes`, continuam
+   * clicáveis — é o modo multisseleção usado na criação de viagem.
+   */
+  selectedCodes?: readonly string[];
   /** Código em gravação, para mostrar o indicador na linha certa. */
   busyCode?: string | null;
   /** Conteúdo fixo acima da busca (título do modal, pergunta do onboarding). */
@@ -25,12 +30,14 @@ type CountryPickerListProps = {
 export function CountryPickerList({
   onSelect,
   disabledCodes = [],
+  selectedCodes = [],
   busyCode = null,
   header,
 }: CountryPickerListProps) {
   const [query, setQuery] = useState('');
   const results = useMemo(() => searchCountries(query), [query]);
   const disabled = useMemo(() => new Set(disabledCodes), [disabledCodes]);
+  const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
 
   return (
     <FlatList
@@ -55,6 +62,7 @@ export function CountryPickerList({
         <CountryRow
           country={item}
           disabled={disabled.has(item.code)}
+          selected={selected.has(item.code)}
           busy={busyCode === item.code}
           onPress={() => onSelect(item)}
         />
@@ -66,11 +74,13 @@ export function CountryPickerList({
 function CountryRow({
   country,
   disabled,
+  selected,
   busy,
   onPress,
 }: {
   country: Country;
   disabled: boolean;
+  selected: boolean;
   busy: boolean;
   onPress: () => void;
 }) {
@@ -80,11 +90,12 @@ function CountryRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={country.name}
-      accessibilityState={{ disabled: blocked }}
-      accessibilityHint={disabled ? 'Passaporte já adicionado' : undefined}
+      accessibilityState={{ disabled: blocked, selected }}
+      accessibilityHint={disabled ? 'Já adicionado' : undefined}
       onPress={blocked ? undefined : onPress}
       style={({ pressed }) => [
         styles.row,
+        selected && styles.rowSelected,
         pressed && !blocked && styles.rowPressed,
         disabled && styles.rowDisabled,
       ]}>
@@ -96,8 +107,8 @@ function CountryRow({
 
       {busy ? (
         <ActivityIndicator size="small" color={colors.primary} />
-      ) : disabled ? (
-        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+      ) : disabled || selected ? (
+        <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
       ) : (
         <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
       )}
@@ -130,6 +141,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   rowPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  rowSelected: {
     backgroundColor: colors.primarySoft,
   },
   rowDisabled: {
