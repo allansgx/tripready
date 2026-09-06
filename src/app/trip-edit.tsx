@@ -21,6 +21,7 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { TextField } from '@/components/ui/text-field';
 import { getCountryName, type Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
+import { usePassports } from '@/features/passports/passports-context';
 import { CityStep } from '@/features/trips/city-step';
 import { formatTripDates } from '@/features/trips/trip-format';
 import {
@@ -43,6 +44,7 @@ import { colors, radius, spacing, typography } from '@/theme/tokens';
 export default function EditTripScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const router = useRouter();
+  const { primary } = usePassports();
 
   const {
     draft,
@@ -118,7 +120,13 @@ export default function EditTripScreen() {
     setBusy(true);
     setNotice(null);
     try {
-      await updateTripWithDestinations(tripId, draft, resolvedName, baseline);
+      await updateTripWithDestinations(
+        tripId,
+        draft,
+        resolvedName,
+        baseline,
+        primary?.country_code ?? null,
+      );
       setSaved(true);
       setTimeout(() => router.back(), 900);
     } catch {

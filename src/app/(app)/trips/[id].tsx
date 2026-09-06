@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { CountryFlag } from '@/components/ui/country-flag';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { getCountryName } from '@/constants/countries';
 import { CelebrationOverlay, type Celebration } from '@/features/trips/celebration-overlay';
@@ -22,9 +23,13 @@ import {
   PRIORITY_LABELS,
 } from '@/features/trips/checklist-catalog';
 import { FlagRow } from '@/features/trips/flag-row';
+import {
+  groupRequirementsByScope,
+  type ChecklistSection,
+} from '@/features/trips/requirement-matching';
 import { formatTripDates } from '@/features/trips/trip-format';
 import { computeTripProgress, formatProgressLabel } from '@/features/trips/trip-progress';
-import { tripRequirementsService, tripsService } from '@/services';
+import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
 import {
   colors,
   priorityColors,
@@ -34,7 +39,7 @@ import {
   spacing,
   typography,
 } from '@/theme/tokens';
-import type { RequirementCategory, TripCity, TripCountry, TripRequirement } from '@/types/models';
+import type { RequirementCategory, TripCity, TripCountry } from '@/types/models';
 
 type Filter = RequirementCategory | 'all';
 
@@ -64,7 +69,7 @@ export default function TripChecklistScreen() {
   const [dates, setDates] = useState('');
   const [countries, setCountries] = useState<TripCountry[]>([]);
   const [cities, setCities] = useState<TripCity[]>([]);
-  const [requirements, setRequirements] = useState<TripRequirement[]>([]);
+  const [requirements, setRequirements] = useState<TripRequirementWithGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
   const [notice, setNotice] = useState<string | null>(null);
@@ -178,15 +183,27 @@ export default function TripChecklistScreen() {
     [requirements],
   );
 
-  const visible = useMemo(
-    () =>
+  /**
+   * A checklist é agrupada pela origem do item: o que vale para a viagem
+   * inteira, o que vem de um grupo de destinos e o que é de um país. O filtro
+   * por categoria continua valendo — ele apenas reduz o que entra nas seções, e
+   * seções sem item nenhum não aparecem.
+   */
+  const sections = useMemo(() => {
+    const visible =
       filter === 'all'
         ? requirements
-        : requirements.filter((requirement) => requirement.category === filter),
-    [requirements, filter],
+        : requirements.filter((requirement) => requirement.category === filter);
+
+    return groupRequirementsByScope(visible, getCountryName);
+  }, [requirements, filter]);
+
+  const visibleCount = useMemo(
+    () => sections.reduce((total, section) => total + section.items.length, 0),
+    [sections],
   );
 
-  async function toggle(requirement: TripRequirement) {
+  async function toggle(requirement: TripRequirementWithGroup) {
     const next = !requirement.completed;
 
     // Atualiza na hora: a checklist reflete o progresso sem esperar a rede.
@@ -310,15 +327,20 @@ export default function TripChecklistScreen() {
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
         <View style={styles.list}>
-          {visible.length === 0 ? (
+          {visibleCount === 0 ? (
             <Text style={styles.hint}>Nada por aqui. Escolha outra categoria acima.</Text>
           ) : (
-            visible.map((requirement) => (
-              <RequirementRow
-                key={requirement.id}
-                requirement={requirement}
-                onPress={() => void toggle(requirement)}
-              />
+            sections.map((section) => (
+              <View key={section.key} style={styles.section}>
+                <SectionHeader section={section} />
+                {section.items.map((requirement) => (
+                  <RequirementRow
+                    key={requirement.id}
+                    requirement={requirement}
+                    onPress={() => void toggle(requirement)}
+                  />
+                ))}
+              </View>
             ))
           )}
         </View>
@@ -360,11 +382,25 @@ function FilterChip({
   );
 }
 
+/** Cabeçalho de uma seção: viagem inteira, grupo de destinos ou país. */
+function SectionHeader({ section }: { section: ChecklistSection<TripRequirementWithGroup> }) {
+  return (
+    <View style={styles.sectionHeader}>
+      {section.kind === 'country' && section.countryCode ? (
+        <CountryFlag code={section.countryCode} />
+      ) : (
+        <Text style={styles.sectionIcon}>{section.kind === 'trip' ? '🌍' : '🧭'}</Text>
+      )}
+      <Text style={styles.sectionLabel}>{section.label}</Text>
+    </View>
+  );
+}
+
 function RequirementRow({
   requirement,
   onPress,
 }: {
-  requirement: TripRequirement;
+  requirement: TripRequirementWithGroup;
   onPress: () => void;
 }) {
   const tone = priorityColors[requirement.priority];
@@ -394,9 +430,6 @@ function RequirementRow({
           <Text style={[styles.priority, { color: tone }]}>
             {PRIORITY_LABELS[requirement.priority]}
           </Text>
-          {requirement.country_code ? (
-            <Text style={styles.country}>· {getCountryName(requirement.country_code)}</Text>
-          ) : null}
         </View>
 
         {requirement.description ? (
@@ -506,7 +539,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  list: { gap: spacing.md },
+  list: { gap: spacing.lg },
+  section: { gap: spacing.md },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  sectionIcon: { fontSize: 16, width: 36, textAlign: 'center' },
+  sectionLabel: { ...typography.bodyStrong, color: colors.text },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -541,6 +582,5 @@ const styles = StyleSheet.create({
   itemMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   dot: { width: 7, height: 7, borderRadius: radius.pill },
   priority: { ...typography.caption, fontWeight: '600' },
-  country: { ...typography.caption, color: colors.textSecondary },
   description: { ...typography.caption, color: colors.textSecondary },
 });

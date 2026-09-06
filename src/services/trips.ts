@@ -19,11 +19,21 @@ export type TripWithRelations = Trip & {
   trip_requirements: { priority: RequirementPriority; completed: boolean }[];
 };
 
+/**
+ * Requisito com o grupo que o originou.
+ *
+ * O nome do grupo vem embutido para a checklist poder abrir uma seção por
+ * grupo de destinos sem uma segunda consulta.
+ */
+export type TripRequirementWithGroup = TripRequirement & {
+  destination_groups: { id: string; code: string; name: string } | null;
+};
+
 /** Viagem completa, para a tela de detalhe/checklist. */
 export type TripDetail = Trip & {
   trip_countries: TripCountry[];
   trip_cities: TripCity[];
-  trip_requirements: TripRequirement[];
+  trip_requirements: TripRequirementWithGroup[];
 };
 
 /** Espaço para paginação futura sem mudar as chamadas existentes. */
@@ -69,7 +79,9 @@ export const tripsService = {
     const row = unwrap(
       await supabase
         .from('trips')
-        .select('*, trip_countries(*), trip_cities(*), trip_requirements(*)')
+        .select(
+          '*, trip_countries(*), trip_cities(*), trip_requirements(*, destination_groups(id, code, name))',
+        )
         .eq('id', tripId)
         .maybeSingle(),
       'Tente abrir esta viagem novamente',

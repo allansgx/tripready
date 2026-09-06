@@ -1,11 +1,55 @@
+import { getCountryName } from '@/constants/countries';
 import type { SelectedCity } from '@/features/trips/city-step';
-import { buildCountryRequirement } from '@/features/trips/checklist-catalog';
+import {
+  diffTripRequirements,
+  resolveTripRequirements,
+  type ExistingRequirement,
+  type ResolvedRequirement,
+} from '@/features/trips/requirement-matching';
+import { todayISO } from '@/features/trips/trip-status';
 import type { TripDraft } from '@/features/trips/use-trip-draft';
-import { tripDestinationsService, tripRequirementsService, tripsService } from '@/services';
+import {
+  requirementCatalogService,
+  tripDestinationsService,
+  tripRequirementsService,
+  tripsService,
+} from '@/services';
 import type { Trip, TripCity, TripRequirement } from '@/types/models';
 
 function sameCity(a: SelectedCity, b: { country_code: string; city_name: string }) {
   return a.countryCode === b.country_code && a.cityName === b.city_name;
+}
+
+export type ChecklistInput = {
+  tripId: string;
+  countryCodes: readonly string[];
+  startDate: string | null;
+  endDate: string | null;
+  /** País do passaporte principal do viajante; nulo quando não há. */
+  passportCountryCode: string | null;
+};
+
+/**
+ * Requisitos que a viagem deveria ter hoje, segundo o catálogo.
+ *
+ * Ponto único de entrada da checklist: a criação usa o resultado inteiro, e a
+ * edição o compara com o que já está gravado. Ninguém mais precisa saber como
+ * o catálogo é carregado nem como a aplicabilidade é decidida.
+ */
+export async function resolveChecklist(input: ChecklistInput): Promise<ResolvedRequirement[]> {
+  const catalog = await requirementCatalogService.loadForCountries(input.countryCodes);
+
+  return resolveTripRequirements(
+    {
+      tripId: input.tripId,
+      countryCodes: input.countryCodes,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      passportCountryCode: input.passportCountryCode,
+    },
+    catalog,
+    { countryName: getCountryName, today: todayISO() },
+  );
 }
 
 /**
@@ -46,18 +90,19 @@ export type TripEditBaseline = {
  * O ponto central é **não recriar** destinos e checklist: só a diferença é
  * aplicada. Países que saem são removidos pelo código, e a cascata do banco
  * leva junto as cidades e os requisitos exclusivos daquele país; tudo o mais —
- * inclusive os itens já verificados — permanece intocado. Países que entram
- * ganham apenas o requisito deles.
+ * inclusive os itens já verificados — permanece intocado.
  *
- * As datas não geram requisito na checklist base atual, que é genérica por
- * decisão de produto; quando existirem regras derivadas de data, elas entram
- * nesta mesma função, junto da reconciliação por país.
+ * A checklist é recalculada inteira pelo catálogo e comparada com a que existe.
+ * Assim a edição também acerta o que não depende de um país só: mudar as datas
+ * pode ativar ou desativar um requisito sazonal, e tirar o último país de um
+ * bloco faz o requisito daquele grupo deixar de valer.
  */
 export async function updateTripWithDestinations(
   tripId: string,
   draft: TripDraft,
   name: string,
   baseline: TripEditBaseline,
+  passportCountryCode: string | null,
 ): Promise<void> {
   await tripsService.update(tripId, {
     name,
@@ -93,17 +138,26 @@ export async function updateTripWithDestinations(
   await tripDestinationsService.removeCitiesByIds(removedCityIds);
   await tripDestinationsService.addCities(tripId, addedCities);
 
-  // Requisitos: um item por país novo, sem tocar nos existentes. A checagem
-  // contra os códigos já presentes evita duplicar caso algo seja repetido.
-  const codesWithRequirement = new Set(
-    baseline.requirements
-      .map((requirement) => requirement.country_code)
-      .filter((code): code is string => Boolean(code)),
-  );
+  // A checklist vem depois dos destinos: um requisito de país só pode ser
+  // gravado quando o país já está na viagem.
+  const desired = await resolveChecklist({
+    tripId,
+    countryCodes: desiredCountries,
+    startDate: draft.range.start,
+    endDate: draft.range.end,
+    passportCountryCode,
+  });
 
-  const newRequirements = addedCountries
-    .filter((code) => !codesWithRequirement.has(code))
-    .map((code) => buildCountryRequirement(tripId, code));
+  const current: ExistingRequirement[] = baseline.requirements.map((requirement) => ({
+    id: requirement.id,
+    template_id: requirement.template_id,
+    group_id: requirement.group_id,
+    country_code: requirement.country_code,
+    completed: requirement.completed,
+  }));
 
-  await tripRequirementsService.createMany(newRequirements);
+  const { toInsert, toRemoveIds } = diffTripRequirements(current, desired);
+
+  await tripRequirementsService.removeMany(toRemoveIds);
+  await tripRequirementsService.createMany(toInsert);
 }

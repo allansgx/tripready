@@ -76,4 +76,21 @@ export const tripRequirementsService = {
       'Falha ao remover requisito',
     );
   },
+
+  /**
+   * Remove um lote — usado na edição, quando uma regra do catálogo deixa de se
+   * aplicar à viagem.
+   */
+  async removeMany(requirementIds: readonly string[]): Promise<void> {
+    if (requirementIds.length === 0) return;
+
+    unwrap(
+      await supabase
+        .from('trip_requirements')
+        .delete()
+        .in('id', [...requirementIds])
+        .select('id'),
+      'Falha ao remover requisitos',
+    );
+  },
 };

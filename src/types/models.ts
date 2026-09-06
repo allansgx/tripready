@@ -5,7 +5,13 @@
  * os tipos do Supabase não quebra os imports espalhados pelo app.
  */
 
-import type { Database, RequirementCategory, RequirementPriority } from '@/types/database';
+import type {
+  Database,
+  RequirementCategory,
+  RequirementPriority,
+  RequirementScope,
+  Season,
+} from '@/types/database';
 
 type Tables = Database['public']['Tables'];
 
@@ -33,7 +39,11 @@ export type TripRequirement = Tables['trip_requirements']['Row'];
 export type TripRequirementInsert = Tables['trip_requirements']['Insert'];
 export type TripRequirementUpdate = Tables['trip_requirements']['Update'];
 
-export type { RequirementCategory, RequirementPriority };
+export type DestinationGroup = Tables['destination_groups']['Row'];
+export type DestinationGroupMember = Tables['destination_group_members']['Row'];
+export type RequirementTemplate = Tables['requirement_templates']['Row'];
+
+export type { RequirementCategory, RequirementPriority, RequirementScope, Season };
 
 export const REQUIREMENT_PRIORITIES: readonly RequirementPriority[] = [
   'required',

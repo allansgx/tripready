@@ -5,14 +5,15 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { usePassports } from '@/features/passports/passports-context';
 import {
   CATEGORY_ICONS,
   CATEGORY_LABELS,
   CHECKLIST_CATEGORIES,
-  buildBaseChecklist,
 } from '@/features/trips/checklist-catalog';
+import { resolveChecklist } from '@/features/trips/trip-persistence';
 import { USE_NATIVE_DRIVER } from '@/lib/animation';
-import { tripDestinationsService, tripRequirementsService } from '@/services';
+import { tripRequirementsService, tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /** Ritmo da animação: rápido o bastante para não virar espera. */
@@ -27,10 +28,15 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Não é um loading decorativo: cada categoria marcada corresponde à gravação
  * real daquele grupo de requisitos no Supabase. A checklist é montada aqui, e
  * não na tela anterior, justamente para o progresso mostrado ser verdadeiro.
+ *
+ * Os itens vêm do catálogo do banco, resolvidos contra os países, as datas e o
+ * passaporte principal — a tela apenas grava o resultado.
  */
 export default function TripPreparingScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const router = useRouter();
+  const { primary } = usePassports();
+  const passportCountryCode = primary?.country_code ?? null;
 
   const [doneCount, setDoneCount] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -57,14 +63,27 @@ export default function TripPreparingScreen() {
     async function prepare() {
       setNeedsRetry(false);
       try {
-        const countries = await tripDestinationsService.listCountries(tripId);
-        const checklist = buildBaseChecklist(
-          tripId,
-          countries.map((country) => country.country_code),
-        );
+        const trip = await tripsService.getWithDestinations(tripId);
+        if (!trip) {
+          setNeedsRetry(true);
+          return;
+        }
 
+        const checklist = await resolveChecklist({
+          tripId,
+          countryCodes: (trip.trip_countries ?? []).map((country) => country.country_code),
+          startDate: trip.start_date,
+          endDate: trip.end_date,
+          passportCountryCode,
+        });
+
+        // Uma categoria por passo, retomando de onde parou: o índice já gravado
+        // impede que uma nova tentativa insira duas vezes o mesmo grupo.
         for (let index = insertedRef.current; index < CHECKLIST_CATEGORIES.length; index++) {
-          await tripRequirementsService.createMany(checklist[CHECKLIST_CATEGORIES[index]]);
+          const category = CHECKLIST_CATEGORIES[index];
+          await tripRequirementsService.createMany(
+            checklist.filter((item) => item.category === category),
+          );
           insertedRef.current = index + 1;
           setDoneCount(index + 1);
           await delay(STEP_DELAY);
@@ -77,7 +96,7 @@ export default function TripPreparingScreen() {
         setNeedsRetry(true);
       }
     }
-  }, [tripId, attempt, openTrip]);
+  }, [tripId, attempt, openTrip, passportCountryCode]);
 
   function retry() {
     setAttempt((current) => current + 1);
