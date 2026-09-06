@@ -302,8 +302,14 @@ export function getFlagEmoji(code: string): string {
   );
 }
 
-/** Tira acentos e caixa para a busca casar "Italia" com "Itália". */
-function normalize(value: string): string {
+/**
+ * Tira acentos e caixa para a busca casar "Italia" com "Itália".
+ *
+ * Exportada para a busca de destinos aplicar exatamente a mesma regra aos
+ * nomes de cidade — duas normalizações diferentes fariam "Sao Paulo" achar o
+ * país e não a cidade.
+ */
+export function normalizeSearch(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -316,10 +322,11 @@ function normalize(value: string): string {
  * ordenada.
  */
 export function searchCountries(query: string): readonly Country[] {
-  const term = normalize(query);
+  const term = normalizeSearch(query);
   if (!term) return COUNTRIES;
 
   return COUNTRIES.filter(
-    (country) => normalize(country.name).includes(term) || normalize(country.code).includes(term),
+    (country) =>
+      normalizeSearch(country.name).includes(term) || normalizeSearch(country.code).includes(term),
   );
 }

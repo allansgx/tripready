@@ -113,6 +113,7 @@ export default function NewTripScreen() {
 
       {step === 'countries' ? (
         <CountryPickerList
+          searchByCity
           onSelect={(country: Country) => toggleCountry(country.code)}
           selectedCodes={countryCodes}
         />

@@ -1,10 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { CountryFlag } from '@/components/ui/country-flag';
 import { SearchField } from '@/components/ui/search-field';
 import { searchCountries, type Country } from '@/constants/countries';
+import { searchDestinations, type DestinationMatch } from '@/constants/destinations';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type CountryPickerListProps = {
@@ -18,6 +27,12 @@ type CountryPickerListProps = {
   selectedCodes?: readonly string[];
   /** Código em gravação, para mostrar o indicador na linha certa. */
   busyCode?: string | null;
+  /**
+   * Também encontra o país pelo nome de uma cidade dele. Ligado no roteiro da
+   * viagem, onde se pensa em cidade; desligado na escolha de passaporte, que é
+   * sobre nacionalidade e não sobre destino.
+   */
+  searchByCity?: boolean;
   /** Conteúdo fixo acima da busca (título do modal, pergunta do onboarding). */
   header?: React.ReactNode;
 };
@@ -32,17 +47,41 @@ export function CountryPickerList({
   disabledCodes = [],
   selectedCodes = [],
   busyCode = null,
+  searchByCity = false,
   header,
 }: CountryPickerListProps) {
   const [query, setQuery] = useState('');
-  const results = useMemo(() => searchCountries(query), [query]);
+  const inputRef = useRef<TextInput>(null);
+
+  const results = useMemo(
+    () =>
+      searchByCity
+        ? searchDestinations(query)
+        : searchCountries(query).map((country) => ({ country, city: null })),
+    [query, searchByCity],
+  );
+
   const disabled = useMemo(() => new Set(disabledCodes), [disabledCodes]);
   const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
+
+  /**
+   * Escolher um destino devolve a lista ao estado inicial.
+   *
+   * Quem monta um roteiro escolhe vários países seguidos, e a busca anterior
+   * só atrapalha o próximo: em vez de apagar "Budapeste" letra por letra, o
+   * campo se limpa sozinho e continua com o foco, pronto para o próximo
+   * destino. O país escolhido segue marcado, agora na lista completa.
+   */
+  function handleSelect(country: Country) {
+    onSelect(country);
+    setQuery('');
+    inputRef.current?.focus();
+  }
 
   return (
     <FlatList
       data={results}
-      keyExtractor={(country) => country.code}
+      keyExtractor={(item) => item.country.code}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       // Altura explícita: dentro de apresentações modais o `flex` do pai nem
@@ -52,17 +91,26 @@ export function CountryPickerList({
       ListHeaderComponent={
         <View style={styles.headerArea}>
           {header}
-          <SearchField placeholder="Buscar país..." value={query} onChangeText={setQuery} />
+          <SearchField
+            ref={inputRef}
+            placeholder={searchByCity ? 'Buscar país ou cidade...' : 'Buscar país...'}
+            value={query}
+            onChangeText={setQuery}
+          />
         </View>
       }
-      ListEmptyComponent={<Text style={styles.empty}>Nenhum país encontrado para “{query}”.</Text>}
+      ListEmptyComponent={
+        <Text style={styles.empty}>
+          {searchByCity ? 'Nenhum destino encontrado' : 'Nenhum país encontrado'} para “{query}”.
+        </Text>
+      }
       renderItem={({ item }) => (
         <CountryRow
-          country={item}
-          disabled={disabled.has(item.code)}
-          selected={selected.has(item.code)}
-          busy={busyCode === item.code}
-          onPress={() => onSelect(item)}
+          match={item}
+          disabled={disabled.has(item.country.code)}
+          selected={selected.has(item.country.code)}
+          busy={busyCode === item.country.code}
+          onPress={() => handleSelect(item.country)}
         />
       )}
     />
@@ -70,24 +118,25 @@ export function CountryPickerList({
 }
 
 function CountryRow({
-  country,
+  match,
   disabled,
   selected,
   busy,
   onPress,
 }: {
-  country: Country;
+  match: DestinationMatch;
   disabled: boolean;
   selected: boolean;
   busy: boolean;
   onPress: () => void;
 }) {
+  const { country, city } = match;
   const blocked = disabled || busy;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={country.name}
+      accessibilityLabel={city ? `${country.name}, ${city}` : country.name}
       accessibilityState={{ disabled: blocked, selected }}
       accessibilityHint={disabled ? 'Já adicionado' : undefined}
       onPress={blocked ? undefined : onPress}
@@ -99,9 +148,16 @@ function CountryRow({
       ]}>
       <CountryFlag code={country.code} />
 
-      <Text style={styles.name} numberOfLines={1}>
-        {country.name}
-      </Text>
+      <View style={styles.texts}>
+        <Text style={styles.name} numberOfLines={1}>
+          {country.name}
+        </Text>
+        {city ? (
+          <Text style={styles.city} numberOfLines={1}>
+            {city}
+          </Text>
+        ) : null}
+      </View>
 
       {busy ? (
         <ActivityIndicator size="small" color={colors.primary} />
@@ -147,10 +203,17 @@ const styles = StyleSheet.create({
   rowDisabled: {
     opacity: 0.55,
   },
+  texts: {
+    flex: 1,
+    gap: 2,
+  },
   name: {
     ...typography.body,
-    flex: 1,
     color: colors.text,
+  },
+  city: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   empty: {
     ...typography.caption,

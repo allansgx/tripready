@@ -1,10 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type SearchFieldProps = Omit<TextInputProps, 'style'> & {
   placeholder?: string;
+  /**
+   * Referência ao input, para quem usa o campo poder devolver o foco. No React
+   * 19 `ref` é uma prop comum, então segue no spread junto com o resto.
+   */
+  ref?: Ref<TextInput>;
 };
 
 /** Campo de busca com lupa, no padrão da referência. */

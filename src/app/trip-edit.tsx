@@ -156,6 +156,7 @@ export default function EditTripScreen() {
         </View>
 
         <CountryPickerList
+          searchByCity
           onSelect={(country: Country) => toggleCountry(country.code)}
           selectedCodes={draft.countryCodes}
         />
