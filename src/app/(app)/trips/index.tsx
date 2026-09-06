@@ -47,7 +47,18 @@ export default function TripsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-        <Text style={styles.title}>Minhas viagens</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Minhas viagens</Text>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Criar nova viagem"
+            hitSlop={10}
+            onPress={() => router.push('/trip-new')}
+            style={({ pressed }) => [styles.create, pressed && styles.createPressed]}>
+            <Ionicons name="add" size={18} color={colors.primary} />
+          </Pressable>
+        </View>
 
         {isLoading ? (
           <View style={styles.centered}>
@@ -62,20 +73,10 @@ export default function TripsScreen() {
         ) : summaries.length === 0 ? (
           <EmptyState onCreate={() => router.push('/trip-new')} />
         ) : (
-          <>
-            <TripSections
-              summaries={summaries}
-              onOpen={(tripId) => router.push({ pathname: '/trips/[id]', params: { id: tripId } })}
-            />
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/trip-new')}
-              style={({ pressed }) => [styles.createCard, pressed && styles.createCardPressed]}>
-              <Ionicons name="add" size={20} color={colors.primary} />
-              <Text style={styles.createLabel}>Criar nova viagem</Text>
-            </Pressable>
-          </>
+          <TripSections
+            summaries={summaries}
+            onOpen={(tripId) => router.push({ pathname: '/trips/[id]', params: { id: tripId } })}
+          />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -146,7 +147,26 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.xxl,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
   title: { ...typography.screenTitle, color: colors.text },
+  create: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createPressed: {
+    opacity: 0.6,
+  },
   section: { gap: spacing.lg },
   centered: {
     alignItems: 'center',
@@ -157,25 +177,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: 'center',
-  },
-  createCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    minHeight: 56,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  createCardPressed: {
-    backgroundColor: colors.primarySoft,
-  },
-  createLabel: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.primary,
   },
   empty: {
     alignItems: 'center',
