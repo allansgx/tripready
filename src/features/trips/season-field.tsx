@@ -229,8 +229,8 @@ export function SeasonField({ seasons, seed }: { seasons: readonly Season[]; see
   const reduceMotion = useReduceMotion();
 
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
-  // Sorteado uma vez. Quem troca a viagem troca a `key` do componente, e o
-  // campo inteiro nasce de novo.
+  // Sorteado uma vez. Quem troca a viagem ou as estações dela troca a `key` do
+  // componente, e o campo inteiro nasce de novo.
   const [descriptors] = useState(() => createDescriptors(seasons, seed));
 
   const state = useSharedValue<FieldState>(createState(descriptors.length));

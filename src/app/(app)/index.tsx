@@ -72,7 +72,13 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       {/* O clima fica atrás de tudo e não recebe toque nenhum: é paisagem. */}
       {nextTrip ? (
-        <SeasonField key={nextTrip.trip.id} seasons={seasons} seed={nextTrip.trip.id} />
+        // A `key` carrega as estações: editar as datas para outra estação
+        // remonta o campo, e as partículas nascem com a forma nova.
+        <SeasonField
+          key={`${nextTrip.trip.id}:${seasons.join('-')}`}
+          seasons={seasons}
+          seed={nextTrip.trip.id}
+        />
       ) : null}
 
       <SafeAreaView style={styles.safe} edges={['top']}>
