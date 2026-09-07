@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { unwrap, unwrapRequired } from '@/services/errors';
+import type { TripRequirementWithGroup } from '@/services/trips';
 import type { Json } from '@/types/database';
 import type {
   RequirementCategory,
@@ -19,6 +20,27 @@ export const tripRequirementsService = {
         .order('created_at', { ascending: true }),
       'Falha ao listar requisitos da viagem',
     );
+  },
+
+  /**
+   * Um requisito com o grupo que o originou — o que a tela de detalhe precisa
+   * para mostrar de onde o item veio.
+   *
+   * Devolve `null` quando a linha não existe ou não é do usuário: a policy
+   * `trip_requirements_select_own` já barra a viagem alheia, e para a tela as
+   * duas situações têm a mesma resposta.
+   */
+  async getById(requirementId: string): Promise<TripRequirementWithGroup | null> {
+    const row = unwrap(
+      await supabase
+        .from('trip_requirements')
+        .select('*, destination_groups(id, code, name)')
+        .eq('id', requirementId)
+        .maybeSingle(),
+      'Falha ao carregar o item da checklist',
+    );
+
+    return row as TripRequirementWithGroup | null;
   },
 
   async create(input: {

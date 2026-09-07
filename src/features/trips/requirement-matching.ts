@@ -592,6 +592,48 @@ export function selectNextRequirement<T extends PendingRequirement>(
   return pending.sort(byPriorityThenCreation)[0] ?? null;
 }
 
+/** De onde veio um item da checklist, pronto para virar rótulo na tela. */
+export type RequirementScopeDescription = {
+  kind: ChecklistSectionKind;
+  /** Identifica a seção do item; itens de mesma origem compartilham a chave. */
+  key: string;
+  label: string;
+  /** Preenchido apenas em itens de país, para a tela mostrar a bandeira. */
+  countryCode: string | null;
+};
+
+/**
+ * A origem de um item: viagem inteira, grupo de destinos ou país.
+ *
+ * Um item de grupo sem o nome do grupo carregado é tratado como item da viagem
+ * inteira — melhor do que anunciar uma origem sem nome.
+ *
+ * Mora aqui, e não dentro do agrupamento, porque a tela de detalhe precisa da
+ * mesma resposta para um item só. Duas leituras da mesma regra dariam dois
+ * rótulos diferentes para o mesmo item.
+ */
+export function describeRequirementScope<T extends ScopedRequirement>(
+  requirement: T,
+  countryName: (code: string) => string,
+): RequirementScopeDescription {
+  if (requirement.country_code) {
+    const code = upper(requirement.country_code);
+    return { kind: 'country', key: `country:${code}`, label: countryName(code), countryCode: code };
+  }
+
+  const groupName = requirement.destination_groups?.name;
+  if (requirement.group_id && groupName) {
+    return {
+      kind: 'group',
+      key: `group:${requirement.group_id}`,
+      label: groupName,
+      countryCode: null,
+    };
+  }
+
+  return { kind: 'trip', key: 'trip', label: TRIP_SECTION_LABEL, countryCode: null };
+}
+
 /**
  * Agrupa a checklist por origem: viagem inteira, grupo de destinos e país.
  *
@@ -615,27 +657,26 @@ export function groupRequirementsByScope<T extends ScopedRequirement>(
   const countries = new Map<string, ChecklistSection<T>>();
 
   for (const requirement of requirements) {
-    const groupName = requirement.destination_groups?.name;
+    const scope = describeRequirementScope(requirement, countryName);
 
-    if (requirement.country_code) {
-      const code = upper(requirement.country_code);
-      const section = countries.get(code) ?? {
-        key: `country:${code}`,
+    if (scope.kind === 'country' && scope.countryCode) {
+      const section = countries.get(scope.countryCode) ?? {
+        key: scope.key,
         kind: 'country' as const,
-        label: countryName(code),
-        countryCode: code,
+        label: scope.label,
+        countryCode: scope.countryCode,
         items: [],
       };
       section.items.push(requirement);
-      countries.set(code, section);
+      countries.set(scope.countryCode, section);
       continue;
     }
 
-    if (requirement.group_id && groupName) {
+    if (scope.kind === 'group' && requirement.group_id) {
       const section = groups.get(requirement.group_id) ?? {
-        key: `group:${requirement.group_id}`,
+        key: scope.key,
         kind: 'group' as const,
-        label: groupName,
+        label: scope.label,
         countryCode: null,
         items: [],
       };
@@ -658,6 +699,62 @@ export function groupRequirementsByScope<T extends ScopedRequirement>(
 
   for (const section of sections) {
     section.items.sort(byPriorityThenCreation);
+  }
+
+  return sections;
+}
+
+/**
+ * Seção da checklist por categoria — o eixo que a tela usa para os accordions.
+ */
+export type ChecklistCategorySection<T> = {
+  category: RequirementCategory;
+  items: T[];
+  /** Itens que contam para o progresso e já foram verificados. */
+  done: number;
+  /** Itens que contam para o progresso. Informativos ficam de fora. */
+  total: number;
+};
+
+/** O que basta para colocar um requisito na sua categoria e contá-lo. */
+export type CategorizedRequirement = OrderedRequirement & {
+  category: RequirementCategory;
+  completed: boolean;
+};
+
+/**
+ * Agrupa a checklist por categoria: Documentos, Saúde, Dinheiro...
+ *
+ * A ordem das categorias entra por parâmetro porque é decisão de apresentação
+ * (`CHECKLIST_CATEGORIES`), e este módulo responde por regra de viagem. Uma
+ * categoria sem item nenhum não vira seção.
+ *
+ * `done`/`total` seguem a mesma regra do progresso da viagem — informativos
+ * ficam de fora da fração —, então a soma das seções fecha exatamente com o
+ * número mostrado no topo da tela. Uma categoria só de informativos devolve
+ * `0/0`, e cabe à tela mostrar a contagem de itens no lugar da fração.
+ */
+export function groupRequirementsByCategory<T extends CategorizedRequirement>(
+  requirements: readonly T[],
+  order: readonly RequirementCategory[],
+): ChecklistCategorySection<T>[] {
+  const sections: ChecklistCategorySection<T>[] = [];
+
+  for (const category of order) {
+    const items = requirements
+      .filter((requirement) => requirement.category === category)
+      .sort(byPriorityThenCreation);
+
+    if (items.length === 0) continue;
+
+    const scored = items.filter((item) => item.priority !== 'informational');
+
+    sections.push({
+      category,
+      items,
+      done: scored.filter((item) => item.completed).length,
+      total: scored.length,
+    });
   }
 
   return sections;

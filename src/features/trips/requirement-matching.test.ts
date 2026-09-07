@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  describeRequirementScope,
   diffTripRequirements,
+  groupRequirementsByCategory,
   groupRequirementsByScope,
   resolveTripRequirements,
   seasonAt,
@@ -707,4 +709,124 @@ test('o próximo passo é o pendente mais importante, informativos de fora', () 
   // Informativo nunca vira próximo passo: ele não trava a viagem.
   assert.equal(selectNextRequirement(withoutRequired.slice(0, 1)), null);
   assert.equal(selectNextRequirement([]), null);
+});
+
+/** Item de checklist reduzido ao que o agrupamento por categoria enxerga. */
+function categorized(
+  overrides: Partial<{
+    category: 'documents' | 'health' | 'money' | 'connectivity' | 'luggage';
+    priority: 'required' | 'recommended' | 'informational';
+    completed: boolean;
+    created_at: string;
+  }> = {},
+) {
+  return {
+    category: 'documents' as const,
+    priority: 'required' as const,
+    completed: false,
+    created_at: '2026-09-01T12:00:00Z',
+    ...overrides,
+  };
+}
+
+const CATEGORY_ORDER = ['documents', 'health', 'money', 'connectivity', 'luggage'] as const;
+
+test('as seções por categoria seguem a ordem pedida e omitem as vazias', () => {
+  const sections = groupRequirementsByCategory(
+    [
+      categorized({ category: 'luggage' }),
+      categorized({ category: 'documents' }),
+      categorized({ category: 'money' }),
+      categorized({ category: 'documents' }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  assert.deepEqual(
+    sections.map((section) => [section.category, section.items.length]),
+    [
+      ['documents', 2],
+      ['money', 1],
+      ['luggage', 1],
+    ],
+  );
+});
+
+test('a fração da categoria deixa informativos de fora, como o progresso da viagem', () => {
+  const [section] = groupRequirementsByCategory(
+    [
+      categorized({ priority: 'required', completed: true }),
+      categorized({ priority: 'recommended', completed: false }),
+      categorized({ priority: 'informational', completed: true }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  // Três itens na seção, dois na conta: o informativo verificado não soma.
+  assert.equal(section.items.length, 3);
+  assert.deepEqual([section.done, section.total], [1, 2]);
+});
+
+test('categoria só de informativos não tem fração a mostrar', () => {
+  const [section] = groupRequirementsByCategory(
+    [categorized({ priority: 'informational' }), categorized({ priority: 'informational' })],
+    CATEGORY_ORDER,
+  );
+
+  assert.deepEqual([section.done, section.total], [0, 0]);
+});
+
+test('dentro da categoria, os itens saem por prioridade e depois por criação', () => {
+  const [section] = groupRequirementsByCategory(
+    [
+      categorized({ priority: 'recommended', created_at: '2026-09-01T12:00:03Z' }),
+      categorized({ priority: 'required', created_at: '2026-09-01T12:00:02Z' }),
+      categorized({ priority: 'informational', created_at: '2026-09-01T12:00:00Z' }),
+      categorized({ priority: 'required', created_at: '2026-09-01T12:00:01Z' }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  assert.deepEqual(
+    section.items.map((item) => [item.priority, item.created_at.slice(-3)]),
+    [
+      ['required', '01Z'],
+      ['required', '02Z'],
+      ['recommended', '03Z'],
+      ['informational', '00Z'],
+    ],
+  );
+});
+
+test('a origem de um item é a mesma que o agrupamento por escopo enxerga', () => {
+  const countryName = (code: string) => (code === 'HU' ? 'Hungria' : code);
+
+  assert.deepEqual(describeRequirementScope(scoped({ country_code: 'hu' }), countryName), {
+    kind: 'country',
+    key: 'country:HU',
+    label: 'Hungria',
+    countryCode: 'HU',
+  });
+
+  assert.deepEqual(
+    describeRequirementScope(
+      scoped({ group_id: 'g-schengen', destination_groups: { name: 'Espaço Schengen' } }),
+      countryName,
+    ),
+    { kind: 'group', key: 'group:g-schengen', label: 'Espaço Schengen', countryCode: null },
+  );
+
+  assert.deepEqual(describeRequirementScope(scoped(), countryName), {
+    kind: 'trip',
+    key: 'trip',
+    label: 'Toda a viagem',
+    countryCode: null,
+  });
+
+  // Sem o nome do grupo carregado, o item é da viagem inteira — o mesmo que o
+  // agrupamento faz, e não uma origem sem nome.
+  assert.equal(
+    describeRequirementScope(scoped({ group_id: 'g-desconhecido' }), countryName).kind,
+    'trip',
+  );
 });

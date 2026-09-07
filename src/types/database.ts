@@ -495,6 +495,68 @@ export type Database = {
           },
         ];
       };
+      requirement_offers: {
+        Row: {
+          id: string;
+          requirement_template_id: string;
+          name: string;
+          description: string | null;
+          url: string;
+          icon: string | null;
+          destination_country_code: string | null;
+          passport_country_code: string | null;
+          is_affiliate: boolean;
+          position: number;
+          active: boolean;
+          valid_from: string | null;
+          valid_until: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          requirement_template_id: string;
+          name: string;
+          description?: string | null;
+          url: string;
+          icon?: string | null;
+          destination_country_code?: string | null;
+          passport_country_code?: string | null;
+          is_affiliate?: boolean;
+          position?: number;
+          active?: boolean;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          requirement_template_id?: string;
+          name?: string;
+          description?: string | null;
+          url?: string;
+          icon?: string | null;
+          destination_country_code?: string | null;
+          passport_country_code?: string | null;
+          is_affiliate?: boolean;
+          position?: number;
+          active?: boolean;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'requirement_offers_requirement_template_id_fkey';
+            columns: ['requirement_template_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {

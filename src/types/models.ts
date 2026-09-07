@@ -43,6 +43,7 @@ export type TripRequirementUpdate = Tables['trip_requirements']['Update'];
 export type DestinationGroup = Tables['destination_groups']['Row'];
 export type DestinationGroupMember = Tables['destination_group_members']['Row'];
 export type RequirementTemplate = Tables['requirement_templates']['Row'];
+export type RequirementOffer = Tables['requirement_offers']['Row'];
 
 export type {
   RequirementCategory,

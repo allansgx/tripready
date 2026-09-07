@@ -1,29 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AccordionSection } from '@/components/ui/accordion-section';
 import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
-import { ProgressBar } from '@/components/ui/progress-bar';
-import { getCountryName } from '@/constants/countries';
+import { ProgressRing } from '@/components/ui/progress-ring';
 import { CelebrationOverlay, type Celebration } from '@/features/trips/celebration-overlay';
 import {
+  CATEGORY_ICONS,
   CATEGORY_LABELS,
   CHECKLIST_CATEGORIES,
   PRIORITY_LABELS,
 } from '@/features/trips/checklist-catalog';
 import { FlagRow } from '@/features/trips/flag-row';
-import {
-  groupRequirementsByScope,
-  tripSeasons,
-  type ChecklistSection,
-} from '@/features/trips/requirement-matching';
+import { groupRequirementsByCategory, tripSeasons } from '@/features/trips/requirement-matching';
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/trip-format';
-import { computeTripProgress, formatProgressLabel } from '@/features/trips/trip-progress';
+import {
+  computeTripProgress,
+  formatPendingRequiredLabel,
+  formatProgressLabel,
+} from '@/features/trips/trip-progress';
 import { getTripStatus } from '@/features/trips/trip-status';
 import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
 import {
@@ -39,8 +39,6 @@ import {
   typography,
 } from '@/theme/tokens';
 import type { RequirementCategory, TripCity, TripCountry } from '@/types/models';
-
-type Filter = RequirementCategory | 'all';
 
 export default function TripChecklistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -75,7 +73,7 @@ export default function TripChecklistScreen() {
   const [cities, setCities] = useState<TripCity[]>([]);
   const [requirements, setRequirements] = useState<TripRequirementWithGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [expanded, setExpanded] = useState<ReadonlySet<RequirementCategory>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
 
@@ -117,36 +115,54 @@ export default function TripChecklistScreen() {
     );
   }
 
-  const [reloadToken, setReloadToken] = useState(0);
+  /**
+   * Abertura inicial das seções, decidida uma única vez por viagem carregada:
+   * a primeira categoria com obrigatório pendente nasce aberta e as demais
+   * ficam recolhidas — o próximo passo em cima, sem obrigar a pessoa a
+   * procurá-lo. Viagem pronta abre nada, e a partir do primeiro toque quem
+   * manda é a pessoa.
+   */
+  const didExpandRef = useRef(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!id) return;
 
-    let active = true;
+    try {
+      const detail = await tripsService.getDetail(id);
+      if (!detail) return;
+      setName(detail.name);
+      setDates(formatTripDates(detail.start_date, detail.end_date));
+      setRange({ start: detail.start_date, end: detail.end_date });
+      setCountries(detail.trip_countries ?? []);
+      setCities(detail.trip_cities ?? []);
+      setRequirements(detail.trip_requirements ?? []);
 
-    async function load() {
-      try {
-        const detail = await tripsService.getDetail(id);
-        if (!active || !detail) return;
-        setName(detail.name);
-        setDates(formatTripDates(detail.start_date, detail.end_date));
-        setRange({ start: detail.start_date, end: detail.end_date });
-        setCountries(detail.trip_countries ?? []);
-        setCities(detail.trip_cities ?? []);
-        setRequirements(detail.trip_requirements ?? []);
-      } catch {
-        if (active) setNotice('Sua conexão oscilou. Toque em atualizar para ver a checklist.');
-      } finally {
-        if (active) setIsLoading(false);
+      if (!didExpandRef.current) {
+        didExpandRef.current = true;
+
+        const first = groupRequirementsByCategory(
+          detail.trip_requirements ?? [],
+          CHECKLIST_CATEGORIES,
+        ).find((section) =>
+          section.items.some((item) => item.priority === 'required' && !item.completed),
+        );
+
+        if (first) setExpanded(new Set([first.category]));
       }
+    } catch {
+      setNotice('Sua conexão oscilou. Toque em atualizar para ver a checklist.');
+    } finally {
+      setIsLoading(false);
     }
+  }, [id]);
 
-    void load();
-
-    return () => {
-      active = false;
-    };
-  }, [id, reloadToken]);
+  // Recarrega ao voltar da edição da viagem ou do detalhe de um item — é assim
+  // que um item marcado lá dentro aparece verificado aqui.
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const progress = useMemo(() => computeTripProgress(requirements), [requirements]);
 
@@ -182,12 +198,6 @@ export default function TripChecklistScreen() {
     }
   }, [isLoading, progress]);
 
-  const categoriesInUse = useMemo(
-    () =>
-      CHECKLIST_CATEGORIES.filter((category) => requirements.some((r) => r.category === category)),
-    [requirements],
-  );
-
   /**
    * A estação sai dos países da viagem, e não do calendário de quem está
    * olhando: dezembro é inverno em Viena e verão no Rio. Uma viagem sem datas
@@ -207,24 +217,22 @@ export default function TripChecklistScreen() {
   );
 
   /**
-   * A checklist é agrupada pela origem do item: o que vale para a viagem
-   * inteira, o que vem de um grupo de destinos e o que é de um país. O filtro
-   * por categoria continua valendo — ele apenas reduz o que entra nas seções, e
-   * seções sem item nenhum não aparecem.
+   * A checklist é agrupada por categoria, que é o eixo dos accordions. De onde
+   * o item veio — viagem inteira, grupo de destinos ou país — continua sendo
+   * informação dele, e aparece na linha e na tela de detalhe.
    */
-  const sections = useMemo(() => {
-    const visible =
-      filter === 'all'
-        ? requirements
-        : requirements.filter((requirement) => requirement.category === filter);
-
-    return groupRequirementsByScope(visible, getCountryName);
-  }, [requirements, filter]);
-
-  const visibleCount = useMemo(
-    () => sections.reduce((total, section) => total + section.items.length, 0),
-    [sections],
+  const sections = useMemo(
+    () => groupRequirementsByCategory(requirements, CHECKLIST_CATEGORIES),
+    [requirements],
   );
+
+  function toggleSection(category: RequirementCategory) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(category)) next.add(category);
+      return next;
+    });
+  }
 
   async function toggle(requirement: TripRequirementWithGroup) {
     const next = !requirement.completed;
@@ -245,6 +253,13 @@ export default function TripChecklistScreen() {
       );
       setNotice('Sua conexão oscilou. Toque no item de novo para salvar.');
     }
+  }
+
+  function openRequirement(requirement: TripRequirementWithGroup) {
+    router.push({
+      pathname: '/trips/item/[requirementId]',
+      params: { requirementId: requirement.id, tripId: requirement.trip_id },
+    });
   }
 
   if (isLoading) {
@@ -320,17 +335,13 @@ export default function TripChecklistScreen() {
                 }
               : null,
           ]}>
-          <ProgressBar percent={progress.percent} />
           <View style={styles.progressRow}>
-            <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
-            <Text style={styles.percent}>{progress.percent}%</Text>
+            <ProgressRing percent={progress.percent} />
+            <View style={styles.progressTexts}>
+              <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
+              <PendingLine progress={progress} />
+            </View>
           </View>
-          {!progress.isReady && progress.requiredPending > 0 ? (
-            <Text style={styles.nextStep}>
-              Próximo passo: verificar {progress.requiredPending}{' '}
-              {progress.requiredPending === 1 ? 'item obrigatório' : 'itens obrigatórios'}.
-            </Text>
-          ) : null}
 
           {season ? (
             <View style={styles.seasonRow}>
@@ -349,57 +360,45 @@ export default function TripChecklistScreen() {
           ) : null}
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}>
-          <FilterChip
-            label="Todos"
-            count={`${requirements.filter((r) => r.completed).length}/${requirements.length}`}
-            active={filter === 'all'}
-            onPress={() => setFilter('all')}
-          />
-          {categoriesInUse.map((category) => {
-            const items = requirements.filter((requirement) => requirement.category === category);
-            return (
-              <FilterChip
-                key={category}
-                label={CATEGORY_LABELS[category]}
-                count={`${items.filter((item) => item.completed).length}/${items.length}`}
-                active={filter === category}
-                onPress={() => setFilter(category)}
-              />
-            );
-          })}
-        </ScrollView>
-
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
         <View style={styles.list}>
-          {visibleCount === 0 ? (
-            <Text style={styles.hint}>Nada por aqui. Escolha outra categoria acima.</Text>
+          {sections.length === 0 ? (
+            <Text style={styles.hint}>Sua checklist aparece aqui assim que ficar pronta.</Text>
           ) : (
             sections.map((section) => (
-              <View key={section.key} style={styles.section}>
-                <SectionHeader section={section} />
-                {section.items.map((requirement) => (
+              <AccordionSection
+                key={section.category}
+                title={CATEGORY_LABELS[section.category]}
+                icon={
+                  <Ionicons
+                    name={CATEGORY_ICONS[section.category]}
+                    size={18}
+                    color={colors.primary}
+                  />
+                }
+                progress={{ done: section.done, total: section.total }}
+                // Categoria só de informativos não tem fração: são itens de
+                // consulta, e uma barra em zero pareceria trabalho pendente.
+                meta={`${section.items.length} ${section.items.length === 1 ? 'item' : 'itens'}`}
+                expanded={expanded.has(section.category)}
+                onToggle={() => toggleSection(section.category)}>
+                {section.items.map((requirement, index) => (
                   <RequirementRow
                     key={requirement.id}
                     requirement={requirement}
-                    onPress={() => void toggle(requirement)}
+                    first={index === 0}
+                    onToggle={() => void toggle(requirement)}
+                    onOpen={() => openRequirement(requirement)}
                   />
                 ))}
-              </View>
+              </AccordionSection>
             ))
           )}
         </View>
 
         {progress.total === 0 ? (
-          <Button
-            label="Atualizar checklist"
-            variant="ghost"
-            onPress={() => setReloadToken((token) => token + 1)}
-          />
+          <Button label="Atualizar checklist" variant="ghost" onPress={() => void load()} />
         ) : null}
       </ScrollView>
 
@@ -408,69 +407,71 @@ export default function TripChecklistScreen() {
   );
 }
 
-function FilterChip({
-  label,
-  count,
-  active,
-  onPress,
-}: {
-  label: string;
-  count: string;
-  active: boolean;
-  onPress: () => void;
-}) {
+/**
+ * O que ainda falta para a viagem ficar pronta.
+ *
+ * Fica em silêncio quando não há checklist, quando a viagem não tem nenhum item
+ * obrigatório e quando já está pronta — nesse último caso o card verde acima já
+ * deu a notícia, e repeti-la aqui só ocuparia espaço.
+ */
+function PendingLine({ progress }: { progress: ReturnType<typeof computeTripProgress> }) {
+  if (progress.total === 0 || progress.requiredTotal === 0 || progress.isReady) return null;
+
+  const pending = formatPendingRequiredLabel(progress);
+  if (!pending) return null;
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={[styles.chip, active && styles.chipActive]}>
-      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text>
-      <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>
-    </Pressable>
+    <Text style={[styles.progressPending, { color: priorityColors.required }]}>
+      {pending} {progress.requiredPending === 1 ? 'pendente' : 'pendentes'}
+    </Text>
   );
 }
 
-/** Cabeçalho de uma seção: viagem inteira, grupo de destinos ou país. */
-function SectionHeader({ section }: { section: ChecklistSection<TripRequirementWithGroup> }) {
-  return (
-    <View style={styles.sectionHeader}>
-      {section.kind === 'country' && section.countryCode ? (
-        <CountryFlag code={section.countryCode} />
-      ) : (
-        <Text style={styles.sectionIcon}>{section.kind === 'trip' ? '🌍' : '🧭'}</Text>
-      )}
-      <Text style={styles.sectionLabel}>{section.label}</Text>
-    </View>
-  );
-}
-
+/**
+ * Uma linha da checklist.
+ *
+ * São dois alvos de toque no mesmo espaço: a caixa marca o item, o resto da
+ * linha abre o detalhe. O aninhamento funciona porque o responsável pelo toque
+ * é sempre o alvo mais interno.
+ */
 function RequirementRow({
   requirement,
-  onPress,
+  first,
+  onToggle,
+  onOpen,
 }: {
   requirement: TripRequirementWithGroup;
-  onPress: () => void;
+  first: boolean;
+  onToggle: () => void;
+  onOpen: () => void;
 }) {
   const tone = priorityColors[requirement.priority];
 
-  // Em consts, e não lidos direto do objeto, para o TypeScript manter o
-  // estreitamento de nulo dentro do `onPress`.
-  const sourceName = requirement.source_name;
-  const sourceUrl = requirement.source_url;
-
   return (
     <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: requirement.completed }}
-      accessibilityLabel={requirement.title}
-      onPress={onPress}
-      style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}>
-      <View style={[styles.checkbox, requirement.completed && styles.checkboxDone]}>
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir ${requirement.title}`}
+      onPress={onOpen}
+      style={({ pressed }) => [
+        styles.item,
+        !first && styles.itemDivided,
+        pressed && styles.itemPressed,
+      ]}>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: requirement.completed }}
+        accessibilityLabel={
+          requirement.completed
+            ? `Desmarcar ${requirement.title}`
+            : `Marcar ${requirement.title} como verificado`
+        }
+        hitSlop={8}
+        onPress={onToggle}
+        style={[styles.checkbox, requirement.completed && styles.checkboxDone]}>
         {requirement.completed ? (
           <Ionicons name="checkmark" size={14} color={colors.contrastText} />
         ) : null}
-      </View>
+      </Pressable>
 
       <View style={styles.itemTexts}>
         <Text
@@ -484,54 +485,15 @@ function RequirementRow({
           <Text style={[styles.priority, { color: tone }]}>
             {PRIORITY_LABELS[requirement.priority]}
           </Text>
+          {requirement.country_code ? (
+            <CountryFlag code={requirement.country_code} size={13} />
+          ) : null}
         </View>
-
-        {requirement.description ? (
-          <Text style={styles.description} numberOfLines={2}>
-            {requirement.description}
-          </Text>
-        ) : null}
-
-        {/*
-          Só os itens vindos de uma regra de visto têm fonte a citar. O link
-          fica dentro do próprio item, e não numa tela à parte, porque é ele que
-          transforma a afirmação em algo que o viajante pode conferir.
-
-          É um Pressable aninhado: quem toca no link não marca o item como
-          verificado, porque o responsável pelo toque é sempre o alvo mais
-          interno.
-        */}
-        {sourceName && sourceUrl ? (
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={`Abrir a fonte oficial: ${sourceName}`}
-            onPress={() => openSource(sourceUrl)}
-            hitSlop={8}
-            style={styles.source}>
-            <Ionicons name="open-outline" size={13} color={colors.primary} />
-            <Text style={styles.sourceText} numberOfLines={1}>
-              {sourceName}
-            </Text>
-          </Pressable>
-        ) : null}
       </View>
+
+      <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
     </Pressable>
   );
-}
-
-/**
- * Abre a fonte oficial no navegador do sistema.
- *
- * Falha em silêncio de propósito: não conseguir abrir o navegador não muda o
- * que o item diz, e interromper a checklist com um aviso seria pior do que
- * simplesmente não abrir.
- */
-async function openSource(url: string) {
-  try {
-    await WebBrowser.openBrowserAsync(url);
-  } catch {
-    // Sem ação: o item continua legível e correto sem o link.
-  }
 }
 
 const styles = StyleSheet.create({
@@ -596,11 +558,11 @@ const styles = StyleSheet.create({
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.lg,
   },
-  progressLabel: { ...typography.caption, color: colors.textSecondary },
-  percent: { ...typography.bodyStrong, color: colors.primary },
-  nextStep: { ...typography.caption, color: colors.text },
+  progressTexts: { flex: 1, gap: spacing.xs },
+  progressLabel: { ...typography.bodyStrong, color: colors.text },
+  progressPending: { ...typography.caption, fontWeight: '600' },
   seasonRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -623,30 +585,6 @@ const styles = StyleSheet.create({
   seasonTexts: { flex: 1, gap: 2 },
   seasonHeadline: { ...typography.caption, color: colors.text, fontWeight: '600' },
   seasonDetail: { ...typography.caption, fontWeight: '600' },
-
-  chips: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipLabel: { ...typography.caption, fontWeight: '600', color: colors.text },
-  chipLabelActive: { color: colors.contrastText },
-  chipCount: { ...typography.caption, color: colors.textSecondary },
-  chipCountActive: { color: colors.contrastText },
   notice: {
     ...typography.caption,
     color: colors.text,
@@ -654,26 +592,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  list: { gap: spacing.lg },
-  section: { gap: spacing.md },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  sectionIcon: { fontSize: 16, width: 36, textAlign: 'center' },
-  sectionLabel: { ...typography.bodyStrong, color: colors.text },
+  list: { gap: spacing.md },
   item: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    paddingVertical: spacing.md,
   },
-  itemPressed: { backgroundColor: colors.background },
+  itemDivided: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.divider,
+  },
+  itemPressed: { opacity: 0.6 },
   checkbox: {
     width: 24,
     height: 24,
@@ -682,7 +612,6 @@ const styles = StyleSheet.create({
     borderColor: colors.progressTrack,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
   checkboxDone: {
     backgroundColor: colors.primary,
@@ -697,12 +626,4 @@ const styles = StyleSheet.create({
   itemMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   dot: { width: 7, height: 7, borderRadius: radius.pill },
   priority: { ...typography.caption, fontWeight: '600' },
-  description: { ...typography.caption, color: colors.textSecondary },
-  source: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingTop: spacing.xs,
-  },
-  sourceText: { ...typography.caption, color: colors.primary, fontWeight: '600', flexShrink: 1 },
 });

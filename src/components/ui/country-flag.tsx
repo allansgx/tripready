@@ -11,15 +11,21 @@ import { colors, typography } from '@/theme/tokens';
  * que é como a referência do Figma apresenta e como o próprio Android
  * costuma degradar esses emojis.
  */
-export function CountryFlag({ code }: { code: string }) {
+export function CountryFlag({ code, size = 26 }: { code: string; size?: number }) {
   const normalized = code.trim().toUpperCase();
+  // A largura acompanha o tamanho para a bandeira ficar alinhada com o texto
+  // ao lado, seja ela o ícone de uma seção ou uma marca dentro de uma linha.
+  const box = { width: size * 1.4 };
 
   if (Platform.OS === 'android') {
-    return <Text style={styles.code}>{normalized}</Text>;
+    return <Text style={[styles.code, box, { fontSize: size * 0.6 }]}>{normalized}</Text>;
   }
 
   return (
-    <Text style={styles.flag} accessibilityElementsHidden importantForAccessibility="no">
+    <Text
+      style={[styles.flag, box, { fontSize: size, lineHeight: size * 1.25 }]}
+      accessibilityElementsHidden
+      importantForAccessibility="no">
       {getFlagEmoji(normalized)}
     </Text>
   );
@@ -27,15 +33,11 @@ export function CountryFlag({ code }: { code: string }) {
 
 const styles = StyleSheet.create({
   flag: {
-    fontSize: 26,
-    lineHeight: 32,
-    width: 36,
     textAlign: 'center',
   },
   code: {
     ...typography.bodyStrong,
     color: colors.text,
-    width: 36,
     textAlign: 'center',
   },
 });

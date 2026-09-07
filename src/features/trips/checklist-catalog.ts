@@ -1,3 +1,6 @@
+import type { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+
 import type { RequirementCategory } from '@/types/models';
 
 /**
@@ -28,13 +31,15 @@ export const CATEGORY_LABELS: Record<RequirementCategory, string> = {
 };
 
 /** Ícones do Ionicons por categoria. */
-export const CATEGORY_ICONS: Record<RequirementCategory, string> = {
+export const CATEGORY_ICONS: Record<RequirementCategory, IoniconName> = {
   documents: 'document-text',
   health: 'medkit',
   money: 'card',
   connectivity: 'wifi',
   luggage: 'bag-handle',
 };
+
+export type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export const PRIORITY_LABELS = {
   required: 'Obrigatório',
