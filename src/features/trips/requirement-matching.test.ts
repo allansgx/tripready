@@ -6,6 +6,7 @@ import {
   diffTripRequirements,
   groupRequirementsByCategory,
   groupRequirementsByScope,
+  isDomesticTrip,
   resolveTripRequirements,
   seasonAt,
   selectNextRequirement,
@@ -59,6 +60,7 @@ function template(overrides: Partial<CatalogTemplate> & Pick<CatalogTemplate, 'i
     scope: 'global',
     season: null,
     passportCountryCode: null,
+    tripKind: null,
     visaRequirementType: null,
     validFrom: null,
     validUntil: null,
@@ -280,6 +282,264 @@ test('a validade é avaliada na data da viagem, não na de hoje', () => {
 
   assert.equal(resolve(catalog, trip({ startDate: '2026-12-10' })).length, 1);
   assert.deepEqual(resolve(catalog, trip({ startDate: '2026-10-01' })), []);
+});
+
+// =============================================================================
+// Viagem doméstica e viagem internacional
+//
+// A natureza da viagem não está no banco: sai da comparação entre os destinos e
+// o passaporte principal. Estes casos exercitam a derivação e o efeito dela na
+// checklist — quem voa de Recife a São Paulo não precisa de passaporte.
+// =============================================================================
+
+test('a viagem é doméstica só quando todo destino é o país do passaporte', () => {
+  assert.equal(isDomesticTrip(['BR'], 'BR'), true);
+  assert.equal(isDomesticTrip(['AR'], 'BR'), false);
+  assert.equal(isDomesticTrip(['AR', 'UY'], 'BR'), false);
+  // Um destino estrangeiro basta para a viagem inteira ser internacional.
+  assert.equal(isDomesticTrip(['BR', 'AR'], 'BR'), false);
+  // A regra não é sobre o Brasil: vale para qualquer passaporte.
+  assert.equal(isDomesticTrip(['PT'], 'PT'), true);
+  assert.equal(isDomesticTrip(['BR'], 'PT'), false);
+});
+
+test('sem passaporte principal a viagem nunca é doméstica', () => {
+  assert.equal(isDomesticTrip(['BR'], null), false);
+});
+
+test('viagem sem destino não é doméstica — não há o que comparar', () => {
+  assert.equal(isDomesticTrip([], 'BR'), false);
+});
+
+test('a comparação normaliza o código do país dos dois lados', () => {
+  assert.equal(isDomesticTrip(['br'], 'BR'), true);
+  assert.equal(isDomesticTrip(['BR'], 'br'), true);
+  assert.equal(isDomesticTrip(['BR', 'BR'], 'BR'), true);
+});
+
+/** As três naturezas possíveis de uma regra, no mesmo catálogo. */
+const kindTemplates = [
+  template({ id: 'passport', title: 'Passaporte válido', tripKind: 'international' }),
+  template({ id: 'id-card', title: 'Documento com foto', tripKind: 'domestic' }),
+  template({ id: 'luggage', title: 'Montar a bagagem' }),
+];
+
+function titlesFor(context: TripContext) {
+  return resolve({ templates: kindTemplates }, context)
+    .map((item) => item.title)
+    .sort();
+}
+
+test('viagem doméstica não recebe requisito internacional', () => {
+  assert.deepEqual(titlesFor(trip({ countryCodes: ['BR'], passportCountryCode: 'BR' })), [
+    'Documento com foto',
+    'Montar a bagagem',
+  ]);
+});
+
+test('viagem internacional não recebe requisito doméstico', () => {
+  assert.deepEqual(titlesFor(trip({ countryCodes: ['AR'], passportCountryCode: 'BR' })), [
+    'Montar a bagagem',
+    'Passaporte válido',
+  ]);
+});
+
+test('viagem com um destino estrangeiro entre os nacionais é internacional', () => {
+  assert.deepEqual(titlesFor(trip({ countryCodes: ['BR', 'AR'], passportCountryCode: 'BR' })), [
+    'Montar a bagagem',
+    'Passaporte válido',
+  ]);
+});
+
+test('a natureza da viagem não é sobre o Brasil', () => {
+  assert.deepEqual(titlesFor(trip({ countryCodes: ['PT'], passportCountryCode: 'PT' })), [
+    'Documento com foto',
+    'Montar a bagagem',
+  ]);
+
+  assert.deepEqual(titlesFor(trip({ countryCodes: ['BR'], passportCountryCode: 'PT' })), [
+    'Montar a bagagem',
+    'Passaporte válido',
+  ]);
+});
+
+test('sem passaporte principal a checklist continua como era', () => {
+  assert.deepEqual(titlesFor(trip({ countryCodes: ['BR'], passportCountryCode: null })), [
+    'Montar a bagagem',
+    'Passaporte válido',
+  ]);
+});
+
+test('requisito internacional por país pula o próprio país do viajante', () => {
+  const catalog = {
+    templates: [
+      template({
+        id: 'entry',
+        title: 'Conferir as exigências de entrada — {country}',
+        scope: 'each_country',
+        tripKind: 'international',
+      }),
+    ],
+  };
+
+  const items = resolve(catalog, trip({ countryCodes: ['BR', 'AR'], passportCountryCode: 'BR' }));
+
+  assert.deepEqual(
+    items.map((item) => item.country_code),
+    ['AR'],
+  );
+});
+
+test('requisito por país sem marcação continua valendo para todo destino', () => {
+  const catalog = {
+    templates: [
+      template({ id: 'plug', title: 'Adaptador de tomada — {country}', scope: 'each_country' }),
+    ],
+  };
+
+  const items = resolve(catalog, trip({ countryCodes: ['BR', 'AR'], passportCountryCode: 'BR' }));
+
+  assert.deepEqual(
+    items.map((item) => item.country_code),
+    ['BR', 'AR'],
+  );
+});
+
+test('requisito doméstico por país alcança o país do viajante', () => {
+  const catalog = {
+    templates: [
+      template({
+        id: 'domestic-id',
+        title: 'Documento de embarque — {country}',
+        scope: 'each_country',
+        tripKind: 'domestic',
+      }),
+    ],
+  };
+
+  const items = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }));
+
+  assert.deepEqual(
+    items.map((item) => item.country_code),
+    ['BR'],
+  );
+});
+
+test('regra de grupo internacional não alcança viagem doméstica', () => {
+  const mercosul: CatalogGroup = {
+    id: 'g-mercosul',
+    code: 'MERCOSUL',
+    name: 'MERCOSUL',
+    members: [
+      { countryCode: 'BR', validFrom: '1991-03-26', validUntil: null },
+      { countryCode: 'AR', validFrom: '1991-03-26', validUntil: null },
+    ],
+  };
+
+  const catalog = {
+    groups: [mercosul],
+    templates: [
+      template({
+        id: 'mercosul-rule',
+        title: 'Regra do bloco',
+        scope: 'group',
+        groupIds: ['g-mercosul'],
+        tripKind: 'international',
+      }),
+    ],
+  };
+
+  assert.deepEqual(resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' })), []);
+
+  assert.equal(
+    resolve(catalog, trip({ countryCodes: ['BR', 'AR'], passportCountryCode: 'BR' })).length,
+    1,
+  );
+});
+
+test('viagem doméstica não gera item de visto', () => {
+  // O banco impede regra de um país para ele mesmo (`visa_rules_not_self`), e o
+  // motor não inventa nenhuma: sem regra para o destino, não há item.
+  const items = resolve(
+    { templates: visaTemplates, visaRules: [] },
+    trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }),
+  );
+
+  assert.deepEqual(items, []);
+});
+
+test('a natureza da viagem vale junto com a estação, não no lugar dela', () => {
+  const catalog = {
+    templates: [
+      template({
+        id: 'winter-abroad',
+        title: 'Casaco para o inverno',
+        tripKind: 'international',
+        season: 'winter',
+      }),
+    ],
+  };
+
+  // Internacional, mas em pleno verão do destino: continua fora.
+  assert.deepEqual(
+    resolve(
+      catalog,
+      trip({ countryCodes: ['AR'], startDate: '2027-01-10', endDate: '2027-01-20' }),
+    ),
+    [],
+  );
+
+  assert.equal(
+    resolve(catalog, trip({ countryCodes: ['AT'], startDate: '2027-01-10', endDate: '2027-01-20' }))
+      .length,
+    1,
+  );
+});
+
+test('a checklist se ajusta quando a viagem deixa de ser doméstica', () => {
+  const catalog = { templates: kindTemplates };
+
+  const domestic = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }));
+  const current = domestic.map((item) => ({
+    id: `req-${item.template_id}`,
+    template_id: item.template_id,
+    group_id: item.group_id,
+    country_code: item.country_code,
+    completed: false,
+  }));
+
+  const desired = resolve(catalog, trip({ countryCodes: ['BR', 'AR'], passportCountryCode: 'BR' }));
+  const diff = diffTripRequirements(current, desired);
+
+  assert.deepEqual(
+    diff.toInsert.map((item) => item.title),
+    ['Passaporte válido'],
+  );
+  // O documento de embarque deixou de valer e ainda não foi verificado: sai.
+  assert.deepEqual(diff.toRemoveIds, ['req-id-card']);
+});
+
+test('item já verificado sobrevive à mudança de natureza da viagem', () => {
+  const catalog = { templates: kindTemplates };
+
+  const international = resolve(catalog, trip({ countryCodes: ['AR'], passportCountryCode: 'BR' }));
+  const current = international.map((item) => ({
+    id: `req-${item.template_id}`,
+    template_id: item.template_id,
+    group_id: item.group_id,
+    country_code: item.country_code,
+    completed: item.template_id === 'passport',
+  }));
+
+  const desired = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }));
+  const diff = diffTripRequirements(current, desired);
+
+  assert.deepEqual(
+    diff.toInsert.map((item) => item.title),
+    ['Documento com foto'],
+  );
+  // "Passaporte válido" não vale mais, mas a pessoa já o verificou: fica.
+  assert.deepEqual(diff.toRemoveIds, []);
 });
 
 // =============================================================================

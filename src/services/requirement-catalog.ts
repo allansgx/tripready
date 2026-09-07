@@ -12,6 +12,7 @@ import type {
   RequirementPriority,
   RequirementScope,
   Season,
+  TripKind,
   VisaRequirementType,
 } from '@/types/models';
 
@@ -37,6 +38,7 @@ type TemplateRow = {
   scope: RequirementScope;
   season: Season | null;
   passport_country_code: string | null;
+  trip_kind: TripKind | null;
   visa_requirement_type: VisaRequirementType | null;
   valid_from: string | null;
   valid_until: string | null;
@@ -123,6 +125,7 @@ async function loadTemplates(): Promise<CatalogTemplate[]> {
     scope: row.scope,
     season: row.season,
     passportCountryCode: row.passport_country_code,
+    tripKind: row.trip_kind,
     visaRequirementType: row.visa_requirement_type,
     validFrom: row.valid_from,
     validUntil: row.valid_until,

@@ -11,6 +11,7 @@ import type {
   RequirementPriority,
   RequirementScope,
   Season,
+  TripKind,
   VisaRequirementType,
 } from '@/types/database';
 
@@ -50,6 +51,7 @@ export type {
   RequirementPriority,
   RequirementScope,
   Season,
+  TripKind,
   VisaRequirementType,
 };
 

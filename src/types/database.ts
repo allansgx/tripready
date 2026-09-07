@@ -23,6 +23,8 @@ export type RequirementScope = 'global' | 'each_country' | 'group' | 'country' |
 
 export type Season = 'winter' | 'spring' | 'summer' | 'autumn';
 
+export type TripKind = 'domestic' | 'international';
+
 export type VisaRequirementType =
   | 'visa_free'
   | 'visa_required'
@@ -393,6 +395,7 @@ export type Database = {
           scope: RequirementScope;
           season: Season | null;
           passport_country_code: string | null;
+          trip_kind: TripKind | null;
           visa_requirement_type: VisaRequirementType | null;
           source_name: string | null;
           source_url: string | null;
@@ -412,6 +415,7 @@ export type Database = {
           scope: RequirementScope;
           season?: Season | null;
           passport_country_code?: string | null;
+          trip_kind?: TripKind | null;
           visa_requirement_type?: VisaRequirementType | null;
           source_name?: string | null;
           source_url?: string | null;
@@ -431,6 +435,7 @@ export type Database = {
           scope?: RequirementScope;
           season?: Season | null;
           passport_country_code?: string | null;
+          trip_kind?: TripKind | null;
           visa_requirement_type?: VisaRequirementType | null;
           source_name?: string | null;
           source_url?: string | null;
@@ -570,6 +575,7 @@ export type Database = {
       requirement_category: RequirementCategory;
       requirement_scope: RequirementScope;
       season: Season;
+      trip_kind: TripKind;
       visa_requirement_type: VisaRequirementType;
     };
     CompositeTypes: Record<never, never>;

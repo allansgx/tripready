@@ -3,6 +3,7 @@ import type {
   RequirementPriority,
   RequirementScope,
   Season,
+  TripKind,
   VisaRequirementType,
 } from '@/types/models';
 
@@ -184,6 +185,8 @@ export type CatalogTemplate = {
   scope: RequirementScope;
   season: Season | null;
   passportCountryCode: string | null;
+  /** Condição de natureza da viagem; nula quando a regra vale para as duas. */
+  tripKind: TripKind | null;
   validFrom: string | null;
   validUntil: string | null;
   active: boolean;
@@ -261,6 +264,33 @@ function unique(codes: readonly string[]): string[] {
   return [...new Set(codes.map(upper))];
 }
 
+/**
+ * A viagem acontece inteira dentro do país do passaporte principal?
+ *
+ * É o que separa "conferir a validade do passaporte" de "levar um documento com
+ * foto": quem voa de São Paulo para Recife não cruza fronteira nenhuma, e um
+ * item de fronteira na checklist cobra um preparo que não existe.
+ *
+ * Derivada, nunca armazenada, como o status da viagem: mudar os destinos ou
+ * trocar o passaporte principal muda a resposta sozinho.
+ *
+ * Sem passaporte principal não há como afirmar que a viagem é doméstica, e a
+ * resposta é `false` — o mesmo comportamento de antes desta regra existir. Uma
+ * viagem ainda sem destino também não é doméstica: não há o que comparar.
+ */
+export function isDomesticTrip(
+  countryCodes: readonly string[],
+  passportCountryCode: string | null,
+): boolean {
+  if (!passportCountryCode) return false;
+
+  const codes = unique(countryCodes);
+  if (codes.length === 0) return false;
+
+  const passport = upper(passportCountryCode);
+  return codes.every((code) => code === passport);
+}
+
 /** Uma data está dentro de um período aberto nas duas pontas. */
 function isWithinPeriod(date: string, from: string | null, until: string | null): boolean {
   if (from && date < from) return false;
@@ -295,6 +325,10 @@ type Resolution = {
   tripCountries: readonly string[];
   groups: readonly CatalogGroup[];
   referenceDate: string;
+  /** País do passaporte principal, normalizado; nulo quando não há. */
+  passport: string | null;
+  /** Todos os destinos são o país do passaporte principal. */
+  isDomestic: boolean;
   /** Regra de visto por destino, já filtrada pelo passaporte e pela data. */
   visaRuleByCountry: ReadonlyMap<string, VisaRule>;
 };
@@ -327,12 +361,23 @@ function visaRulesByCountry(
 function targetsFor(template: CatalogTemplate, resolution: Resolution): Target[] {
   const { tripCountries, groups, referenceDate } = resolution;
 
+  /**
+   * Uma regra internacional não alcança o próprio país do viajante.
+   *
+   * Vale para a viagem mista, que é internacional como um todo: quem sai do
+   * Brasil para a Argentina confere as exigências de entrada argentinas, e não
+   * as brasileiras — ele não passa por imigração ao voltar para casa. Regras
+   * sem marcação e regras domésticas não são afetadas.
+   */
+  const reachesCountry = (code: string) =>
+    template.tripKind !== 'international' || code !== resolution.passport;
+
   switch (template.scope) {
     case 'global':
       return [{ countryCode: null, group: null, seasonCountries: tripCountries, rule: null }];
 
     case 'each_country':
-      return tripCountries.map((code) => ({
+      return tripCountries.filter(reachesCountry).map((code) => ({
         countryCode: code,
         group: null,
         seasonCountries: [code],
@@ -342,7 +387,7 @@ function targetsFor(template: CatalogTemplate, resolution: Resolution): Target[]
     case 'country': {
       const linked = new Set(template.countryCodes.map(upper));
       return tripCountries
-        .filter((code) => linked.has(code))
+        .filter((code) => linked.has(code) && reachesCountry(code))
         .map((code) => ({ countryCode: code, group: null, seasonCountries: [code], rule: null }));
     }
 
@@ -415,7 +460,8 @@ function renderTitle(
  * Requisitos aplicáveis a uma viagem.
  *
  * A ordem de avaliação é a mesma descrita no produto: descarta o que não vale
- * na data, o que não vale para o passaporte, e então resolve o escopo. Cada
+ * na data, o que não vale para o passaporte, o que não vale para a natureza da
+ * viagem — doméstica ou internacional —, e então resolve o escopo. Cada
  * regra produz no máximo um item por país (ou um só, nos escopos de viagem
  * inteira e de grupo), então a saída já nasce sem duplicatas.
  */
@@ -432,6 +478,8 @@ export function resolveTripRequirements(
     tripCountries,
     groups: catalog.groups,
     referenceDate,
+    passport,
+    isDomestic: isDomesticTrip(tripCountries, passport),
     visaRuleByCountry: visaRulesByCountry(catalog.visaRules, passport, referenceDate),
   };
 
@@ -441,6 +489,10 @@ export function resolveTripRequirements(
     if (!template.active) continue;
     if (!isWithinPeriod(referenceDate, template.validFrom, template.validUntil)) continue;
     if (template.passportCountryCode && upper(template.passportCountryCode) !== passport) continue;
+    // Uma regra sem `tripKind` vale para as duas naturezas: é o padrão do
+    // catálogo e o que mantém intacto tudo o que não foi marcado.
+    if (template.tripKind === 'domestic' && !resolution.isDomestic) continue;
+    if (template.tripKind === 'international' && resolution.isDomestic) continue;
 
     for (const target of targetsFor(template, resolution)) {
       if (!matchesSeason(template, target, trip)) continue;
