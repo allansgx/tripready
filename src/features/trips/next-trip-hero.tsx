@@ -4,34 +4,50 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { FlagRow } from '@/features/trips/flag-row';
-import { formatSeasonTrail, formatTripDates } from '@/features/trips/trip-format';
+import {
+  formatSeasonTip,
+  formatSeasonTrail,
+  formatTripDates,
+  suggestTripName,
+} from '@/features/trips/trip-format';
 import { formatProgressLabel } from '@/features/trips/trip-progress';
 import { buildTripCountdown } from '@/features/trips/trip-status';
 import type { TripSummary } from '@/features/trips/trip-summary';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
-import {
-  colors,
-  radius,
-  seasonBorderColors,
-  seasonSoftColors,
-  shadow,
-  spacing,
-  typography,
-} from '@/theme/tokens';
+import { colors, radius, spacing, typography } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 
-/** O fundo tingido da estação, bem diluído sobre o branco do card. */
-const WASH_OPACITY = 0.55;
+/**
+ * Traços desenhados sobre o fundo quente da Home.
+ *
+ * O cinza dos tokens foi calibrado para o branco dos cards; aqui o fundo é bege
+ * e um pouco vivo, então divisor, etiqueta e contorno do próximo passo são
+ * tintas translúcidas — elas escurecem o que estiver atrás em vez de tapar,
+ * o que é o que mantém a leitura de "conteúdo no ambiente".
+ */
+const INK_LINE = 'rgba(22,22,26,0.07)';
+const INK_CHIP = 'rgba(22,22,26,0.05)';
+const PRIMARY_WASH = 'rgba(108,78,227,0.08)';
+const PRIMARY_EDGE = 'rgba(108,78,227,0.14)';
+
+/**
+ * O intervalo entre os blocos da composição, tirado do protótipo.
+ *
+ * Não sai da escala de `spacing` porque não existe lá: 24 aperta a tela e 32
+ * afasta demais. O ritmo da Home é este, e ele vale para todos os intervalos
+ * grandes — cabeçalho, contagem, divisor, progresso, próximo passo e dica.
+ */
+const BLOCK_GAP = 28;
 
 const ENTRANCE_DURATION_MS = 420;
-/** Distância que o card sobe ao aparecer. */
+/** Distância que o conteúdo sobe ao aparecer. */
 const ENTRANCE_OFFSET = 16;
 const COUNT_UP_DURATION_MS = 1200;
 
 /**
- * Entrada do card: aparece subindo, uma vez só, quando a viagem chega.
+ * Entrada da tela: aparece subindo, uma vez só, quando a viagem chega.
  *
- * Com "reduzir movimento" ligado o card já nasce no lugar — o conteúdo nunca
+ * Com "reduzir movimento" ligado o conteúdo já nasce no lugar — nada aqui
  * depende do fim da animação para ficar legível.
  */
 function useEntrance(reduceMotion: boolean) {
@@ -96,12 +112,17 @@ function useCountUp(target: number | null, animated: boolean): number | null {
 }
 
 /**
- * O bloco protagonista da Home: quanto falta para viajar, quão preparada a
- * viagem está e qual é o próximo passo — nessa ordem, em um card só.
+ * A próxima viagem ocupando a Home inteira: quanto falta para viajar, quão
+ * preparada a viagem está, qual é o próximo passo e o que esperar da estação —
+ * nessa ordem, direto sobre o ambiente sazonal.
  *
- * Tudo o que ele mostra é derivado: a contagem vem das datas, o progresso e o
- * próximo passo vêm da checklist já resumida em `TripSummary`. Nada aqui é
- * calculado de novo nem guardado no banco.
+ * Não há card envolvendo o conteúdo. O único bloco com aparência de card é o do
+ * próximo passo, porque é o único acionável: contagem e progresso informam, e
+ * informação não deve parecer botão. Quem abre a checklist é o "Verificar".
+ *
+ * Tudo o que a tela mostra é derivado: a contagem vem das datas, o progresso e
+ * o próximo passo vêm da checklist já resumida em `TripSummary`, e a estação
+ * vem dos destinos. Nada aqui é calculado de novo nem guardado no banco.
  */
 export function NextTripHero({
   summary,
@@ -109,7 +130,7 @@ export function NextTripHero({
   onOpen,
 }: {
   summary: TripSummary;
-  /** Estações da viagem, já resolvidas pela tela — o card só as veste. */
+  /** Estações da viagem, já resolvidas pela tela — o conteúdo só as veste. */
   seasons: readonly Season[];
   onOpen: () => void;
 }) {
@@ -122,26 +143,28 @@ export function NextTripHero({
   const countingDays = useCountUp(countdown.days, !reduceMotion);
 
   const seasonTrail = formatSeasonTrail(seasons);
-
-  /**
-   * O contorno é a mesma cor do fundo da estação, um tom mais firme: destaca o
-   * card contra o cinza da tela sem transformá-lo em um bloco colorido.
-   */
-  const seasonBorder = seasons.length > 0 ? seasonBorderColors[seasons[0]] : null;
+  const seasonTip = formatSeasonTip(seasons);
 
   // Uma viagem que já começou não é mais "a próxima".
   const eyebrow = countdown.kind === 'ongoing' ? 'Sua viagem' : 'Sua próxima viagem';
 
   const headline =
     countdown.days === null
-      ? countdown.message
+      ? [countdown.message, countdown.label].filter(Boolean).join('. ')
       : `${countdown.days} ${countdown.days === 1 ? 'dia' : 'dias'} para viajar`;
+
+  /**
+   * O destino acima do nome, como no protótipo. Some quando o nome da viagem já
+   * é o próprio destino — que é o caso mais comum, porque é o nome sugerido na
+   * criação, e repetir "Estados Unidos" duas vezes seguidas não informa nada.
+   */
+  const destination = countryCodes.length > 0 ? suggestTripName(countryCodes) : null;
+  const showsDestination = destination !== null && destination !== trip.name;
 
   return (
     <Animated.View
       style={[
-        styles.card,
-        seasonBorder ? { borderWidth: 1, borderColor: seasonBorder } : null,
+        styles.content,
         {
           opacity: entrance,
           transform: [
@@ -154,132 +177,175 @@ export function NextTripHero({
           ],
         },
       ]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${trip.name}. ${headline}. ${progress.percent}% preparada.`}
-        accessibilityHint="Abre a checklist da viagem"
-        onPress={onOpen}
-        style={({ pressed }) => [styles.top, pressed && styles.topPressed]}>
-        {/* O card não anima partícula nenhuma: o clima vivo é o campo atrás
-            dele. Aqui fica só o tom da estação, que dá contexto sem movimento. */}
-        {seasons.length > 0 ? (
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: seasonSoftColors[seasons[0]], opacity: WASH_OPACITY },
-            ]}
-          />
-        ) : null}
-
-        <Text style={styles.eyebrow}>{eyebrow}</Text>
-
-        <View style={styles.destination}>
-          <FlagRow codes={countryCodes} size={28} />
+      <View style={styles.header}>
+        <View style={styles.identity}>
+          <Text style={styles.eyebrow}>{eyebrow}</Text>
+          {showsDestination ? (
+            <View style={styles.destination}>
+              <FlagRow codes={countryCodes} size={15} />
+              <Text style={styles.destinationName} numberOfLines={1}>
+                {destination}
+              </Text>
+            </View>
+          ) : null}
           <Text style={styles.name} numberOfLines={2}>
             {trip.name}
           </Text>
         </View>
 
-        <View style={styles.countdown} accessibilityElementsHidden importantForAccessibility="no">
-          {countdown.days === null ? (
-            <Text style={styles.message} numberOfLines={2} adjustsFontSizeToFit>
-              {countdown.message}
+        {/* A estação não é um filtro nem um seletor: é a legenda do que está
+            caindo atrás. Por isso etiqueta, e não botão. */}
+        {seasonTrail ? (
+          <View style={styles.seasonChip}>
+            <Text style={styles.seasonChipText} numberOfLines={1}>
+              {seasonTrail}
             </Text>
-          ) : (
-            <Text style={styles.days} numberOfLines={1} adjustsFontSizeToFit>
-              {countingDays}
-            </Text>
-          )}
-          {countdown.label ? <Text style={styles.countdownLabel}>{countdown.label}</Text> : null}
-        </View>
+          </View>
+        ) : null}
+      </View>
 
+      {/* Agrupado para o leitor de tela: "3 dias para viajar. 10–17 set 2026" é
+          uma frase, e não três pedaços soltos. */}
+      <View style={styles.countdown} accessible accessibilityLabel={`${headline}. ${dates}`}>
+        {countdown.days === null ? (
+          <Text style={styles.message} numberOfLines={2} adjustsFontSizeToFit>
+            {countdown.message}
+          </Text>
+        ) : (
+          <Text style={styles.days} numberOfLines={1} adjustsFontSizeToFit>
+            {countingDays}
+          </Text>
+        )}
+        {countdown.label ? <Text style={styles.countdownLabel}>{countdown.label}</Text> : null}
         <Text style={styles.dates}>{dates}</Text>
-        {seasonTrail ? <Text style={styles.seasons}>{seasonTrail}</Text> : null}
+      </View>
 
-        <View style={styles.divider} />
+      <View style={styles.divider} />
 
+      <View style={styles.preparation}>
         <View style={styles.progressHeader}>
           <Text style={styles.progressTitle}>Preparação</Text>
           <Text style={styles.percent}>{progress.percent}%</Text>
         </View>
-        <ProgressBar percent={progress.percent} height={8} />
+        <ProgressBar percent={progress.percent} height={5} />
         <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
-      </Pressable>
+      </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={
-          nextStep ? `Próximo passo: ${nextStep.title}` : 'Abrir a checklist da viagem'
-        }
-        onPress={onOpen}
-        style={({ pressed }) => [styles.footer, pressed && styles.footerPressed]}>
-        <View style={styles.footerTexts}>
-          {nextStep ? (
-            <>
-              <Text style={styles.footerLabel}>✨ Próximo passo</Text>
-              <Text style={styles.footerTitle} numberOfLines={2}>
-                {nextStep.title}
-              </Text>
-            </>
-          ) : progress.isReady ? (
-            <>
-              <Text style={styles.footerLabel}>🎉 Tudo pronto</Text>
-              <Text style={styles.footerTitle}>Você já verificou o que precisava</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.footerLabel}>✨ Comece por aqui</Text>
-              <Text style={styles.footerTitle}>Veja o que preparar para esta viagem</Text>
-            </>
-          )}
-        </View>
+      <View style={styles.nextStep}>
+        <Text style={styles.nextStepLabel}>
+          {nextStep
+            ? '✨ Próximo passo'
+            : progress.isReady
+              ? '🎉 Tudo pronto'
+              : '✨ Comece por aqui'}
+        </Text>
 
-        <View style={styles.footerAction}>
-          <Text style={styles.footerActionText}>{nextStep ? 'Verificar' : 'Abrir'}</Text>
-          <Ionicons name="arrow-forward" size={15} color={colors.primary} />
+        <View style={styles.nextStepRow}>
+          <Text style={styles.nextStepTitle} numberOfLines={3}>
+            {nextStep
+              ? nextStep.title
+              : progress.isReady
+                ? 'Você já verificou todos os itens importantes.'
+                : 'Veja o que falta conferir antes de viajar.'}
+          </Text>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              nextStep ? `Verificar: ${nextStep.title}` : 'Abrir a checklist da viagem'
+            }
+            accessibilityHint="Abre a checklist da viagem"
+            onPress={onOpen}
+            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
+            <Text style={styles.actionLabel}>{nextStep ? 'Verificar' : 'Abrir'}</Text>
+            <Ionicons name="chevron-forward" size={13} color={colors.contrastText} />
+          </Pressable>
         </View>
-      </Pressable>
+      </View>
+
+      {seasonTip ? (
+        <View style={styles.tip}>
+          <Text style={styles.tipLabel}>{seasonTip.label}</Text>
+          <Text style={styles.tipText}>{seasonTip.text}</Text>
+        </View>
+      ) : null}
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    ...shadow.card,
+  /**
+   * `flexGrow` sem `flex`: em tela alta a composição cresce e a folga sobra ao
+   * redor; em tela baixa não há folga, o bloco fica do tamanho do conteúdo e a
+   * rolagem da tela assume. É o que evita ter de escolher entre espremer o
+   * conteúdo e inventar rolagem onde ela não é necessária.
+   *
+   * Os blocos ficam empilhados a partir do topo, todos no tamanho natural, e a
+   * sobra de altura fica embaixo. Nenhum deles é elástico de propósito: como o
+   * `flexShrink` padrão do React Native é 0, um bloco elástico no meio da pilha
+   * não encolhe quando falta espaço — ele transborda, e aí o `ScrollView` corta
+   * o que passou em vez de rolar, porque a altura do conteúdo continua sendo a
+   * da tela. Altura natural é o que garante que faltar espaço vire rolagem.
+   *
+   * O intervalo entre blocos é o do protótipo, que separa contagem, divisor,
+   * progresso e próximo passo por 28 pontos. É o respiro que faz a tela parecer
+   * composta em vez de empilhada, e é maior do que qualquer `spacing` isolado.
+   */
+  content: {
+    flexGrow: 1,
+    gap: BLOCK_GAP,
   },
-  top: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-    gap: spacing.sm,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
-  topPressed: {
-    backgroundColor: colors.background,
+  identity: {
+    flex: 1,
+    gap: spacing.xs,
   },
   eyebrow: {
     ...typography.sectionLabel,
+    fontSize: 11,
+    letterSpacing: 1.4,
     color: colors.textSecondary,
     textTransform: 'uppercase',
   },
   destination: {
-    gap: spacing.xs,
-    marginTop: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  destinationName: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flexShrink: 1,
   },
   name: {
     ...typography.title,
     color: colors.text,
   },
-  // O número ocupa a tela inteira em largura: é ele que responde "quanto
-  // falta?" antes de qualquer leitura.
+  seasonChip: {
+    flexShrink: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    backgroundColor: INK_CHIP,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: INK_LINE,
+  },
+  seasonChipText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  // O número é o centro visual da tela: é ele que responde "quanto falta?"
+  // antes de qualquer leitura.
+  // A contagem é o bloco mais isolado da tela no protótipo: um respiro a mais
+  // acima do número, e o rótulo e a data soltos abaixo dele, sem se colar.
   countdown: {
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
   },
   days: {
     ...typography.countdown,
@@ -292,31 +358,27 @@ const styles = StyleSheet.create({
   },
   countdownLabel: {
     ...typography.sectionLabel,
+    fontSize: 11,
+    letterSpacing: 1.8,
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    marginTop: spacing.xs,
   },
   dates: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  seasons: {
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: spacing.xs,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.divider,
-    marginVertical: spacing.lg,
+    backgroundColor: INK_LINE,
+  },
+  preparation: {
+    gap: spacing.sm,
   },
   progressHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
   },
   progressTitle: {
     ...typography.bodyStrong,
@@ -329,41 +391,62 @@ const styles = StyleSheet.create({
   progressLabel: {
     ...typography.caption,
     color: colors.textSecondary,
-    marginTop: spacing.sm,
   },
-  footer: {
+  // O único bloco com cara de card na tela, porque é o único acionável.
+  nextStep: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.xl - spacing.sm,
+    backgroundColor: PRIMARY_WASH,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PRIMARY_EDGE,
+  },
+  nextStepLabel: {
+    ...typography.sectionLabel,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
+  nextStepRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.md,
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
   },
-  footerPressed: {
-    opacity: 0.7,
-  },
-  footerTexts: {
-    flex: 1,
-    gap: 2,
-  },
-  footerLabel: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  footerTitle: {
-    ...typography.bodyStrong,
+  nextStepTitle: {
+    ...typography.body,
+    fontWeight: '400',
     color: colors.text,
+    flex: 1,
   },
-  footerAction: {
+  action: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md - 2,
+    backgroundColor: colors.primary,
   },
-  footerActionText: {
+  actionPressed: {
+    backgroundColor: colors.primaryPressed,
+  },
+  actionLabel: {
     ...typography.caption,
     fontWeight: '600',
-    color: colors.primary,
+    color: colors.contrastText,
+  },
+  tip: {
+    gap: spacing.xs,
+  },
+  tipLabel: {
+    ...typography.caption,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  tipText: {
+    ...typography.caption,
+    lineHeight: 20,
+    color: colors.textSecondary,
   },
 });

@@ -87,24 +87,73 @@ export function suggestTripName(countryCodes: readonly string[]): string {
 }
 
 /** Como cada estação se apresenta na checklist. */
-const SEASONS: Record<Season, { emoji: string; label: string; complement: string }> = {
-  winter: { emoji: '❄️', label: 'Inverno', complement: 'no inverno' },
-  spring: { emoji: '🌸', label: 'Primavera', complement: 'na primavera' },
-  summer: { emoji: '☀️', label: 'Verão', complement: 'no verão' },
-  autumn: { emoji: '🍂', label: 'Outono', complement: 'no outono' },
+const SEASONS: Record<
+  Season,
+  { emoji: string; label: string; complement: string; possessive: string; tip: string }
+> = {
+  winter: {
+    emoji: '❄️',
+    label: 'Inverno',
+    complement: 'no inverno',
+    possessive: 'do inverno',
+    tip: 'Vai fazer frio. Um casaco impermeável e boas meias dão conta do dia inteiro.',
+  },
+  spring: {
+    emoji: '🌸',
+    label: 'Primavera',
+    complement: 'na primavera',
+    possessive: 'da primavera',
+    tip: 'Dias floridos com chuvas rápidas. Uma jaqueta leve resolve as duas coisas.',
+  },
+  summer: {
+    emoji: '☀️',
+    label: 'Verão',
+    complement: 'no verão',
+    possessive: 'do verão',
+    tip: 'Sol firme. Protetor solar, roupas leves e uma garrafa de água deixam o passeio melhor.',
+  },
+  autumn: {
+    emoji: '🍂',
+    label: 'Outono',
+    complement: 'no outono',
+    possessive: 'do outono',
+    tip: 'Período de folhas douradas. Leve um casaco leve para as noites mais frescas.',
+  },
 };
 
 /**
  * As estações da viagem em linha: "❄️ Inverno" ou "🍂 Outono · ❄️ Inverno".
  *
- * É a legenda do clima que a Home anima dentro do card — sem ela, folhas caindo
- * são só um enfeite sem explicação. `null` quando a viagem não tem datas e,
+ * É a legenda do clima que a Home anima ao fundo — sem ela, folhas caindo são
+ * só um enfeite sem explicação. `null` quando a viagem não tem datas e,
  * portanto, não tem estação a afirmar.
  */
 export function formatSeasonTrail(seasons: readonly Season[]): string | null {
   if (seasons.length === 0) return null;
 
   return seasons.map((season) => `${SEASONS[season].emoji} ${SEASONS[season].label}`).join(' · ');
+}
+
+export type SeasonTip = {
+  /** "🍂 Dica do outono". */
+  label: string;
+  text: string;
+};
+
+/**
+ * A dica da estação no destino, para a Home.
+ *
+ * É a única estação que interessa aqui: a de quem chega. Atravessando duas, a
+ * dica é a da primeira — é o que a pessoa precisa saber para arrumar a mala
+ * agora, e o percurso completo já aparece na etiqueta da estação.
+ *
+ * `null` sem datas: sem estação não há dica a dar.
+ */
+export function formatSeasonTip(seasons: readonly Season[]): SeasonTip | null {
+  if (seasons.length === 0) return null;
+
+  const season = SEASONS[seasons[0]];
+  return { label: `${season.emoji} Dica ${season.possessive}`, text: season.tip };
 }
 
 /**

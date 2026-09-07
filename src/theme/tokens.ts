@@ -72,6 +72,22 @@ export const seasonBorderColors = {
   autumn: '#EBD5C4',
 } as const;
 
+/**
+ * O fundo da Home.
+ *
+ * `base` é um cinza levemente quente — a Home é a única tela que não usa o
+ * `colors.background` neutro, porque é a única que precisa parecer um ambiente
+ * e não uma folha. Sobre ela é pintado o halo da estação, em cor cheia e
+ * opacidade baixíssima: é atmosfera, não bloco de cor.
+ */
+export const seasonBackdropColors = {
+  base: '#F8F6F2',
+  winter: '#5A9BE6',
+  spring: '#FFA0C3',
+  summer: '#FFCD46',
+  autumn: '#C36428',
+} as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -112,12 +128,17 @@ export const typography = {
    * Contagem regressiva da Home: o número é o maior elemento do app, com a
    * fonte arredondada do sistema para os dígitos terem cara de viagem, e não
    * de painel de números.
+   *
+   * A entrelinha é um pouco maior que o corpo de propósito. Em fonte desse
+   * tamanho, uma `lineHeight` justa corta a parte de cima e de baixo dos
+   * dígitos no Android; a folga é a mínima que evita isso, porque cada ponto
+   * gasto aqui afasta o número do rótulo logo abaixo.
    */
   countdown: {
-    fontSize: 88,
-    lineHeight: 96,
+    fontSize: 104,
+    lineHeight: 112,
     fontWeight: '800' as const,
-    letterSpacing: -3,
+    letterSpacing: -4,
     fontFamily: fontFamily.rounded,
   },
   /** Frase que substitui o número quando não há dias a contar ("É hoje! ✈️"). */
