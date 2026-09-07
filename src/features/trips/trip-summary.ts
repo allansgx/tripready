@@ -1,3 +1,4 @@
+import { selectNextRequirement } from '@/features/trips/requirement-matching';
 import { computeTripProgress, type TripProgress } from '@/features/trips/trip-progress';
 import {
   formatStartCountdown,
@@ -5,7 +6,7 @@ import {
   todayISO,
   type TripStatus,
 } from '@/features/trips/trip-status';
-import type { TripWithRelations } from '@/services/trips';
+import type { TripRequirementBrief, TripWithRelations } from '@/services/trips';
 import type { Trip } from '@/types/models';
 
 export type TripSummary = {
@@ -15,6 +16,8 @@ export type TripSummary = {
   status: TripStatus;
   /** "Começa em 5 dias" — só para viagens futuras próximas. */
   countdown: string | null;
+  /** Item pendente mais importante da checklist; `null` quando não há nenhum. */
+  nextStep: TripRequirementBrief | null;
 };
 
 /** Prioridade de exibição: em andamento, depois próximas, depois concluídas. */
@@ -26,13 +29,15 @@ const STATUS_ORDER: Record<TripStatus, number> = {
 
 export function toTripSummary(row: TripWithRelations, today: string = todayISO()): TripSummary {
   const { trip_countries, trip_requirements, ...trip } = row;
+  const requirements = trip_requirements ?? [];
 
   return {
     trip,
     countryCodes: (trip_countries ?? []).map((country) => country.country_code),
-    progress: computeTripProgress(trip_requirements ?? []),
+    progress: computeTripProgress(requirements),
     status: getTripStatus(trip, today),
     countdown: formatStartCountdown(trip, today),
+    nextStep: selectNextRequirement(requirements),
   };
 }
 

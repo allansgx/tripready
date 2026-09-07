@@ -555,15 +555,41 @@ const PRIORITY_ORDER: Record<RequirementPriority, number> = {
   informational: 2,
 };
 
+/** O que basta para ordenar um requisito. */
+type OrderedRequirement = Pick<ScopedRequirement, 'priority' | 'created_at'>;
+
 /**
  * Empate dentro da prioridade fica com a ordem de criação, que é a ordem das
  * categorias em que a checklist foi montada — estável entre uma abertura e
  * outra, ao contrário da ordem em que o banco devolve as linhas.
  */
-function byPriorityThenCreation(a: ScopedRequirement, b: ScopedRequirement): number {
+function byPriorityThenCreation(a: OrderedRequirement, b: OrderedRequirement): number {
   const priority = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
   if (priority !== 0) return priority;
   return a.created_at.localeCompare(b.created_at);
+}
+
+/** O mínimo para escolher o próximo passo: prioridade, ordem e estado. */
+export type PendingRequirement = OrderedRequirement & { completed: boolean };
+
+/**
+ * O item que a pessoa deve resolver primeiro.
+ *
+ * Segue a mesma hierarquia da lista — obrigatórios antes de recomendados, e
+ * empate pela ordem de criação —, então o "próximo passo" da Home é sempre o
+ * primeiro item pendente que ela encontra ao abrir a checklist. Informativos
+ * ficam de fora: são conteúdo de consulta e não travam a viagem.
+ *
+ * `null` quando não há nada pendente que valha cobrar.
+ */
+export function selectNextRequirement<T extends PendingRequirement>(
+  requirements: readonly T[],
+): T | null {
+  const pending = requirements.filter(
+    (requirement) => !requirement.completed && requirement.priority !== 'informational',
+  );
+
+  return pending.sort(byPriorityThenCreation)[0] ?? null;
 }
 
 /**

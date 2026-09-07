@@ -6,6 +6,7 @@ import {
   groupRequirementsByScope,
   resolveTripRequirements,
   seasonAt,
+  selectNextRequirement,
   seasonsInRange,
   tripSeasons,
   type CatalogGroup,
@@ -685,4 +686,25 @@ test('as estações da viagem saem dos destinos, em ordem cronológica', () => {
 
   // Sem datas não há estação a afirmar.
   assert.deepEqual(tripSeasons(['AT'], null, null), []);
+});
+
+test('o próximo passo é o pendente mais importante, informativos de fora', () => {
+  const items = [
+    { priority: 'informational' as const, completed: false, created_at: '2026-01-01T00:00:00Z' },
+    { priority: 'recommended' as const, completed: false, created_at: '2026-01-01T00:00:01Z' },
+    { priority: 'required' as const, completed: true, created_at: '2026-01-01T00:00:02Z' },
+    { priority: 'required' as const, completed: false, created_at: '2026-01-01T00:00:03Z' },
+    { priority: 'required' as const, completed: false, created_at: '2026-01-01T00:00:04Z' },
+  ];
+
+  // Obrigatório pendente mais antigo — o mesmo que abre a checklist.
+  assert.equal(selectNextRequirement(items)?.created_at.slice(-3), '03Z');
+
+  // Sem obrigatórios pendentes, o recomendado assume.
+  const withoutRequired = items.filter((item) => item.priority !== 'required');
+  assert.equal(selectNextRequirement(withoutRequired)?.priority, 'recommended');
+
+  // Informativo nunca vira próximo passo: ele não trava a viagem.
+  assert.equal(selectNextRequirement(withoutRequired.slice(0, 1)), null);
+  assert.equal(selectNextRequirement([]), null);
 });

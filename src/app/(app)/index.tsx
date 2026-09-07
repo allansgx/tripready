@@ -1,79 +1,151 @@
-import { useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/ui/card';
-import { ListRow } from '@/components/ui/list-row';
-import { SectionLabel } from '@/components/ui/section-label';
-import { getCountryName } from '@/constants/countries';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
-import { usePassports } from '@/features/passports/passports-context';
+import { NextTripHero } from '@/features/trips/next-trip-hero';
+import {
+  buildTripSummaries,
+  splitTripSections,
+  type TripSummary,
+} from '@/features/trips/trip-summary';
 import { tripsService } from '@/services';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /**
- * Tela provisória (sem design final): valida sessão e leitura no banco com RLS
- * ativo. O passaporte principal já aparece aqui porque é ele que vai definir os
- * requisitos das viagens.
+ * Início: uma viagem só, a próxima.
+ *
+ * A tela responde a duas perguntas — quanto falta para viajar e quão preparada
+ * a viagem está — e oferece um único caminho adiante, o próximo passo da
+ * checklist. A lista completa continua sendo assunto da aba Viagens; aqui
+ * repetir viagens seria repetir aquela tela.
  */
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { passports, primary } = usePassports();
-  const [tripsCount, setTripsCount] = useState<number | null>(null);
-  const [status, setStatus] = useState('Carregando...');
+  const router = useRouter();
+
+  const [nextTrip, setNextTrip] = useState<TripSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [needsRetry, setNeedsRetry] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    setNeedsRetry(false);
+    try {
+      const rows = await tripsService.listWithRelations(user.id);
+      // `buildTripSummaries` já ordena por relevância: a primeira viagem ativa
+      // é a em andamento ou a que começa antes — exatamente a que a Home destaca.
+      const { active } = splitTripSections(buildTripSummaries(rows));
+      setNextTrip(active[0] ?? null);
+    } catch {
+      setNeedsRetry(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      if (!user) return;
-
-      tripsService
-        .listByUser(user.id)
-        .then((trips) => {
-          if (!active) return;
-          setTripsCount(trips.length);
-          setStatus('Conectado ao Supabase.');
-        })
-        .catch((error: unknown) => {
-          if (active) setStatus(error instanceof Error ? error.message : 'Erro desconhecido.');
-        });
-
-      return () => {
-        active = false;
-      };
-    }, [user]),
+      void load();
+    }, [load]),
   );
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-        <Text style={styles.title}>Início</Text>
-
-        <View>
-          <SectionLabel>Status</SectionLabel>
-          <Card>
-            <ListRow label="Banco de dados" description={status} />
-            <ListRow
-              label="Passaporte principal"
-              description={
-                primary ? getCountryName(primary.country_code) : 'nenhum passaporte principal'
-              }
-            />
-            <ListRow label="Passaportes" description={`${passports.length} cadastrado(s)`} />
-            <ListRow
-              label="Viagens"
-              description={tripsCount === null ? '—' : `${tripsCount} registro(s)`}
-            />
-          </Card>
-        </View>
+        {isLoading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.hint}>Buscando sua próxima viagem...</Text>
+          </View>
+        ) : needsRetry ? (
+          <View style={styles.centered}>
+            <Text style={styles.hint}>Sua conexão oscilou. Toque para carregar de novo.</Text>
+            <Button label="Carregar viagem" onPress={() => void load()} variant="ghost" />
+          </View>
+        ) : nextTrip ? (
+          <NextTripHero
+            summary={nextTrip}
+            onOpen={() =>
+              router.push({ pathname: '/trips/[id]', params: { id: nextTrip.trip.id } })
+            }
+          />
+        ) : (
+          <EmptyState onCreate={() => router.push('/trip-new')} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyIcon}>
+        <Ionicons name="airplane" size={30} color={colors.primary} />
+      </View>
+      <Text style={styles.emptyTitle}>Para onde você vai?</Text>
+      <Text style={styles.emptyText}>
+        Crie sua viagem e acompanhe aqui a contagem regressiva e tudo o que preparar antes de
+        embarcar.
+      </Text>
+      <View style={styles.emptyAction}>
+        <Button label="Criar viagem" onPress={onCreate} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.xl - spacing.xs, gap: spacing.xl },
-  title: { ...typography.screenTitle, color: colors.text },
+  // `flexGrow` faz o conteúdo ocupar a altura da rolagem mesmo sendo menor que
+  // ela — é o que permite centralizar o card na tela e ainda assim rolar quando
+  // ele cresce (nome longo, próximo passo em duas linhas, fonte ampliada).
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.xl - spacing.xs,
+    gap: spacing.lg,
+  },
+  centered: {
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingVertical: spacing.xxl,
+  },
+  hint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  empty: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  emptyTitle: {
+    ...typography.title,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  emptyText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  emptyAction: {
+    alignSelf: 'stretch',
+    marginTop: spacing.md,
+  },
 });

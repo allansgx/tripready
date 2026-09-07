@@ -13,10 +13,22 @@ export type TripWithDestinations = Trip & {
   trip_cities: TripCity[];
 };
 
+/**
+ * Requisito reduzido ao que as telas de visão geral precisam: o progresso sai
+ * da prioridade e do estado, e o "próximo passo" precisa do título e da ordem.
+ */
+export type TripRequirementBrief = {
+  id: string;
+  title: string;
+  priority: RequirementPriority;
+  completed: boolean;
+  created_at: string;
+};
+
 /** Viagem com o mínimo necessário para montar o card da listagem. */
 export type TripWithRelations = Trip & {
   trip_countries: { country_code: string }[];
-  trip_requirements: { priority: RequirementPriority; completed: boolean }[];
+  trip_requirements: TripRequirementBrief[];
 };
 
 /**
@@ -77,7 +89,9 @@ export const tripsService = {
   async listWithRelations(userId: string, options: ListOptions = {}): Promise<TripWithRelations[]> {
     let query = supabase
       .from('trips')
-      .select('*, trip_countries(country_code), trip_requirements(priority, completed)')
+      .select(
+        '*, trip_countries(country_code), trip_requirements(id, title, priority, completed, created_at)',
+      )
       .eq('user_id', userId)
       .order('start_date', { ascending: true, nullsFirst: false });
 

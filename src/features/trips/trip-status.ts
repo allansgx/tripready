@@ -54,6 +54,18 @@ function daysBetween(from: string, to: string): number | null {
   return Math.round((end - start) / 86_400_000);
 }
 
+/**
+ * Dias que faltam para a viagem começar.
+ *
+ * `0` no dia da partida e `null` quando não há data de início ou ela é
+ * ilegível. Números negativos são possíveis para viagens que já começaram —
+ * quem decide o que fazer com isso é quem chama.
+ */
+export function daysUntilStart(trip: DateRange, today: string = todayISO()): number | null {
+  if (!trip.start_date) return null;
+  return daysBetween(today, trip.start_date);
+}
+
 /** Limite de dias para a contagem aparecer — evita poluir todos os cards. */
 const COUNTDOWN_WINDOW_DAYS = 30;
 
@@ -64,10 +76,73 @@ const COUNTDOWN_WINDOW_DAYS = 30;
 export function formatStartCountdown(trip: DateRange, today: string = todayISO()): string | null {
   if (getTripStatus(trip, today) !== 'upcoming' || !trip.start_date) return null;
 
-  const days = daysBetween(today, trip.start_date);
+  const days = daysUntilStart(trip, today);
   if (days === null || days < 0 || days > COUNTDOWN_WINDOW_DAYS) return null;
 
   if (days === 0) return 'Começa hoje';
   if (days === 1) return 'Começa amanhã';
   return `Começa em ${days} dias`;
+}
+
+/**
+ * A contagem regressiva da Home, sem limite de janela: a próxima viagem é uma
+ * só, e a pergunta "quanto falta?" vale mesmo faltando meses.
+ *
+ * O `kind` existe para a tela decidir a forma sem reinterpretar textos: só
+ * `days` tem número grande a exibir; os demais trazem uma frase pronta. Nunca
+ * existe "0 dias" — o dia da partida vira "É hoje!", que é o que a pessoa
+ * espera ler.
+ *
+ * Vale para viagens ativas (em andamento ou futuras), que são as únicas que a
+ * Home destaca; uma viagem concluída não tem contagem a fazer.
+ */
+export type TripCountdownKind = 'days' | 'tomorrow' | 'today' | 'ongoing' | 'undated';
+
+export type TripCountdown = {
+  kind: TripCountdownKind;
+  /** Preenchido apenas em `days` — o número protagonista da Home. */
+  days: number | null;
+  /** Frase grande quando não há número a mostrar. */
+  message: string | null;
+  /** Legenda de apoio, abaixo do número ou da frase. */
+  label: string | null;
+};
+
+export function buildTripCountdown(trip: DateRange, today: string = todayISO()): TripCountdown {
+  const days = daysUntilStart(trip, today);
+
+  // O dia da partida vem antes do estado: para `getTripStatus` a viagem já
+  // começou, mas quem embarca hoje quer ler "É hoje!", não "boa viagem".
+  if (days === 0) {
+    return { kind: 'today', days: null, message: 'É hoje! ✈️', label: 'Boa viagem!' };
+  }
+
+  if (getTripStatus(trip, today) === 'ongoing') {
+    return {
+      kind: 'ongoing',
+      days: null,
+      message: 'Boa viagem! ✈️',
+      label: 'Viagem em andamento',
+    };
+  }
+
+  if (days === null) {
+    return {
+      kind: 'undated',
+      days: null,
+      message: 'Quase lá ✈️',
+      label: 'Escolha as datas para ver a contagem',
+    };
+  }
+
+  if (days === 1) {
+    return {
+      kind: 'tomorrow',
+      days: null,
+      message: 'Amanhã é o grande dia ✈️',
+      label: 'Últimos preparativos',
+    };
+  }
+
+  return { kind: 'days', days, message: null, label: 'dias para viajar' };
 }

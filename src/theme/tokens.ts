@@ -85,6 +85,8 @@ export const radius = {
   sm: 10,
   md: 14,
   lg: 16,
+  /** Blocos protagonistas, como a contagem regressiva da Home. */
+  xl: 24,
   pill: 999,
 } as const;
 
@@ -106,6 +108,25 @@ export const typography = {
   bodyStrong: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const },
   /** Texto de apoio (e-mail, descrições). */
   caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' as const },
+  /**
+   * Contagem regressiva da Home: o número é o maior elemento do app, com a
+   * fonte arredondada do sistema para os dígitos terem cara de viagem, e não
+   * de painel de números.
+   */
+  countdown: {
+    fontSize: 88,
+    lineHeight: 96,
+    fontWeight: '800' as const,
+    letterSpacing: -3,
+    fontFamily: fontFamily.rounded,
+  },
+  /** Frase que substitui o número quando não há dias a contar ("É hoje! ✈️"). */
+  countdownMessage: {
+    fontSize: 32,
+    lineHeight: 40,
+    fontWeight: '700' as const,
+    fontFamily: fontFamily.rounded,
+  },
   /** Rótulos de seção em caixa alta ("PASSAPORTES", "CONTA"). */
   sectionLabel: {
     fontSize: 12,

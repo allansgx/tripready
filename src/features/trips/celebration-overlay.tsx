@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  AccessibilityInfo,
   Animated,
   Easing,
   Modal,
@@ -12,7 +11,7 @@ import {
 } from 'react-native';
 
 import { Button } from '@/components/ui/button';
-import { USE_NATIVE_DRIVER } from '@/lib/animation';
+import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, priorityColors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 const CONFETTI_COUNT = 14;
@@ -64,7 +63,7 @@ export function CelebrationOverlay({
   onDismiss: () => void;
 }) {
   const { width } = useWindowDimensions();
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReduceMotion();
 
   // Inicializador de `useState`: cada valor nasce uma vez e nunca é trocado,
   // então a animação sobrevive a qualquer re-renderização.
@@ -74,12 +73,6 @@ export function CelebrationOverlay({
   const [confetti] = useState(() => new Animated.Value(0));
 
   const [pieces] = useState(createPieces);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then(setReduceMotion)
-      .catch(() => setReduceMotion(false));
-  }, []);
 
   useEffect(() => {
     if (!celebration) {
