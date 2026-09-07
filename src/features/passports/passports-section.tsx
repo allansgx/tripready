@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
 
 import { Card } from '@/components/ui/card';
 import { CountryFlag } from '@/components/ui/country-flag';
+import { showDialog } from '@/components/ui/dialog';
 import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
 import { usePassports } from '@/features/passports/passports-context';
@@ -30,7 +30,7 @@ export function PassportsSection() {
     try {
       await action();
     } catch (error) {
-      Alert.alert(
+      showDialog(
         'Não foi possível concluir',
         error instanceof Error ? error.message : 'Tente novamente.',
       );
@@ -47,7 +47,7 @@ export function PassportsSection() {
     if (passport.is_primary) {
       const isOnly = passports.length === 1;
 
-      Alert.alert(
+      showDialog(
         name,
         isOnly
           ? 'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.'
@@ -74,7 +74,7 @@ export function PassportsSection() {
         text: 'Remover passaporte',
         style: 'destructive',
         onPress: () =>
-          Alert.alert(`Remover ${name}?`, 'Você pode adicioná-lo de novo quando quiser.', [
+          showDialog(`Remover ${name}?`, 'Você pode adicioná-lo de novo quando quiser.', [
             { text: 'Cancelar', style: 'cancel' },
             {
               text: 'Remover',
@@ -86,7 +86,7 @@ export function PassportsSection() {
       { text: 'Cancelar', style: 'cancel' },
     ];
 
-    Alert.alert(name, undefined, buttons);
+    showDialog(name, undefined, buttons);
   }
 
   return (

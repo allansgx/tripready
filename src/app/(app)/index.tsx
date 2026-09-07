@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
 import { NextTripHero } from '@/features/trips/next-trip-hero';
+import { tripSeasons } from '@/features/trips/requirement-matching';
+import { SeasonField } from '@/features/trips/season-field';
 import {
   buildTripSummaries,
   splitTripSections,
@@ -53,31 +55,61 @@ export default function HomeScreen() {
     }, [load]),
   );
 
+  /**
+   * As estações saem dos destinos, não do calendário de quem olha: dezembro é
+   * inverno em Viena e verão no Rio. É a mesma regra da tela de detalhe, e
+   * alimenta tanto o campo de partículas quanto o card.
+   */
+  const seasons = useMemo(
+    () =>
+      nextTrip
+        ? tripSeasons(nextTrip.countryCodes, nextTrip.trip.start_date, nextTrip.trip.end_date)
+        : [],
+    [nextTrip],
+  );
+
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-        {isLoading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.hint}>Buscando sua próxima viagem...</Text>
-          </View>
-        ) : needsRetry ? (
-          <View style={styles.centered}>
-            <Text style={styles.hint}>Sua conexão oscilou. Toque para carregar de novo.</Text>
-            <Button label="Carregar viagem" onPress={() => void load()} variant="ghost" />
-          </View>
-        ) : nextTrip ? (
-          <NextTripHero
-            summary={nextTrip}
-            onOpen={() =>
-              router.push({ pathname: '/trips/[id]', params: { id: nextTrip.trip.id } })
-            }
-          />
-        ) : (
-          <EmptyState onCreate={() => router.push('/trip-new')} />
-        )}
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.screen}>
+      {/* O clima fica atrás de tudo e não recebe toque nenhum: é paisagem. */}
+      {nextTrip ? (
+        <SeasonField key={nextTrip.trip.id} seasons={seasons} seed={nextTrip.trip.id} />
+      ) : null}
+
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        {/* Sem repique: com o card cabendo na tela, arrastar não deve mover
+            nada — ele fica preso no meio. A rolagem continua existindo para
+            quando o conteúdo de fato passar da altura disponível (nome longo,
+            fonte ampliada pelo sistema). */}
+        <ScrollView
+          contentContainerStyle={styles.content}
+          contentInsetAdjustmentBehavior="automatic"
+          bounces={false}
+          alwaysBounceVertical={false}
+          overScrollMode="never">
+          {isLoading ? (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.hint}>Buscando sua próxima viagem...</Text>
+            </View>
+          ) : needsRetry ? (
+            <View style={styles.centered}>
+              <Text style={styles.hint}>Sua conexão oscilou. Toque para carregar de novo.</Text>
+              <Button label="Carregar viagem" onPress={() => void load()} variant="ghost" />
+            </View>
+          ) : nextTrip ? (
+            <NextTripHero
+              summary={nextTrip}
+              seasons={seasons}
+              onOpen={() =>
+                router.push({ pathname: '/trips/[id]', params: { id: nextTrip.trip.id } })
+              }
+            />
+          ) : (
+            <EmptyState onCreate={() => router.push('/trip-new')} />
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -101,6 +133,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
   // `flexGrow` faz o conteúdo ocupar a altura da rolagem mesmo sendo menor que
   // ela — é o que permite centralizar o card na tela e ainda assim rolar quando
   // ele cresce (nome longo, próximo passo em duas linhas, fonte ampliada).

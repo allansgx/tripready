@@ -2,19 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
+import { showDialog } from '@/components/ui/dialog';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { getCountryName } from '@/constants/countries';
 import { CelebrationOverlay, type Celebration } from '@/features/trips/celebration-overlay';
@@ -90,7 +83,7 @@ export default function TripChecklistScreen() {
   function openMenu() {
     if (!id) return;
 
-    Alert.alert(name, undefined, [
+    showDialog(name, undefined, [
       {
         text: 'Editar viagem',
         onPress: () => router.push({ pathname: '/trip-edit', params: { tripId: id } }),
@@ -101,7 +94,7 @@ export default function TripChecklistScreen() {
   }
 
   function confirmDelete() {
-    Alert.alert(
+    showDialog(
       'Excluir esta viagem?',
       'Esta viagem e sua checklist serão removidas do seu histórico.',
       [

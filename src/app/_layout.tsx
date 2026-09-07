@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { DialogHost } from '@/components/ui/dialog';
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
 import { PassportsProvider, usePassports } from '@/features/passports/passports-context';
 import { colors } from '@/theme/tokens';
@@ -21,6 +22,8 @@ export default function RootLayout() {
       <PassportsProvider>
         <StatusBar style="dark" />
         <RootNavigator />
+        {/* Onde os alertas da web aparecem; no nativo não desenha nada. */}
+        <DialogHost />
       </PassportsProvider>
     </AuthProvider>
   );

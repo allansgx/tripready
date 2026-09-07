@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { showDialog } from '@/components/ui/dialog';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { SectionLabel } from '@/components/ui/section-label';
@@ -108,7 +108,7 @@ export default function EditTripScreen() {
       return;
     }
 
-    Alert.alert('Descartar alterações?', 'Você tem alterações que ainda não foram salvas.', [
+    showDialog('Descartar alterações?', 'Você tem alterações que ainda não foram salvas.', [
       { text: 'Continuar editando', style: 'cancel' },
       { text: 'Descartar', style: 'destructive', onPress: () => router.back() },
     ]);

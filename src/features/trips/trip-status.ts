@@ -114,14 +114,14 @@ export function buildTripCountdown(trip: DateRange, today: string = todayISO()):
   // O dia da partida vem antes do estado: para `getTripStatus` a viagem já
   // começou, mas quem embarca hoje quer ler "É hoje!", não "boa viagem".
   if (days === 0) {
-    return { kind: 'today', days: null, message: 'É hoje! ✈️', label: 'Boa viagem!' };
+    return { kind: 'today', days: null, message: 'Chegou a hora!', label: 'Boa viagem!' };
   }
 
   if (getTripStatus(trip, today) === 'ongoing') {
     return {
       kind: 'ongoing',
       days: null,
-      message: 'Boa viagem! ✈️',
+      message: 'Aproveite!',
       label: 'Viagem em andamento',
     };
   }
@@ -130,7 +130,7 @@ export function buildTripCountdown(trip: DateRange, today: string = todayISO()):
     return {
       kind: 'undated',
       days: null,
-      message: 'Quase lá ✈️',
+      message: 'Quase lá...',
       label: 'Escolha as datas para ver a contagem',
     };
   }
@@ -139,7 +139,7 @@ export function buildTripCountdown(trip: DateRange, today: string = todayISO()):
     return {
       kind: 'tomorrow',
       days: null,
-      message: 'Amanhã é o grande dia ✈️',
+      message: 'Falta 1 dia',
       label: 'Últimos preparativos',
     };
   }

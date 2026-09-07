@@ -95,6 +95,19 @@ const SEASONS: Record<Season, { emoji: string; label: string; complement: string
 };
 
 /**
+ * As estações da viagem em linha: "❄️ Inverno" ou "🍂 Outono · ❄️ Inverno".
+ *
+ * É a legenda do clima que a Home anima dentro do card — sem ela, folhas caindo
+ * são só um enfeite sem explicação. `null` quando a viagem não tem datas e,
+ * portanto, não tem estação a afirmar.
+ */
+export function formatSeasonTrail(seasons: readonly Season[]): string | null {
+  if (seasons.length === 0) return null;
+
+  return seasons.map((season) => `${SEASONS[season].emoji} ${SEASONS[season].label}`).join(' · ');
+}
+
+/**
  * Um broto no lugar dos emojis somados: com duas ou mais estações, empilhar os
  * ícones vira ruído e nenhum deles representa a viagem inteira.
  */

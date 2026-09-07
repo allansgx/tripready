@@ -49,9 +49,13 @@ export default function AppLayout() {
 
       <NativeTabs.Trigger name="trips" accessibilityLabel="Viagens" contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label hidden={hideLabels}>Viagens</NativeTabs.Trigger.Label>
+        {/* Avião subindo em diagonal, como quem decola. No iOS o símbolo é
+            sólido nos dois estados: o `airplane` do SF Symbols não tem variante
+            de contorno, e quem marca a aba ativa é o roxo do `tintColor`. No
+            Android, `flight_takeoff` é o equivalente do Material. */}
         <NativeTabs.Trigger.Icon
-          sf={{ default: 'suitcase', selected: 'suitcase.fill' }}
-          md={{ default: 'luggage', selected: 'luggage' }}
+          sf={{ default: 'airplane.up.right', selected: 'airplane.up.right' }}
+          md={{ default: 'flight_takeoff', selected: 'flight_takeoff' }}
         />
       </NativeTabs.Trigger>
 

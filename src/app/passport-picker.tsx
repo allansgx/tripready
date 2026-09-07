@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showDialog } from '@/components/ui/dialog';
 import type { Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { usePassports } from '@/features/passports/passports-context';
@@ -26,7 +27,7 @@ export default function PassportPickerScreen() {
       await addPassport(country.code);
       router.back();
     } catch (error) {
-      Alert.alert(
+      showDialog(
         'Não foi possível adicionar',
         error instanceof Error ? error.message : 'Tente novamente.',
       );

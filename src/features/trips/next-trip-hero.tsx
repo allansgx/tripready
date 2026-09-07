@@ -4,12 +4,24 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { FlagRow } from '@/features/trips/flag-row';
-import { formatTripDates } from '@/features/trips/trip-format';
+import { formatSeasonTrail, formatTripDates } from '@/features/trips/trip-format';
 import { formatProgressLabel } from '@/features/trips/trip-progress';
 import { buildTripCountdown } from '@/features/trips/trip-status';
 import type { TripSummary } from '@/features/trips/trip-summary';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
-import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
+import {
+  colors,
+  radius,
+  seasonBorderColors,
+  seasonSoftColors,
+  shadow,
+  spacing,
+  typography,
+} from '@/theme/tokens';
+import type { Season } from '@/types/models';
+
+/** O fundo tingido da estação, bem diluído sobre o branco do card. */
+const WASH_OPACITY = 0.55;
 
 const ENTRANCE_DURATION_MS = 420;
 /** Distância que o card sobe ao aparecer. */
@@ -91,7 +103,16 @@ function useCountUp(target: number | null, animated: boolean): number | null {
  * próximo passo vêm da checklist já resumida em `TripSummary`. Nada aqui é
  * calculado de novo nem guardado no banco.
  */
-export function NextTripHero({ summary, onOpen }: { summary: TripSummary; onOpen: () => void }) {
+export function NextTripHero({
+  summary,
+  seasons,
+  onOpen,
+}: {
+  summary: TripSummary;
+  /** Estações da viagem, já resolvidas pela tela — o card só as veste. */
+  seasons: readonly Season[];
+  onOpen: () => void;
+}) {
   const { trip, countryCodes, progress, nextStep } = summary;
   const countdown = buildTripCountdown(trip);
   const dates = formatTripDates(trip.start_date, trip.end_date);
@@ -99,6 +120,14 @@ export function NextTripHero({ summary, onOpen }: { summary: TripSummary; onOpen
   const reduceMotion = useReduceMotion();
   const entrance = useEntrance(reduceMotion);
   const countingDays = useCountUp(countdown.days, !reduceMotion);
+
+  const seasonTrail = formatSeasonTrail(seasons);
+
+  /**
+   * O contorno é a mesma cor do fundo da estação, um tom mais firme: destaca o
+   * card contra o cinza da tela sem transformá-lo em um bloco colorido.
+   */
+  const seasonBorder = seasons.length > 0 ? seasonBorderColors[seasons[0]] : null;
 
   // Uma viagem que já começou não é mais "a próxima".
   const eyebrow = countdown.kind === 'ongoing' ? 'Sua viagem' : 'Sua próxima viagem';
@@ -112,6 +141,7 @@ export function NextTripHero({ summary, onOpen }: { summary: TripSummary; onOpen
     <Animated.View
       style={[
         styles.card,
+        seasonBorder ? { borderWidth: 1, borderColor: seasonBorder } : null,
         {
           opacity: entrance,
           transform: [
@@ -130,6 +160,18 @@ export function NextTripHero({ summary, onOpen }: { summary: TripSummary; onOpen
         accessibilityHint="Abre a checklist da viagem"
         onPress={onOpen}
         style={({ pressed }) => [styles.top, pressed && styles.topPressed]}>
+        {/* O card não anima partícula nenhuma: o clima vivo é o campo atrás
+            dele. Aqui fica só o tom da estação, que dá contexto sem movimento. */}
+        {seasons.length > 0 ? (
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: seasonSoftColors[seasons[0]], opacity: WASH_OPACITY },
+            ]}
+          />
+        ) : null}
+
         <Text style={styles.eyebrow}>{eyebrow}</Text>
 
         <View style={styles.destination}>
@@ -153,6 +195,7 @@ export function NextTripHero({ summary, onOpen }: { summary: TripSummary; onOpen
         </View>
 
         <Text style={styles.dates}>{dates}</Text>
+        {seasonTrail ? <Text style={styles.seasons}>{seasonTrail}</Text> : null}
 
         <View style={styles.divider} />
 
@@ -257,6 +300,12 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  seasons: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

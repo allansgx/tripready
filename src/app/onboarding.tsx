@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showDialog } from '@/components/ui/dialog';
 import type { Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { usePassports } from '@/features/passports/passports-context';
@@ -27,7 +28,7 @@ export default function OnboardingScreen() {
     try {
       await addPassport(country.code);
     } catch (error) {
-      Alert.alert(
+      showDialog(
         'Não foi possível salvar',
         error instanceof Error ? error.message : 'Tente novamente.',
       );
