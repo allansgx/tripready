@@ -8,7 +8,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
-import { SeasonShape, type SeasonShapeKind } from '@/features/trips/season-shapes';
+import { SeasonShape, type SeasonShapeKind } from '@/features/trips/components/season-shapes';
 import { useReduceMotion } from '@/lib/animation';
 import { seasonColors } from '@/theme/tokens';
 import type { Season } from '@/types/models';

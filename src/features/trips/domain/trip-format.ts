@@ -1,5 +1,5 @@
 import { getCountryName } from '@/constants/countries';
-import type { TripStatus } from '@/features/trips/trip-status';
+import type { TripStatus } from '@/features/trips/domain/trip-status';
 import type { Season } from '@/types/models';
 
 const MONTHS = [

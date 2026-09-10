@@ -9,7 +9,7 @@ import {
 } from 'react';
 
 import { useAuth } from '@/features/auth/auth-context';
-import { rebuildChecklistsForPassport } from '@/features/trips/trip-persistence';
+import { rebuildChecklistsForPassport } from '@/features/trips/data/trip-persistence';
 import { passportsService } from '@/services';
 import type { Passport } from '@/types/models';
 

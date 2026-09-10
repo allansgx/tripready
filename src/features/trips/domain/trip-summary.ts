@@ -1,11 +1,11 @@
-import { selectNextRequirement } from '@/features/trips/requirement-matching';
-import { computeTripProgress, type TripProgress } from '@/features/trips/trip-progress';
+import { selectNextRequirement } from '@/features/trips/domain/requirement-matching';
+import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
 import {
   formatStartCountdown,
   getTripStatus,
   todayISO,
   type TripStatus,
-} from '@/features/trips/trip-status';
+} from '@/features/trips/domain/trip-status';
 import type { TripRequirementBrief, TripWithRelations } from '@/services/trips';
 import type { Trip } from '@/types/models';
 

@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import type { DateRange } from '@/components/ui/date-range-picker';
-import type { SelectedCity } from '@/features/trips/city-step';
-import { suggestTripName } from '@/features/trips/trip-format';
+import type { SelectedCity } from '@/features/trips/components/city-step';
+import { suggestTripName } from '@/features/trips/domain/trip-format';
 
 export type TripDraft = {
   name: string;

@@ -83,6 +83,19 @@ O TripReady é simples, claro, mobile-first, orientado à ação e positivo.
 
 ## Commits
 
-- O commit não é feito automatico após uma alteração, mas quando for solicitado para fazer um commit, utilize o convetional commits, em português.
+- Não faça commit automatico após uma alteração, mas quando for solicitado para fazer um commit, utilize o convetional commits, em português.
 - Sempre claro, objetivo e curto, mas não deixe faltar informação.
 - Pode usar tópicos se necessário.
+
+### Feature organization
+
+Organize feature code by responsibility when the feature has enough files to justify it:
+
+- `components/` — UI específica da feature
+- `domain/` — regras de negócio puras
+- `data/` — acesso, persistência e normalização de dados
+- `hooks/` — hooks específicos da feature
+- `tests/` — testes da feature
+
+Do not create additional layers such as services, repositories, use-cases, utils or abstractions unless there is a concrete need.
+Prefer the smallest structure that keeps responsibilities clear.

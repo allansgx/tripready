@@ -1,13 +1,13 @@
 import { getCountryName } from '@/constants/countries';
-import type { SelectedCity } from '@/features/trips/city-step';
+import type { SelectedCity } from '@/features/trips/components/city-step';
 import {
   diffTripRequirements,
   resolveTripRequirements,
   type ExistingRequirement,
   type ResolvedRequirement,
-} from '@/features/trips/requirement-matching';
-import { todayISO } from '@/features/trips/trip-status';
-import type { TripDraft } from '@/features/trips/use-trip-draft';
+} from '@/features/trips/domain/requirement-matching';
+import { todayISO } from '@/features/trips/domain/trip-status';
+import type { TripDraft } from '@/features/trips/hooks/use-trip-draft';
 import {
   requirementCatalogService,
   tripDestinationsService,

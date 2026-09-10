@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { SeasonField, type FieldPointer } from '@/features/trips/season-field';
+import { SeasonField, type FieldPointer } from '@/features/trips/components/season-field';
 import { colors, seasonBackdropColors } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 

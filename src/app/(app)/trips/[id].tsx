@@ -9,22 +9,28 @@ import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
 import { ProgressRing } from '@/components/ui/progress-ring';
-import { CelebrationOverlay, type Celebration } from '@/features/trips/celebration-overlay';
+import {
+  CelebrationOverlay,
+  type Celebration,
+} from '@/features/trips/components/celebration-overlay';
+import { FlagRow } from '@/features/trips/components/flag-row';
 import {
   CATEGORY_ICONS,
   CATEGORY_LABELS,
   CHECKLIST_CATEGORIES,
   PRIORITY_LABELS,
-} from '@/features/trips/checklist-catalog';
-import { FlagRow } from '@/features/trips/flag-row';
-import { groupRequirementsByCategory, tripSeasons } from '@/features/trips/requirement-matching';
-import { formatTripDates, summarizeTripSeasons } from '@/features/trips/trip-format';
+} from '@/features/trips/data/checklist-catalog';
+import {
+  groupRequirementsByCategory,
+  tripSeasons,
+} from '@/features/trips/domain/requirement-matching';
+import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
 import {
   computeTripProgress,
   formatPendingRequiredLabel,
   formatProgressLabel,
-} from '@/features/trips/trip-progress';
-import { getTripStatus } from '@/features/trips/trip-status';
+} from '@/features/trips/domain/trip-progress';
+import { getTripStatus } from '@/features/trips/domain/trip-status';
 import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
 import {
   colors,

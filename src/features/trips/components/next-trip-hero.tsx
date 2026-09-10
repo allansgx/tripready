@@ -3,16 +3,16 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { FlagRow } from '@/features/trips/flag-row';
+import { FlagRow } from '@/features/trips/components/flag-row';
 import {
   formatSeasonTip,
   formatSeasonTrail,
   formatTripDates,
   suggestTripName,
-} from '@/features/trips/trip-format';
-import { formatProgressLabel } from '@/features/trips/trip-progress';
-import { buildTripCountdown } from '@/features/trips/trip-status';
-import type { TripSummary } from '@/features/trips/trip-summary';
+} from '@/features/trips/domain/trip-format';
+import { formatProgressLabel } from '@/features/trips/domain/trip-progress';
+import { buildTripCountdown } from '@/features/trips/domain/trip-status';
+import type { TripSummary } from '@/features/trips/domain/trip-summary';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 import type { Season } from '@/types/models';

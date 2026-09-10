@@ -7,12 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
-import { TripCard } from '@/features/trips/trip-card';
+import { TripCard } from '@/features/trips/components/trip-card';
 import {
   buildTripSummaries,
   splitTripSections,
   type TripSummary,
-} from '@/features/trips/trip-summary';
+} from '@/features/trips/domain/trip-summary';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 

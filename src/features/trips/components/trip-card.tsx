@@ -2,10 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { FlagRow } from '@/features/trips/flag-row';
-import { formatTripDates } from '@/features/trips/trip-format';
-import { formatPendingRequiredLabel, formatProgressLabel } from '@/features/trips/trip-progress';
-import type { TripSummary } from '@/features/trips/trip-summary';
+import { FlagRow } from '@/features/trips/components/flag-row';
+import { formatTripDates } from '@/features/trips/domain/trip-format';
+import {
+  formatPendingRequiredLabel,
+  formatProgressLabel,
+} from '@/features/trips/domain/trip-progress';
+import type { TripSummary } from '@/features/trips/domain/trip-summary';
 import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 /**

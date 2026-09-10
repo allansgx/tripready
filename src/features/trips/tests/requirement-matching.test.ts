@@ -16,7 +16,7 @@ import {
   type CatalogTemplate,
   type TripContext,
   type VisaRule,
-} from './requirement-matching.ts';
+} from '../domain/requirement-matching.ts';
 
 /**
  * Testes da regra de aplicabilidade dos requisitos.

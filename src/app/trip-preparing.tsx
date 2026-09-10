@@ -10,8 +10,8 @@ import {
   CATEGORY_ICONS,
   CATEGORY_LABELS,
   CHECKLIST_CATEGORIES,
-} from '@/features/trips/checklist-catalog';
-import { resolveChecklist } from '@/features/trips/trip-persistence';
+} from '@/features/trips/data/checklist-catalog';
+import { resolveChecklist } from '@/features/trips/data/trip-persistence';
 import { USE_NATIVE_DRIVER } from '@/lib/animation';
 import { tripRequirementsService, tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';

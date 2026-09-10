@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildTripCountdown, daysUntilStart, getTripStatus } from './trip-status.ts';
+import { buildTripCountdown, daysUntilStart, getTripStatus } from '../domain/trip-status.ts';
 
 /**
  * Testes da contagem regressiva da Home.

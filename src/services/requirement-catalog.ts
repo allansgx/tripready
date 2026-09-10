@@ -4,7 +4,7 @@ import type {
   CatalogTemplate,
   RequirementCatalog,
   VisaRule,
-} from '@/features/trips/requirement-matching';
+} from '@/features/trips/domain/requirement-matching';
 import { supabase } from '@/lib/supabase/client';
 import { unwrapRequired } from '@/services/errors';
 import type {

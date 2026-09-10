@@ -14,15 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
-import { NextTripHero } from '@/features/trips/next-trip-hero';
-import { tripSeasons } from '@/features/trips/requirement-matching';
-import type { FieldPointer } from '@/features/trips/season-field';
-import { SeasonalBackdrop } from '@/features/trips/seasonal-backdrop';
+import { NextTripHero } from '@/features/trips/components/next-trip-hero';
+import type { FieldPointer } from '@/features/trips/components/season-field';
+import { SeasonalBackdrop } from '@/features/trips/components/seasonal-backdrop';
+import { tripSeasons } from '@/features/trips/domain/requirement-matching';
 import {
   buildTripSummaries,
   splitTripSections,
   type TripSummary,
-} from '@/features/trips/trip-summary';
+} from '@/features/trips/domain/trip-summary';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 

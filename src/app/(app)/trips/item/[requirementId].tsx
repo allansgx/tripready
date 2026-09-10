@@ -15,8 +15,8 @@ import {
   CATEGORY_LABELS,
   PRIORITY_LABELS,
   type IoniconName,
-} from '@/features/trips/checklist-catalog';
-import { describeRequirementScope } from '@/features/trips/requirement-matching';
+} from '@/features/trips/data/checklist-catalog';
+import { describeRequirementScope } from '@/features/trips/domain/requirement-matching';
 import {
   requirementOffersService,
   tripDestinationsService,

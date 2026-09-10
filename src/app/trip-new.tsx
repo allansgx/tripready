@@ -18,10 +18,10 @@ import { TextField } from '@/components/ui/text-field';
 import type { Country } from '@/constants/countries';
 import { useAuth } from '@/features/auth/auth-context';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
-import { CityStep } from '@/features/trips/city-step';
-import { formatTripDates } from '@/features/trips/trip-format';
-import { createTripWithDestinations } from '@/features/trips/trip-persistence';
-import { useTripDraft } from '@/features/trips/use-trip-draft';
+import { CityStep } from '@/features/trips/components/city-step';
+import { createTripWithDestinations } from '@/features/trips/data/trip-persistence';
+import { formatTripDates } from '@/features/trips/domain/trip-format';
+import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 const STEPS = ['countries', 'cities', 'dates', 'name'] as const;
