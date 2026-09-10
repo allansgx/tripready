@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -44,7 +45,19 @@ function RootNavigator() {
   const { session, isLoading: isLoadingSession } = useAuth();
   const { hasPassport, isLoading: isLoadingPassports } = usePassports();
 
-  const isReady = !isLoadingSession && !(session && isLoadingPassports);
+  /**
+   * A serifada do dia do embarque, carregada em tempo de execução porque o app
+   * roda no Expo Go, onde o plugin de build do `expo-font` não vale.
+   *
+   * Um erro aqui não segura o app: sem a fonte, o nome da viagem sai na fonte
+   * do sistema, que é uma tela menos bonita e não uma tela quebrada.
+   */
+  const [fontsLoaded, fontError] = useFonts({
+    Fraunces_700Bold: require('@/assets/fonts/Fraunces_700Bold.ttf'),
+  });
+
+  const isReady =
+    !isLoadingSession && !(session && isLoadingPassports) && (fontsLoaded || fontError !== null);
 
   useEffect(() => {
     if (isReady) {

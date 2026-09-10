@@ -66,6 +66,38 @@ export function formatProgressLabel(progress: TripProgress): string {
   }`;
 }
 
+/**
+ * Quantos itens ainda esperam verificação, no mesmo recorte da porcentagem.
+ *
+ * É o que a Home mostra no dia do embarque, no lugar do percentual: naquele dia
+ * a pergunta deixa de ser "quanto eu preparei" e passa a ser "o que ainda dá
+ * para fazer agora", e uma contagem responde isso melhor que uma nota.
+ */
+export function formatPendingLabel(progress: TripProgress): string {
+  if (progress.total === 0) return 'Checklist em preparação';
+
+  const pending = progress.total - progress.done;
+  if (pending === 0) return 'Tudo verificado';
+  return `${pending} ${pending === 1 ? 'item pendente' : 'itens pendentes'}`;
+}
+
+/**
+ * O que a checklist oferece a quem já embarcou.
+ *
+ * Conta os itens de prioridade `informational`: os que não pedem ação e, por
+ * isso, ficam fora do progresso. Hoje o catálogo traz quatro — contatos de
+ * emergência, regras de bagagem da companhia, orçamento da viagem e a
+ * confirmação de entrada sem visto. Nem todos nasceram para a viagem em si, e é
+ * por isso que a frase convida a consultar em vez de prometer conteúdo de
+ * destino: ela envelhece bem se o catálogo ganhar itens de uso no local.
+ */
+export function formatReferenceLabel(progress: TripProgress): string {
+  if (progress.informationalTotal === 0) return 'Sua checklist continua à mão.';
+  return progress.informationalTotal === 1
+    ? '1 informação para consultar quando precisar.'
+    : `${progress.informationalTotal} informações para consultar quando precisar.`;
+}
+
 /** Etiqueta dos obrigatórios pendentes; `null` quando não há nenhum. */
 export function formatPendingRequiredLabel(progress: TripProgress): string | null {
   if (progress.requiredPending === 0) return null;

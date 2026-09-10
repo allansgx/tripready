@@ -85,13 +85,55 @@ export function formatStartCountdown(trip: DateRange, today: string = todayISO()
 }
 
 /**
+ * Onde a pessoa está dentro da viagem: dia 3 de 7, faltando 4 para voltar.
+ *
+ * `null` quando a viagem não está em andamento ou não tem as duas datas — sem
+ * término não existe "de 7", e um dia solto não situa ninguém.
+ */
+export type TripDayCount = {
+  /** 1 no dia da partida: quem embarcou hoje está no primeiro dia, não no zero. */
+  day: number;
+  total: number;
+  /** Dias até o término, 0 no último dia. */
+  remaining: number;
+};
+
+export function buildTripDayCount(
+  trip: DateRange,
+  today: string = todayISO(),
+): TripDayCount | null {
+  const { start_date: start, end_date: end } = trip;
+  if (!start || !end) return null;
+  if (getTripStatus(trip, today) !== 'ongoing') return null;
+
+  const elapsed = daysBetween(start, today);
+  const span = daysBetween(start, end);
+  const left = daysBetween(today, end);
+  if (elapsed === null || span === null || left === null || span < 0) return null;
+
+  return { day: elapsed + 1, total: span + 1, remaining: left };
+}
+
+/**
+ * A legenda do retorno, em minúsculas porque é apoio e não manchete.
+ *
+ * Sem contagem regressiva no último dia: quem está no fim da viagem não precisa
+ * ler "volta em 0 dias".
+ */
+export function formatReturnCountdown(dayCount: TripDayCount): string {
+  if (dayCount.remaining === 0) return 'último dia';
+  if (dayCount.remaining === 1) return 'volta amanhã';
+  return `volta em ${dayCount.remaining} dias`;
+}
+
+/**
  * A contagem regressiva da Home, sem limite de janela: a próxima viagem é uma
  * só, e a pergunta "quanto falta?" vale mesmo faltando meses.
  *
- * O `kind` existe para a tela decidir a forma sem reinterpretar textos: só
- * `days` tem número grande a exibir; os demais trazem uma frase pronta. Nunca
- * existe "0 dias" — o dia da partida vira "É hoje!", que é o que a pessoa
- * espera ler.
+ * O `kind` existe para a tela decidir a forma sem reinterpretar textos: `days`
+ * e `ongoing` têm número grande a exibir, os demais trazem uma frase pronta.
+ * Nunca existe "0 dias" — o dia da partida tem tela própria, e a viagem já
+ * acontecendo conta a partir do dia 1.
  *
  * Vale para viagens ativas (em andamento ou futuras), que são as únicas que a
  * Home destaca; uma viagem concluída não tem contagem a fazer.
@@ -100,7 +142,10 @@ export type TripCountdownKind = 'days' | 'tomorrow' | 'today' | 'ongoing' | 'und
 
 export type TripCountdown = {
   kind: TripCountdownKind;
-  /** Preenchido apenas em `days` — o número protagonista da Home. */
+  /**
+   * O número protagonista da Home: dias que faltam em `days`, dia atual da
+   * viagem em `ongoing`. Os demais tipos não têm número a mostrar.
+   */
   days: number | null;
   /** Frase grande quando não há número a mostrar. */
   message: string | null;
@@ -117,7 +162,20 @@ export function buildTripCountdown(trip: DateRange, today: string = todayISO()):
     return { kind: 'today', days: null, message: 'Chegou a hora!', label: 'Boa viagem!' };
   }
 
+  // Com a viagem acontecendo a contagem inverte: o número deixa de ser o que
+  // falta para começar e passa a ser onde a pessoa está dentro dela.
   if (getTripStatus(trip, today) === 'ongoing') {
+    const dayCount = buildTripDayCount(trip, today);
+    if (dayCount) {
+      return {
+        kind: 'ongoing',
+        days: dayCount.day,
+        message: null,
+        label: `de ${dayCount.total} dias`,
+      };
+    }
+
+    // Viagem sem término definido: não há "de quantos" a dizer.
     return {
       kind: 'ongoing',
       days: null,

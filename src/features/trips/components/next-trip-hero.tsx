@@ -10,8 +10,16 @@ import {
   formatTripDates,
   suggestTripName,
 } from '@/features/trips/domain/trip-format';
-import { formatProgressLabel } from '@/features/trips/domain/trip-progress';
-import { buildTripCountdown } from '@/features/trips/domain/trip-status';
+import {
+  formatPendingLabel,
+  formatProgressLabel,
+  formatReferenceLabel,
+} from '@/features/trips/domain/trip-progress';
+import {
+  buildTripCountdown,
+  buildTripDayCount,
+  formatReturnCountdown,
+} from '@/features/trips/domain/trip-status';
 import type { TripSummary } from '@/features/trips/domain/trip-summary';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
@@ -29,6 +37,15 @@ const INK_LINE = 'rgba(22,22,26,0.07)';
 const INK_CHIP = 'rgba(22,22,26,0.05)';
 const PRIMARY_WASH = 'rgba(108,78,227,0.08)';
 const PRIMARY_EDGE = 'rgba(108,78,227,0.14)';
+
+/**
+ * O roxo da barra no dia do embarque.
+ *
+ * Dessaturado de propósito: com a viagem começando hoje, o progresso deixa de
+ * ser a notícia da tela e não deve puxar o olho antes do nome da viagem nem
+ * cobrar o que ficou para trás. Quem chama para a ação continua sendo o botão.
+ */
+const PRIMARY_CALM = '#A396D6';
 
 /**
  * O intervalo entre os blocos da composição, tirado do protótipo.
@@ -123,6 +140,19 @@ function useCountUp(target: number | null, animated: boolean): number | null {
  * Tudo o que a tela mostra é derivado: a contagem vem das datas, o progresso e
  * o próximo passo vêm da checklist já resumida em `TripSummary`, e a estação
  * vem dos destinos. Nada aqui é calculado de novo nem guardado no banco.
+ *
+ * A viagem em andamento inverte a contagem: o número deixa de ser o que falta
+ * para começar e passa a ser o dia em que a pessoa está, em roxo, porque ela
+ * está dentro da viagem e não à espera dela. A preparação sai junto — não há
+ * mais o que preparar —, e o lugar dela passa a dizer quando se volta e o que
+ * da checklist ainda serve de consulta.
+ *
+ * O dia do embarque é a outra variação da composição, e não uma segunda tela: o
+ * número some — contar zero dia não diz nada — e o destino ocupa o lugar dele em
+ * serifada, com a data emoldurada por traços. O resto muda só de palavra:
+ * "Antes de embarcar" no lugar de "Preparação", itens pendentes no lugar da
+ * porcentagem, "Verifique agora" no lugar de "Próximo passo". O dia pede
+ * urgência, não alarme, e nada aqui comemora por conta própria.
  */
 export function NextTripHero({
   summary,
@@ -142,16 +172,34 @@ export function NextTripHero({
   const entrance = useEntrance(reduceMotion);
   const countingDays = useCountUp(countdown.days, !reduceMotion);
 
+  const isDeparture = countdown.kind === 'today';
+  const isOngoing = countdown.kind === 'ongoing';
+  const dayCount = buildTripDayCount(trip);
+
   const seasonTrail = formatSeasonTrail(seasons);
   const seasonTip = formatSeasonTip(seasons);
 
-  // Uma viagem que já começou não é mais "a próxima".
-  const eyebrow = countdown.kind === 'ongoing' ? 'Sua viagem' : 'Sua próxima viagem';
+  // Uma viagem que já começou não é mais "a próxima", e a que parte hoje não é
+  // mais uma expectativa: uma palavra só muda o enquadramento da tela inteira.
+  const eyebrow = isDeparture
+    ? 'Embarque hoje'
+    : countdown.kind === 'ongoing'
+      ? 'Sua viagem'
+      : 'Sua próxima viagem';
 
+  /**
+   * A frase que o leitor de tela ouve no lugar do número.
+   *
+   * Na viagem em andamento ela diz "Dia 3 de 7": o número sozinho, lido em voz
+   * alta, não carrega a inversão que a tela faz — quem ouve "3" precisa saber
+   * que são três dias vividos, e não três dias de espera.
+   */
   const headline =
-    countdown.days === null
-      ? [countdown.message, countdown.label].filter(Boolean).join('. ')
-      : `${countdown.days} ${countdown.days === 1 ? 'dia' : 'dias'} para viajar`;
+    isOngoing && dayCount
+      ? `Dia ${dayCount.day} de ${dayCount.total}`
+      : countdown.days === null
+        ? [countdown.message, countdown.label].filter(Boolean).join('. ')
+        : `${countdown.days} ${countdown.days === 1 ? 'dia' : 'dias'} para viajar`;
 
   /**
    * O destino acima do nome, como no protótipo. Some quando o nome da viagem já
@@ -160,6 +208,38 @@ export function NextTripHero({
    */
   const destination = countryCodes.length > 0 ? suggestTripName(countryCodes) : null;
   const showsDestination = destination !== null && destination !== trip.name;
+
+  /**
+   * O que fica grande no dia do embarque: para onde a pessoa vai.
+   *
+   * O destino, e não o nome da viagem, porque é ele que carrega a viagem no
+   * dia — "Estados Unidos" diz o que "Trip 1" não diz. O nome continua no
+   * cabeçalho, que é onde ele identifica a viagem. Sem destino cadastrado o
+   * nome assume, para o bloco nunca ficar sem protagonista.
+   */
+  const departurePlace = destination ?? trip.name;
+
+  /**
+   * A seção abaixo do divisor muda de assunto conforme o momento da viagem, mas
+   * não de forma: título à esquerda, um dado curto à direita e uma linha de
+   * apoio embaixo. É a mesma leitura, com o que importa em cada dia.
+   */
+  const sectionTitle = isOngoing ? 'Na viagem' : isDeparture ? 'Antes de embarcar' : 'Preparação';
+  const sectionNote = isOngoing
+    ? dayCount && formatReturnCountdown(dayCount)
+    : isDeparture
+      ? formatPendingLabel(progress)
+      : null;
+  // A porcentagem é a linguagem da preparação: some junto com ela.
+  const showsPercent = !isDeparture && !isOngoing;
+
+  const nextStepLabel = nextStep
+    ? isDeparture
+      ? '✨ Verifique agora'
+      : '✨ Próximo passo'
+    : progress.isReady
+      ? '🎉 Tudo pronto'
+      : '✨ Comece por aqui';
 
   return (
     <Animated.View
@@ -206,39 +286,75 @@ export function NextTripHero({
 
       {/* Agrupado para o leitor de tela: "3 dias para viajar. 10–17 set 2026" é
           uma frase, e não três pedaços soltos. */}
-      <View style={styles.countdown} accessible accessibilityLabel={`${headline}. ${dates}`}>
-        {countdown.days === null ? (
-          <Text style={styles.message} numberOfLines={2} adjustsFontSizeToFit>
-            {countdown.message}
+      {isDeparture ? (
+        <View
+          style={styles.departure}
+          accessible
+          accessibilityLabel={`Hoje é o dia. ${departurePlace}. ${dates}`}>
+          <Text style={styles.departureLabel}>Hoje é o dia</Text>
+
+          <Text style={styles.departureName} numberOfLines={2} adjustsFontSizeToFit>
+            {departurePlace}
           </Text>
-        ) : (
-          <Text style={styles.days} numberOfLines={1} adjustsFontSizeToFit>
-            {countingDays}
-          </Text>
-        )}
-        {countdown.label ? <Text style={styles.countdownLabel}>{countdown.label}</Text> : null}
-        <Text style={styles.dates}>{dates}</Text>
-      </View>
+
+          {/* As linhas não separam nada: elas isolam a data para ela ser lida
+              como marco, e não como legenda do nome. */}
+          <View style={styles.dateRule}>
+            <View style={styles.rule} />
+            <Text style={styles.departureDates}>{dates}</Text>
+            <View style={styles.rule} />
+          </View>
+
+          <Ionicons name="airplane-outline" size={17} color={colors.textSecondary} />
+        </View>
+      ) : (
+        <View style={styles.countdown} accessible accessibilityLabel={`${headline}. ${dates}`}>
+          {countdown.days === null ? (
+            <Text style={styles.message} numberOfLines={2} adjustsFontSizeToFit>
+              {countdown.message}
+            </Text>
+          ) : (
+            <Text
+              style={[styles.days, isOngoing && styles.daysOngoing]}
+              numberOfLines={1}
+              adjustsFontSizeToFit>
+              {countingDays}
+            </Text>
+          )}
+          {countdown.label ? <Text style={styles.countdownLabel}>{countdown.label}</Text> : null}
+          <Text style={styles.dates}>{dates}</Text>
+        </View>
+      )}
 
       <View style={styles.divider} />
 
       <View style={styles.preparation}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Preparação</Text>
-          <Text style={styles.percent}>{progress.percent}%</Text>
+          <Text style={styles.progressTitle}>{sectionTitle}</Text>
+          {showsPercent ? (
+            <Text style={styles.percent}>{progress.percent}%</Text>
+          ) : sectionNote ? (
+            <Text style={styles.sideNote}>{sectionNote}</Text>
+          ) : null}
         </View>
-        <ProgressBar percent={progress.percent} height={5} />
-        <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
+
+        {/* A barra sai com a preparação: medir o quanto se preparou é cobrança
+            de quem já está viajando. */}
+        {isOngoing ? null : (
+          <ProgressBar
+            percent={progress.percent}
+            height={5}
+            color={isDeparture ? PRIMARY_CALM : colors.primary}
+          />
+        )}
+
+        <Text style={styles.progressLabel}>
+          {isOngoing ? formatReferenceLabel(progress) : formatProgressLabel(progress)}
+        </Text>
       </View>
 
       <View style={styles.nextStep}>
-        <Text style={styles.nextStepLabel}>
-          {nextStep
-            ? '✨ Próximo passo'
-            : progress.isReady
-              ? '🎉 Tudo pronto'
-              : '✨ Comece por aqui'}
-        </Text>
+        <Text style={styles.nextStepLabel}>{nextStepLabel}</Text>
 
         <View style={styles.nextStepRow}>
           <Text style={styles.nextStepTitle} numberOfLines={3}>
@@ -351,6 +467,11 @@ const styles = StyleSheet.create({
     ...typography.countdown,
     color: colors.text,
   },
+  // Com a viagem acontecendo o número troca o preto pelo roxo da marca: não é
+  // mais uma espera a ser cumprida, é a viagem em curso.
+  daysOngoing: {
+    color: colors.primary,
+  },
   message: {
     ...typography.countdownMessage,
     color: colors.primary,
@@ -367,6 +488,48 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  /**
+   * O bloco do dia do embarque, no lugar exato onde a contagem ficava.
+   *
+   * O intervalo é menor que o dos demais blocos da tela: nome, data e avião são
+   * uma composição só, e não três informações empilhadas.
+   */
+  departure: {
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  // A mesma etiqueta do rótulo da contagem, no mesmo lugar da tela: o que muda
+  // no dia é a frase, não a forma do bloco.
+  departureLabel: {
+    ...typography.sectionLabel,
+    fontSize: 11,
+    letterSpacing: 1.8,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+  },
+  departureName: {
+    ...typography.departureName,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  dateRule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  // Traços curtos, do tamanho de um travessão: eles emolduram a data, e não
+  // atravessam a tela como o divisor logo abaixo faria.
+  rule: {
+    width: 28,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: INK_LINE,
+  },
+  departureDates: {
+    ...typography.caption,
+    letterSpacing: 0.4,
+    color: colors.textSecondary,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
@@ -387,6 +550,12 @@ const styles = StyleSheet.create({
   percent: {
     ...typography.bodyStrong,
     color: colors.primary,
+  },
+  // O dado curto à direita do título — itens pendentes no embarque, retorno na
+  // viagem. Sempre em tom neutro: informa, não cobra.
+  sideNote: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   progressLabel: {
     ...typography.caption,

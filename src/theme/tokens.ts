@@ -115,6 +115,16 @@ export const fontFamily = Platform.select({
   default: { sans: 'normal', rounded: 'normal' },
 })!;
 
+/**
+ * Fonte de exibição, empacotada em `assets/fonts` e registrada no layout raiz.
+ *
+ * Só o dia do embarque usa. É o único momento em que o nome da viagem vira o
+ * protagonista da tela, e a serifada dá a ele um tom de acontecimento que a
+ * fonte do sistema não tem. O nome é o da família registrada pelo `expo-font`,
+ * igual nas três plataformas.
+ */
+export const displayFont = 'Fraunces_700Bold';
+
 export const typography = {
   /** Título de tela: "Perfil" na referência. */
   screenTitle: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const },
@@ -147,6 +157,19 @@ export const typography = {
     lineHeight: 40,
     fontWeight: '700' as const,
     fontFamily: fontFamily.rounded,
+  },
+  /**
+   * O destino no dia do embarque, ocupando o lugar da contagem.
+   *
+   * Sem `fontWeight`: a família registrada já é a Bold e, no Android, pedir
+   * peso a uma família de arquivo único faz o sistema engrossar a fonte por
+   * conta própria em vez de desenhar o arquivo como ele é.
+   */
+  departureName: {
+    fontSize: 40,
+    lineHeight: 48,
+    letterSpacing: -1,
+    fontFamily: displayFont,
   },
   /** Rótulos de seção em caixa alta ("PASSAPORTES", "CONTA"). */
   sectionLabel: {

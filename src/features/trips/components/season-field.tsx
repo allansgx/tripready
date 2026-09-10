@@ -36,9 +36,10 @@ const FIRST_SEASON_SHARE = 0.6;
  *
  * O limite é de custo por quadro (um `useAnimatedStyle` por partícula), mas
  * também de composição: acima disso a Home vira uma tela de neve, e o texto
- * passa a competir com o fundo.
+ * passa a competir com o fundo. É paisagem — quem não reparar nela está
+ * exatamente com a atenção onde deveria.
  */
-const MAX_PARTICLES = 26;
+const MAX_PARTICLES = 16;
 
 /** Área de referência do sorteio de contagem — um celular comum, em pontos. */
 const AREA_BASE = 390 * 844;
@@ -74,11 +75,11 @@ const SOFT_DEPTH = 0.45;
 /**
  * O alcance do sopro do dedo, em pontos de tela.
  *
- * Precisa ser bem maior do que a intuição sugere. Vinte e poucas partículas
- * espalhadas por uma tela de celular ficam, em média, a mais de cem pontos uma
- * da outra: um raio pequeno faz a maioria dos toques não encontrar partícula
- * nenhuma, e o efeito simplesmente não acontece. O raio é o que garante que
- * passar o dedo pela tela sempre pegue alguma coisa.
+ * Precisa ser bem maior do que a intuição sugere. Uma dúzia e meia de
+ * partículas espalhadas por uma tela de celular fica, em média, a mais de cem
+ * pontos uma da outra: um raio pequeno faz a maioria dos toques não encontrar
+ * partícula nenhuma, e o efeito simplesmente não acontece. O raio é o que
+ * garante que passar o dedo pela tela sempre pegue alguma coisa.
  */
 const POINTER_RADIUS = 220;
 /** Aceleração que o dedo aplica no limite máximo, em pontos/s². */
@@ -125,12 +126,18 @@ type SeasonPhysics = {
  * Folha grande cai mais rápido e balança mais que floco pequeno, e o giro em
  * profundidade só existe em folha e pétala — floco e partícula de luz não têm
  * lado. A luz do verão desce quase parada, como poeira suspensa no sol.
+ *
+ * Tamanho e contagem são deliberadamente discretos: o campo é o clima da
+ * viagem por trás do conteúdo, e assim que uma partícula fica grande ou
+ * frequente o bastante para ser seguida com o olho ela deixa de ser ambiente e
+ * passa a disputar a tela com o texto. A luz do verão é a menor de todas —
+ * poeira no sol não tem desenho para mostrar.
  */
 const SEASON_PHYSICS: Record<Season, SeasonPhysics> = {
   winter: {
     kind: 'flake',
-    count: 24,
-    size: [20, 60],
+    count: 14,
+    size: [10, 30],
     opacity: [0.28, 0.46],
     gravity: [26, 42],
     terminal: [40, 70],
@@ -141,8 +148,8 @@ const SEASON_PHYSICS: Record<Season, SeasonPhysics> = {
   },
   autumn: {
     kind: 'leaf',
-    count: 16,
-    size: [20, 60],
+    count: 10,
+    size: [12, 34],
     opacity: [0.22, 0.38],
     gravity: [55, 85],
     terminal: [70, 120],
@@ -153,8 +160,8 @@ const SEASON_PHYSICS: Record<Season, SeasonPhysics> = {
   },
   spring: {
     kind: 'petal',
-    count: 18,
-    size: [20, 60],
+    count: 11,
+    size: [12, 34],
     opacity: [0.22, 0.38],
     gravity: [40, 65],
     terminal: [55, 90],
@@ -165,8 +172,8 @@ const SEASON_PHYSICS: Record<Season, SeasonPhysics> = {
   },
   summer: {
     kind: 'mote',
-    count: 20,
-    size: [20, 60],
+    count: 12,
+    size: [8, 22],
     opacity: [0.25, 0.45],
     gravity: [10, 18],
     terminal: [16, 28],
