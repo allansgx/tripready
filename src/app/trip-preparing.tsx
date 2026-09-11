@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { StepRow } from '@/components/ui/step-row';
 import { usePassports } from '@/features/passports/passports-context';
 import {
   CATEGORY_ICONS,
@@ -12,9 +12,8 @@ import {
   CHECKLIST_CATEGORIES,
 } from '@/features/trips/data/checklist-catalog';
 import { resolveChecklist } from '@/features/trips/data/trip-persistence';
-import { USE_NATIVE_DRIVER } from '@/lib/animation';
 import { tripRequirementsService, tripsService } from '@/services';
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
 
 /** Ritmo da animação: rápido o bastante para não virar espera. */
 const STEP_DELAY = 260;
@@ -116,7 +115,7 @@ export default function TripPreparingScreen() {
 
         <View style={styles.list}>
           {CHECKLIST_CATEGORIES.map((category, index) => (
-            <CategoryRow
+            <StepRow
               key={category}
               label={CATEGORY_LABELS[category]}
               icon={CATEGORY_ICONS[category]}
@@ -139,45 +138,6 @@ export default function TripPreparingScreen() {
   );
 }
 
-function CategoryRow({ label, icon, done }: { label: string; icon: string; done: boolean }) {
-  const [progress] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    if (!done) return;
-    Animated.spring(progress, {
-      toValue: 1,
-      useNativeDriver: USE_NATIVE_DRIVER,
-      speed: 14,
-      bounciness: 10,
-    }).start();
-  }, [done, progress]);
-
-  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] });
-  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] });
-
-  return (
-    <Animated.View style={[styles.row, { opacity }]}>
-      <View style={[styles.rowIcon, done && styles.rowIconDone]}>
-        <Ionicons
-          name={icon as never}
-          size={18}
-          color={done ? colors.contrastText : colors.textSecondary}
-        />
-      </View>
-
-      <Text style={[styles.rowLabel, done && styles.rowLabelDone]}>{label}</Text>
-
-      <Animated.View style={{ transform: [{ scale }] }}>
-        {done ? (
-          <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-        ) : (
-          <View style={styles.pendingDot} />
-        )}
-      </Animated.View>
-    </Animated.View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
   content: {
@@ -194,31 +154,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   list: { gap: spacing.md },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.background,
-  },
-  rowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.progressTrack,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowIconDone: { backgroundColor: colors.primary },
-  rowLabel: { ...typography.body, color: colors.textSecondary, flex: 1 },
-  rowLabelDone: { color: colors.text, fontWeight: '600' },
-  pendingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: radius.pill,
-    backgroundColor: colors.progressTrack,
-  },
   retry: {
     marginTop: spacing.xl,
     gap: spacing.sm,

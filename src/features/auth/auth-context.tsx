@@ -22,6 +22,17 @@ type AuthContextValue = {
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   /**
+   * Exclui a conta, sem encerrar a sessão. **Lança** `DeleteAccountError`: a
+   * tela de confirmação mostra a mensagem no seu próprio contexto, e não no
+   * erro global da tela de login.
+   */
+  deleteAccount: () => Promise<void>;
+  /**
+   * Encerra a sessão só no dispositivo, fechando o fluxo de exclusão depois que
+   * a confirmação já foi mostrada. Nunca levanta erro.
+   */
+  signOutLocal: () => Promise<void>;
+  /**
    * Métodos de e-mail/senha (temporários, para testes no Expo Go).
    * Diferente dos de OAuth, estes **lançam** o erro: cada tela de formulário
    * mostra a mensagem no seu próprio contexto, em vez do erro global.
@@ -114,6 +125,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setError(toMessage(err));
         }
       },
+      deleteAccount: async () => {
+        setError(null);
+        await authService.deleteAccount();
+      },
+      signOutLocal: () => authService.signOutLocal(),
     };
   }, [session, isLoading, isSigningIn, error]);
 

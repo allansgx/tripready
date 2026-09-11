@@ -1,9 +1,11 @@
+import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { getQueryParams } from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
 import { authRedirectUri } from '@/features/auth/auth-redirect';
+import { DeleteAccountError, type DeleteAccountFailure } from '@/features/auth/delete-account';
 import { supabase } from '@/lib/supabase/client';
 
 // Fecha a janela de autenticação quando o redirect volta (necessário no web).
@@ -105,6 +107,26 @@ async function signInWithOAuthBrowser(provider: OAuthProvider) {
   return createSessionFromUrl(result.url);
 }
 
+/**
+ * Traduz o erro do `functions.invoke` no motivo que a tela precisa distinguir.
+ *
+ * `401` é a única resposta que significa "esta sessão não vale mais" — a função
+ * responde `200` quando a conta já havia sido excluída, justamente para que
+ * repetir a tentativa não pareça uma falha.
+ */
+function classifyDeleteFailure(error: unknown): DeleteAccountFailure {
+  if (error instanceof FunctionsFetchError) {
+    return 'connection';
+  }
+
+  if (error instanceof FunctionsHttpError) {
+    const response = error.context as Response | undefined;
+    return response?.status === 401 ? 'session' : 'unknown';
+  }
+
+  return 'unknown';
+}
+
 export const authService = {
   signInWithGoogle() {
     return signInWithOAuthBrowser('google');
@@ -200,6 +222,42 @@ export const authService = {
     }
 
     return data.session ? 'signed-in' : 'confirm-email';
+  },
+
+  /**
+   * Exclusão permanente da conta.
+   *
+   * A Edge Function `delete-account` apaga a linha em `auth.users` — o app não
+   * tem (e não deve ter) privilégio para isso. A partir dali a cascata do banco
+   * leva perfil, passaportes, viagens, destinos e checklists.
+   *
+   * A função responde igual para "apaguei agora" e "já estava apagada", então
+   * uma resposta perdida por rede pode ser reenviada sem virar mensagem de erro
+   * sobre uma conta que já não existe. Só a sessão inválida é tratada como
+   * problema, porque aí a pessoa precisa entrar de novo.
+   *
+   * A sessão **não** é encerrada aqui. Derrubá-la junto trocaria a tela na
+   * mesma hora e a confirmação da exclusão não teria onde aparecer — quem
+   * decide o momento é a tela, com `signOutLocal`.
+   */
+  async deleteAccount(): Promise<void> {
+    const { error } = await supabase.functions.invoke('delete-account');
+
+    if (error) {
+      throw new DeleteAccountError(classifyDeleteFailure(error), { cause: error });
+    }
+  },
+
+  /**
+   * Encerra a sessão apenas no dispositivo.
+   *
+   * É o fim do fluxo de exclusão: a conta já não existe, então não há mais nada
+   * a encerrar no servidor e uma ida de rede só poderia falhar. Diferente do
+   * `signOut`, não levanta erro — sair é a última coisa que pode dar errado
+   * para alguém que acabou de apagar a conta.
+   */
+  async signOutLocal(): Promise<void> {
+    await supabase.auth.signOut({ scope: 'local' });
   },
 
   async sendPasswordReset(email: string) {

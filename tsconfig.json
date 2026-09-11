@@ -11,5 +11,9 @@
       "@/assets/*": ["./assets/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  // As Edge Functions rodam em Deno, com outro runtime e outros imports. Elas
+  // têm a própria checagem em `supabase/functions/deno.json` (`pnpm
+  // functions:check`) — compilá-las junto com o app só produziria erro falso.
+  "exclude": ["supabase/functions"]
 }

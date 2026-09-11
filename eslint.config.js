@@ -10,8 +10,10 @@ module.exports = defineConfig([
   expoConfig,
 
   // Saídas de build e arquivos gerados: não são código nosso para corrigir.
+  // `supabase/functions` é código Deno, validado por `deno lint`/`deno check`
+  // (`pnpm functions:check`) em vez das regras de React Native.
   {
-    ignores: ['dist/*', '.expo/*', 'expo-env.d.ts'],
+    ignores: ['dist/*', '.expo/*', 'expo-env.d.ts', 'supabase/functions/*'],
   },
 
   // Precisa ser o último: apaga as regras de formatação, que são do Prettier.

@@ -3,5 +3,9 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  // Só as Edge Functions rodam em Deno. Limitar o LSP a essa pasta mantém o
+  // app com o TypeScript do Expo e dá tipos e lint ao código Deno.
+  "deno.enable": false,
+  "deno.enablePaths": ["supabase/functions"]
 }

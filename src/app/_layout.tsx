@@ -118,6 +118,16 @@ function RootNavigator() {
             contentStyle: { backgroundColor: colors.surface },
           }}
         />
+        {/* Também sem gesto: no meio da exclusão não há o que cancelar, e no
+            fim a saída é o botão que leva para a entrada. */}
+        <Stack.Screen
+          name="account-deleting"
+          options={{
+            presentation: 'modal',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
       </Stack.Protected>
 
       <Stack.Protected guard={!!session && !hasPassport}>

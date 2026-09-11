@@ -54,7 +54,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/**/*.test.ts\"",
-    "check": "expo lint && tsc --noEmit && prettier --check . && npm test"
+    "check": "expo lint && tsc --noEmit && prettier --check . && npm test",
+    "functions:check": "deno check supabase/functions/delete-account/index.ts && deno lint supabase/functions"
   },
   "private": true
 }

@@ -1,23 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ListRow } from '@/components/ui/list-row';
 import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
+import { DeleteAccountModal } from '@/features/auth/delete-account-modal';
 import { getAvatarUrl, getDisplayName } from '@/features/auth/user-profile';
 import { PassportsSection } from '@/features/passports/passports-section';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const avatarUrl = getAvatarUrl(user);
   const showAvatar = Boolean(avatarUrl) && !avatarFailed;
+
+  /** O modal confirma; quem exclui é a tela de processamento. */
+  function startDeletion() {
+    setIsDeleteOpen(false);
+    router.push('/account-deleting');
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -63,7 +74,24 @@ export default function ProfileScreen() {
             />
           </Card>
         </View>
+
+        {/* Fora do cartão, e por último: excluir a conta não é uma opção entre
+            outras da seção — é a saída definitiva. */}
+        <View style={styles.dangerZone}>
+          <Button
+            label="Excluir conta"
+            variant="outline"
+            tone="danger"
+            onPress={() => setIsDeleteOpen(true)}
+          />
+        </View>
       </ScrollView>
+
+      <DeleteAccountModal
+        visible={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={startDeletion}
+      />
     </SafeAreaView>
   );
 }
@@ -86,6 +114,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  dangerZone: { marginTop: spacing.sm },
   identityTexts: { flex: 1, gap: 2 },
   name: { ...typography.bodyStrong, color: colors.text },
   email: { ...typography.caption, color: colors.textSecondary },

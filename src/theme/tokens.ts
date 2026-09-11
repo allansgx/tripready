@@ -24,6 +24,9 @@ export const colors = {
   contrast: '#111114',
   contrastText: '#FFFFFF',
   danger: '#D93025',
+  dangerPressed: '#B4261C',
+  /** Vermelho bem claro, usado atrás de ícones e em botões destrutivos. */
+  dangerSoft: '#FDECEA',
   /** Trilho cinza das barras de progresso. */
   progressTrack: '#ECEBF2',
 } as const;
@@ -40,6 +43,27 @@ export const prioritySoftColors = {
   required: '#FDECEC',
   recommended: '#FDF3E0',
   informational: '#EBEFFD',
+} as const;
+
+/**
+ * Cores por momento da viagem, usadas no card da lista.
+ *
+ * Cada card tem um tom só, e ele diz em que ponto a viagem está: `accent` pinta
+ * o anel de progresso e a bolinha da faixa, `soft` é o fundo da faixa e `text` é
+ * a frase — escurecida o bastante para ler sobre o fundo diluído.
+ *
+ * A véspera e o dia do embarque reaproveitam o âmbar dos recomendados, que já é
+ * o tom de atenção do app; o verde das futuras é o único valor novo aqui.
+ */
+export const tripMomentColors = {
+  ongoing: { accent: colors.primary, soft: colors.primarySoft, text: colors.primary },
+  imminent: {
+    accent: priorityColors.recommended,
+    soft: prioritySoftColors.recommended,
+    text: '#946200',
+  },
+  upcoming: { accent: '#2FA36B', soft: '#E8F5EE', text: '#1E7A4E' },
+  completed: { accent: '#C4C4CA', soft: '#F0F0F2', text: colors.textSecondary },
 } as const;
 
 /** Cor de destaque de cada estação, usada no texto e no ícone. */
