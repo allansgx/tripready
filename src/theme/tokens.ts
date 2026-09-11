@@ -159,7 +159,7 @@ export const typography = {
     fontFamily: fontFamily.rounded,
   },
   /**
-   * O destino no dia do embarque, ocupando o lugar da contagem.
+   * O nome da viagem no dia do embarque, ocupando o lugar da contagem.
    *
    * Sem `fontWeight`: a família registrada já é a Bold e, no Android, pedir
    * peso a uma família de arquivo único faz o sistema engrossar a fonte por

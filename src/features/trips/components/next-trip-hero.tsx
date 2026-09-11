@@ -62,6 +62,12 @@ const ENTRANCE_OFFSET = 16;
 const COUNT_UP_DURATION_MS = 1200;
 
 /**
+ * Quantas bandeiras cabem no cabeçalho do dia do embarque antes de a fila virar
+ * uma lista. O que passar disso é contado em uma etiqueta ao lado.
+ */
+const DEPARTURE_FLAGS = 4;
+
+/**
  * Entrada da tela: aparece subindo, uma vez só, quando a viagem chega.
  *
  * Com "reduzir movimento" ligado o conteúdo já nasce no lugar — nada aqui
@@ -148,8 +154,10 @@ function useCountUp(target: number | null, animated: boolean): number | null {
  * da checklist ainda serve de consulta.
  *
  * O dia do embarque é a outra variação da composição, e não uma segunda tela: o
- * número some — contar zero dia não diz nada — e o destino ocupa o lugar dele em
- * serifada, com a data emoldurada por traços. O resto muda só de palavra:
+ * número some — contar zero dia não diz nada — e o nome da viagem ocupa o lugar
+ * dele em serifada, com a data emoldurada por traços. O cabeçalho encolhe junto:
+ * sobram as bandeiras dos destinos, porque o nome já está grande logo abaixo. O
+ * resto muda só de palavra:
  * "Antes de embarcar" no lugar de "Preparação", itens pendentes no lugar da
  * porcentagem, "Verifique agora" no lugar de "Próximo passo". O dia pede
  * urgência, não alarme, e nada aqui comemora por conta própria.
@@ -210,14 +218,15 @@ export function NextTripHero({
   const showsDestination = destination !== null && destination !== trip.name;
 
   /**
-   * O que fica grande no dia do embarque: para onde a pessoa vai.
+   * As bandeiras do cabeçalho no dia do embarque, no lugar do destino escrito e
+   * do nome da viagem.
    *
-   * O destino, e não o nome da viagem, porque é ele que carrega a viagem no
-   * dia — "Estados Unidos" diz o que "Trip 1" não diz. O nome continua no
-   * cabeçalho, que é onde ele identifica a viagem. Sem destino cadastrado o
-   * nome assume, para o bloco nunca ficar sem protagonista.
+   * O nome é o protagonista logo abaixo, então aqui basta dizer para onde se
+   * vai — e bandeira diz isso sem gastar linha. Acima de quatro destinos a fila
+   * viraria uma lista, e o que sobra passa a ser contado ao lado.
    */
-  const departurePlace = destination ?? trip.name;
+  const departureFlags = countryCodes.slice(0, DEPARTURE_FLAGS);
+  const hiddenFlags = countryCodes.length - departureFlags.length;
 
   /**
    * A seção abaixo do divisor muda de assunto conforme o momento da viagem, mas
@@ -260,17 +269,37 @@ export function NextTripHero({
       <View style={styles.header}>
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>{eyebrow}</Text>
-          {showsDestination ? (
-            <View style={styles.destination}>
-              <FlagRow codes={countryCodes} size={15} />
-              <Text style={styles.destinationName} numberOfLines={1}>
-                {destination}
-              </Text>
+
+          {isDeparture ? (
+            <View style={styles.flags}>
+              <FlagRow codes={departureFlags} />
+              {hiddenFlags > 0 ? (
+                <View style={styles.flagsChip}>
+                  <Text
+                    style={styles.flagsChipText}
+                    accessibilityLabel={`e mais ${hiddenFlags} ${
+                      hiddenFlags === 1 ? 'destino' : 'destinos'
+                    }`}>
+                    +{hiddenFlags}
+                  </Text>
+                </View>
+              ) : null}
             </View>
-          ) : null}
-          <Text style={styles.name} numberOfLines={2}>
-            {trip.name}
-          </Text>
+          ) : (
+            <>
+              {showsDestination ? (
+                <View style={styles.destination}>
+                  <FlagRow codes={countryCodes} size={15} />
+                  <Text style={styles.destinationName} numberOfLines={1}>
+                    {destination}
+                  </Text>
+                </View>
+              ) : null}
+              <Text style={styles.name} numberOfLines={2}>
+                {trip.name}
+              </Text>
+            </>
+          )}
         </View>
 
         {/* A estação não é um filtro nem um seletor: é a legenda do que está
@@ -290,11 +319,11 @@ export function NextTripHero({
         <View
           style={styles.departure}
           accessible
-          accessibilityLabel={`Hoje é o dia. ${departurePlace}. ${dates}`}>
+          accessibilityLabel={`Hoje é o dia. ${trip.name}. ${dates}`}>
           <Text style={styles.departureLabel}>Hoje é o dia</Text>
 
           <Text style={styles.departureName} numberOfLines={2} adjustsFontSizeToFit>
-            {departurePlace}
+            {trip.name}
           </Text>
 
           {/* As linhas não separam nada: elas isolam a data para ela ser lida
@@ -431,6 +460,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  // No dia do embarque as bandeiras são a única linha sob a etiqueta: ficam no
+  // tamanho cheio do `FlagRow` e o que não coube vira contagem ao lado.
+  flags: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  flagsChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: INK_CHIP,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: INK_LINE,
+  },
+  flagsChipText: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   destinationName: {
     ...typography.caption,
