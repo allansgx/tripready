@@ -19,7 +19,7 @@ Estrutura atual em `src/`: `app/` (rotas), `features/` (domínios: auth, trips, 
 - Manter a lógica de negócio separada da UI quando isso melhorar a reutilização/testabilidade.
 - Respeitar a estrutura existente antes de criar novas pastas ou padrões.
 - Preferir componentes nativos da plataforma (ex.: `@expo/ui`) a reimplementações customizadas em JS.
-- Não deixar comentários desnecessários no código, deixe somente quando for muito válido.
+- Não faça comentários no código, exceto se for extremamente necessário, e comentário curtos se precisar.
 
 ## Antes de implementar
 
