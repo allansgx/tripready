@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 
 import { authRedirectUri } from '@/features/auth/auth-redirect';
 import { DeleteAccountError, type DeleteAccountFailure } from '@/features/auth/delete-account';
+import { normalizeEmail } from '@/features/auth/email';
 import { supabase } from '@/lib/supabase/client';
 
 // Fecha a janela de autenticação quando o redirect volta (necessário no web).
@@ -202,7 +203,7 @@ export const authService = {
     const displayName = name.trim();
 
     const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
+      email: normalizeEmail(email),
       password,
       options: {
         emailRedirectTo: authRedirectUri,

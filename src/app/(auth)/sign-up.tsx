@@ -9,10 +9,10 @@ import { ScreenHeader } from '@/components/ui/screen-header';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { toAuthMessage } from '@/features/auth/auth-errors';
+import { normalizeEmail, validateEmail } from '@/features/auth/email';
+import { isPasswordValid, MIN_PASSWORD_LENGTH } from '@/features/auth/password';
+import { PasswordField } from '@/features/auth/password-field';
 import { spacing } from '@/theme/tokens';
-
-/** Senha mínima aceita pelo Supabase Auth na configuração padrão. */
-const MIN_PASSWORD_LENGTH = 6;
 
 /** TEMPORÁRIO — cadastro por e-mail/senha para testes no Expo Go. */
 export default function SignUpScreen() {
@@ -25,19 +25,32 @@ export default function SignUpScreen() {
   const [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+
+  /** O aviso sai ao mexer no campo e volta no blur, nunca durante a digitação. */
+  function changeEmail(value: string) {
+    setEmail(value);
+    if (emailError) setEmailError(null);
+  }
+
+  const canSubmit = validateEmail(email) === null && isPasswordValid(password);
 
   async function submit() {
     if (!name.trim()) {
       setError('Informe seu nome.');
       return;
     }
-    if (!email.trim()) {
-      setError('Informe o e-mail.');
+
+    const emailProblem = validateEmail(email);
+    if (emailProblem) {
+      setError(null);
+      setEmailError(emailProblem);
       return;
     }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`A senha precisa ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+
+    if (!isPasswordValid(password)) {
+      setError('A senha ainda não cumpre todos os requisitos.');
       return;
     }
     if (password !== confirmation) {
@@ -52,7 +65,7 @@ export default function SignUpScreen() {
       // 'signed-in': confirmação de e-mail desligada, a sessão já veio pronta e
       // o layout raiz troca para o grupo (app) sozinho.
       if (result === 'confirm-email') {
-        setSentTo(email.trim());
+        setSentTo(normalizeEmail(email));
       }
     } catch (err) {
       setError(toAuthMessage(err));
@@ -91,20 +104,22 @@ export default function SignUpScreen() {
         <TextField
           label="E-mail"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={changeEmail}
+          onBlur={() => setEmailError(validateEmail(email))}
+          error={emailError}
           placeholder="voce@email.com"
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="email"
           textContentType="emailAddress"
+          returnKeyType="next"
         />
-        <TextField
+        <PasswordField
           label="Senha"
           value={password}
           onChangeText={setPassword}
           placeholder={`Mínimo de ${MIN_PASSWORD_LENGTH} caracteres`}
-          secureTextEntry
           autoCapitalize="none"
           autoComplete="new-password"
           textContentType="newPassword"
@@ -124,7 +139,7 @@ export default function SignUpScreen() {
 
         {error ? <FormMessage text={error} /> : null}
 
-        <Button label="Criar conta" onPress={submit} loading={busy} />
+        <Button label="Criar conta" onPress={submit} loading={busy} disabled={!canSubmit} />
       </View>
     </FormLayout>
   );

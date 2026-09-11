@@ -9,7 +9,6 @@ const MESSAGES: Record<string, string> = {
   'Invalid login credentials': 'E-mail ou senha incorretos.',
   'Email not confirmed': 'Confirme o e-mail antes de entrar. Verifique sua caixa de entrada.',
   'User already registered': 'Este e-mail já está cadastrado.',
-  'Password should be at least 6 characters.': 'A senha precisa ter ao menos 6 caracteres.',
   'Unable to validate email address: invalid format': 'E-mail inválido.',
   'Signup requires a valid password': 'Informe uma senha válida.',
   'Email rate limit exceeded': 'Muitas tentativas seguidas. Aguarde alguns minutos.',
@@ -17,9 +16,21 @@ const MESSAGES: Record<string, string> = {
     'Por segurança, aguarde 60 segundos antes de tentar de novo.',
 };
 
+/** A recusa do GoTrue lista os caracteres exigidos e muda com a política. */
+const PASSWORD_REJECTION_PREFIX = 'Password should';
+const PASSWORD_REJECTION_MESSAGE = 'A senha ainda não cumpre todos os requisitos da lista.';
+
 export function toAuthMessage(error: unknown): string {
   if (!(error instanceof Error)) {
     return 'Erro inesperado na autenticação.';
   }
-  return MESSAGES[error.message] ?? error.message;
+
+  const mapped = MESSAGES[error.message];
+  if (mapped) return mapped;
+
+  if (error.message.startsWith(PASSWORD_REJECTION_PREFIX)) {
+    return PASSWORD_REJECTION_MESSAGE;
+  }
+
+  return error.message;
 }
