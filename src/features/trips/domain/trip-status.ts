@@ -66,22 +66,53 @@ export function daysUntilStart(trip: DateRange, today: string = todayISO()): num
   return daysBetween(today, trip.start_date);
 }
 
-/** Limite de dias para a contagem aparecer — evita poluir todos os cards. */
-const COUNTDOWN_WINDOW_DAYS = 30;
-
 /**
- * Aviso contextual de proximidade, só para viagens futuras dentro da janela.
- * `null` quando a viagem ainda está distante, já começou ou não tem data.
+ * O momento da viagem como o card da lista conta: uma frase curta e um tom.
+ *
+ * É a mesma pergunta da contagem da Home — em que ponto esta viagem está? —,
+ * mas respondida em uma linha, porque na lista cada viagem tem poucas palavras
+ * para se apresentar. O `tone` existe para a tela escolher a cor sem
+ * reinterpretar o texto: a faixa e o anel do card pintam com ele.
+ *
+ * `imminent` é o que separa "daqui a duas semanas" de "é agora": véspera e dia
+ * do embarque, os dois dias em que um obrigatório pendente vira urgência.
  */
-export function formatStartCountdown(trip: DateRange, today: string = todayISO()): string | null {
-  if (getTripStatus(trip, today) !== 'upcoming' || !trip.start_date) return null;
+export type TripMomentTone = 'ongoing' | 'imminent' | 'upcoming' | 'completed';
+
+export type TripMoment = {
+  tone: TripMomentTone;
+  label: string;
+};
+
+/** Até aqui a espera se conta em dias; acima disso, em meses. */
+const MOMENT_DAYS_WINDOW = 45;
+
+/** Média de dias por mês, só para arredondar a espera longa. */
+const DAYS_PER_MONTH = 30.44;
+
+export function buildTripMoment(trip: DateRange, today: string = todayISO()): TripMoment {
+  if (getTripStatus(trip, today) === 'completed') {
+    return { tone: 'completed', label: 'Concluída' };
+  }
 
   const days = daysUntilStart(trip, today);
-  if (days === null || days < 0 || days > COUNTDOWN_WINDOW_DAYS) return null;
 
-  if (days === 0) return 'Começa hoje';
-  if (days === 1) return 'Começa amanhã';
-  return `Começa em ${days} dias`;
+  // O dia da partida vem antes do estado: para `getTripStatus` a viagem já
+  // começou, mas quem embarca hoje precisa ler isso, e não "em andamento".
+  if (days === 0) return { tone: 'imminent', label: 'Embarque hoje' };
+
+  if (getTripStatus(trip, today) === 'ongoing') {
+    return { tone: 'ongoing', label: 'Viagem em andamento' };
+  }
+
+  // Sem data não há espera a anunciar, então a faixa diz o que fazer a respeito.
+  if (days === null) return { tone: 'upcoming', label: 'Escolha as datas' };
+
+  if (days === 1) return { tone: 'imminent', label: 'Começa amanhã' };
+  if (days <= MOMENT_DAYS_WINDOW) return { tone: 'upcoming', label: `Começa em ${days} dias` };
+
+  const months = Math.round(days / DAYS_PER_MONTH);
+  return { tone: 'upcoming', label: `Começa em ${months} ${months === 1 ? 'mês' : 'meses'}` };
 }
 
 /**

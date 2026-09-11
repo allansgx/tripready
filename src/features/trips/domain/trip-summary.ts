@@ -1,11 +1,6 @@
 import { selectNextRequirement } from '@/features/trips/domain/requirement-matching';
 import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
-import {
-  formatStartCountdown,
-  getTripStatus,
-  todayISO,
-  type TripStatus,
-} from '@/features/trips/domain/trip-status';
+import { getTripStatus, todayISO, type TripStatus } from '@/features/trips/domain/trip-status';
 import type { TripRequirementBrief, TripWithRelations } from '@/services/trips';
 import type { Trip } from '@/types/models';
 
@@ -14,8 +9,6 @@ export type TripSummary = {
   countryCodes: string[];
   progress: TripProgress;
   status: TripStatus;
-  /** "Começa em 5 dias" — só para viagens futuras próximas. */
-  countdown: string | null;
   /** Item pendente mais importante da checklist; `null` quando não há nenhum. */
   nextStep: TripRequirementBrief | null;
 };
@@ -36,7 +29,6 @@ export function toTripSummary(row: TripWithRelations, today: string = todayISO()
     countryCodes: (trip_countries ?? []).map((country) => country.country_code),
     progress: computeTripProgress(requirements),
     status: getTripStatus(trip, today),
-    countdown: formatStartCountdown(trip, today),
     nextStep: selectNextRequirement(requirements),
   };
 }
@@ -82,6 +74,27 @@ export function buildTripSummaries(rows: readonly TripWithRelations[]): TripSumm
       if (!startB) return -1;
       return startA.localeCompare(startB);
     });
+}
+
+/**
+ * Os filtros rápidos da lista de viagens.
+ *
+ * São os próprios estados da viagem mais o "Todas", e não um recorte paralelo:
+ * o que a lista filtra é exatamente o status derivado das datas. Viagem sem
+ * datas é `upcoming`, então aparece em "Futuras".
+ */
+export type TripFilter = 'all' | TripStatus;
+
+/**
+ * Aplica o filtro preservando a ordem de `buildTripSummaries` — a ordenação
+ * continua sendo decidida em um lugar só.
+ */
+export function filterTripSummaries(
+  summaries: readonly TripSummary[],
+  filter: TripFilter,
+): TripSummary[] {
+  if (filter === 'all') return [...summaries];
+  return summaries.filter((summary) => summary.status === filter);
 }
 
 /** Separa a lista nas seções da tela: ativas (em andamento + próximas) e histórico. */

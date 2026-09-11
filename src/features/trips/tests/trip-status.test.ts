@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildTripCountdown,
   buildTripDayCount,
+  buildTripMoment,
   daysUntilStart,
   formatReturnCountdown,
   getTripStatus,
@@ -97,4 +98,57 @@ test('viagem sem data convida a escolher as datas', () => {
   assert.equal(countdown.kind, 'undated');
   assert.equal(countdown.days, null);
   assert.ok(countdown.label);
+});
+
+/**
+ * O momento da viagem, que é o que o card da lista conta em uma linha só.
+ *
+ * O tom importa tanto quanto a frase: é ele que decide a cor da faixa, do anel
+ * e da pílula de obrigatórios do card.
+ */
+
+test('viagem concluída e viagem em andamento se apresentam pelo estado', () => {
+  assert.deepEqual(buildTripMoment(trip('2026-09-01', '2026-09-10'), TODAY), {
+    tone: 'completed',
+    label: 'Concluída',
+  });
+
+  assert.deepEqual(buildTripMoment(trip('2026-10-01', '2026-10-27'), TODAY), {
+    tone: 'ongoing',
+    label: 'Viagem em andamento',
+  });
+});
+
+test('véspera e dia do embarque compartilham o tom de urgência', () => {
+  // Para `getTripStatus` a viagem que parte hoje já começou; quem embarca
+  // precisa ler o embarque, e não "em andamento".
+  assert.deepEqual(buildTripMoment(trip(TODAY, '2026-10-20'), TODAY), {
+    tone: 'imminent',
+    label: 'Embarque hoje',
+  });
+
+  assert.deepEqual(buildTripMoment(trip('2026-10-12'), TODAY), {
+    tone: 'imminent',
+    label: 'Começa amanhã',
+  });
+});
+
+test('a espera se conta em dias até a janela e em meses depois dela', () => {
+  assert.deepEqual(buildTripMoment(trip('2026-10-24'), TODAY), {
+    tone: 'upcoming',
+    label: 'Começa em 13 dias',
+  });
+
+  // 45 dias ainda é uma contagem útil; 46 vira "2 meses" para o card não
+  // exibir números que ninguém consegue dimensionar.
+  assert.equal(buildTripMoment(trip('2026-11-25'), TODAY).label, 'Começa em 45 dias');
+  assert.equal(buildTripMoment(trip('2026-11-26'), TODAY).label, 'Começa em 2 meses');
+  assert.equal(buildTripMoment(trip('2027-02-11'), TODAY).label, 'Começa em 4 meses');
+});
+
+test('viagem sem data mostra o próximo passo no lugar da contagem', () => {
+  assert.deepEqual(buildTripMoment(trip(null), TODAY), {
+    tone: 'upcoming',
+    label: 'Escolha as datas',
+  });
 });

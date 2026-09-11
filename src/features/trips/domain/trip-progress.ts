@@ -67,6 +67,18 @@ export function formatProgressLabel(progress: TripProgress): string {
 }
 
 /**
+ * A mesma contagem em versão curta: "1/8 itens".
+ *
+ * É o que cabe no rodapé do card da lista, ao lado da data. O recorte é o da
+ * porcentagem — obrigatórios e recomendados —, para a fração e o anel do card
+ * nunca contarem coisas diferentes.
+ */
+export function formatProgressFraction(progress: TripProgress): string {
+  if (progress.total === 0) return 'Checklist em preparação';
+  return `${progress.done}/${progress.total} ${progress.total === 1 ? 'item' : 'itens'}`;
+}
+
+/**
  * Quantos itens ainda esperam verificação, no mesmo recorte da porcentagem.
  *
  * É o que a Home mostra no dia do embarque, no lugar do percentual: naquele dia

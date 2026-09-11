@@ -5,22 +5,34 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
-import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
 import { TripCard } from '@/features/trips/components/trip-card';
+import { TripFilterBar } from '@/features/trips/components/trip-filter-bar';
 import {
   buildTripSummaries,
-  splitTripSections,
+  filterTripSummaries,
+  type TripFilter,
   type TripSummary,
 } from '@/features/trips/domain/trip-summary';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
+/**
+ * A lista de viagens.
+ *
+ * Uma lista só, na ordem de relevância que `buildTripSummaries` decide — em
+ * andamento, próximas por data de início, concluídas por término mais recente —
+ * e filtros rápidos no topo para quem quer recortar. Os cabeçalhos de seção
+ * saíram junto com a chegada dos filtros: separar "próximas" de "histórico"
+ * dentro de uma lista que já pode ser filtrada por isso é dizer a mesma coisa
+ * duas vezes.
+ */
 export default function TripsScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
   const [summaries, setSummaries] = useState<TripSummary[]>([]);
+  const [filter, setFilter] = useState<TripFilter>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [needsRetry, setNeedsRetry] = useState(false);
 
@@ -44,6 +56,10 @@ export default function TripsScreen() {
     }, [load]),
   );
 
+  const createTrip = () => router.push('/trip-new');
+  const visible = filterTripSummaries(summaries, filter);
+  const isReady = !isLoading && !needsRetry;
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
@@ -54,11 +70,16 @@ export default function TripsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Criar nova viagem"
             hitSlop={10}
-            onPress={() => router.push('/trip-new')}
+            onPress={createTrip}
             style={({ pressed }) => [styles.create, pressed && styles.createPressed]}>
-            <Ionicons name="add" size={18} color={colors.primary} />
+            <Ionicons name="add" size={20} color={colors.contrastText} />
           </Pressable>
         </View>
+
+        {/* Sem nenhuma viagem cadastrada os filtros não têm o que recortar. */}
+        {isReady && summaries.length > 0 ? (
+          <TripFilterBar value={filter} onChange={setFilter} />
+        ) : null}
 
         {isLoading ? (
           <View style={styles.centered}>
@@ -71,12 +92,21 @@ export default function TripsScreen() {
             <Button label="Carregar viagens" onPress={() => void load()} variant="ghost" />
           </View>
         ) : summaries.length === 0 ? (
-          <EmptyState onCreate={() => router.push('/trip-new')} />
+          <EmptyState onCreate={createTrip} />
+        ) : visible.length === 0 ? (
+          <FilterEmptyState filter={filter} onSelect={setFilter} onCreate={createTrip} />
         ) : (
-          <TripSections
-            summaries={summaries}
-            onOpen={(tripId) => router.push({ pathname: '/trips/[id]', params: { id: tripId } })}
-          />
+          <View style={styles.list}>
+            {visible.map((summary) => (
+              <TripCard
+                key={summary.trip.id}
+                summary={summary}
+                onPress={() =>
+                  router.push({ pathname: '/trips/[id]', params: { id: summary.trip.id } })
+                }
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -84,42 +114,51 @@ export default function TripsScreen() {
 }
 
 /**
- * Cabeçalhos só quando eles separam algo de fato: com uma única viagem, ou com
- * apenas viagens ativas, a lista fala por si.
+ * O vazio de um filtro, que nunca é um beco sem saída: cada um diz o que vai
+ * aparecer ali e oferece o caminho de volta — outro filtro ou a criação da
+ * viagem que está faltando.
  */
-function TripSections({
-  summaries,
-  onOpen,
+function FilterEmptyState({
+  filter,
+  onSelect,
+  onCreate,
 }: {
-  summaries: TripSummary[];
-  onOpen: (tripId: string) => void;
+  filter: TripFilter;
+  onSelect: (filter: TripFilter) => void;
+  onCreate: () => void;
 }) {
-  const { active, history } = splitTripSections(summaries);
-  const showHeadings = summaries.length > 1 && history.length > 0;
+  // "Todas" vazio significa nenhuma viagem cadastrada, e quem responde por esse
+  // caso é o vazio geral da tela.
+  if (filter === 'all') return null;
 
-  const cards = (group: TripSummary[]) =>
-    group.map((summary) => (
-      <TripCard key={summary.trip.id} summary={summary} onPress={() => onOpen(summary.trip.id)} />
-    ));
+  const options: Record<
+    Exclude<TripFilter, 'all'>,
+    { text: string; label: string; action: () => void }
+  > = {
+    ongoing: {
+      text: 'Quando sua viagem começar, ela aparece aqui.',
+      label: 'Ver as futuras',
+      action: () => onSelect('upcoming'),
+    },
+    upcoming: {
+      text: 'Que tal marcar a próxima?',
+      label: 'Criar viagem',
+      action: onCreate,
+    },
+    completed: {
+      text: 'Suas viagens concluídas ficam guardadas aqui.',
+      label: 'Ver todas',
+      action: () => onSelect('all'),
+    },
+  };
+
+  const option = options[filter];
 
   return (
-    <>
-      {active.length > 0 ? (
-        <View style={styles.section}>
-          {showHeadings ? <SectionLabel>Próximas viagens</SectionLabel> : null}
-          {cards(active)}
-        </View>
-      ) : null}
-
-      {history.length > 0 ? (
-        <View style={styles.section}>
-          {showHeadings || (summaries.length > 1 && active.length === 0) ? (
-            <SectionLabel>Histórico</SectionLabel>
-          ) : null}
-          {cards(history)}
-        </View>
-      ) : null}
-    </>
+    <View style={styles.centered}>
+      <Text style={styles.hint}>{option.text}</Text>
+      <Button label={option.label} onPress={option.action} variant="ghost" />
+    </View>
   );
 }
 
@@ -157,17 +196,15 @@ const styles = StyleSheet.create({
   create: {
     width: 40,
     height: 40,
-    borderWidth: 1,
-    borderColor: colors.primary,
     borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   createPressed: {
-    opacity: 0.6,
+    backgroundColor: colors.primaryPressed,
   },
-  section: { gap: spacing.lg },
+  list: { gap: spacing.lg },
   centered: {
     alignItems: 'center',
     gap: spacing.lg,

@@ -1,36 +1,78 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ProgressBar } from '@/components/ui/progress-bar';
-import { FlagRow } from '@/features/trips/components/flag-row';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { getCountryName } from '@/constants/countries';
+import { TripCountryChips } from '@/features/trips/components/trip-country-chips';
 import { formatTripDates } from '@/features/trips/domain/trip-format';
 import {
   formatPendingRequiredLabel,
-  formatProgressLabel,
+  formatProgressFraction,
 } from '@/features/trips/domain/trip-progress';
+import { buildTripMoment } from '@/features/trips/domain/trip-status';
 import type { TripSummary } from '@/features/trips/domain/trip-summary';
-import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
+import {
+  colors,
+  prioritySoftColors,
+  radius,
+  shadow,
+  spacing,
+  tripMomentColors,
+  typography,
+} from '@/theme/tokens';
+
+/**
+ * Tintas escuras dos avisos do rodapé.
+ *
+ * Os fundos saem de `prioritySoftColors`, mas o texto precisa de uma versão
+ * mais fechada da mesma cor para ler sobre o fundo diluído — o vermelho e o
+ * âmbar dos tokens foram calibrados para pontos e ícones, não para texto.
+ */
+const PILL_URGENT_INK = '#C6383C';
+const PILL_CALM_INK = '#946200';
 
 /**
  * Card da listagem.
  *
- * Viagens ativas mostram progresso e obrigatórios pendentes; concluídas trocam
- * isso pelo registro do que já aconteceu, sem cobrar preparação de uma viagem
- * que já terminou. Cidades continuam só no detalhe.
+ * A leitura é sempre a mesma, de cima para baixo: qual é a viagem, em que ponto
+ * ela está, para onde ela vai e o que falta preparar. O nome ocupa o título
+ * sozinho — é como a pessoa chama a viagem, e nenhum destino toma esse lugar.
+ *
+ * Cada card tem um tom só, vindo de `buildTripMoment`: ele pinta a faixa do
+ * momento e o anel do progresso. É o que deixa a lista legível de relance —
+ * roxo é a viagem acontecendo, âmbar é a que parte agora, verde é a que ainda
+ * dá tempo de preparar e cinza é a que já passou.
+ *
+ * Viagens concluídas mantêm o mesmo desenho, no tom cinza, mas sem fração e sem
+ * pílula de obrigatórios: cobrar preparação de uma viagem que já aconteceu não
+ * leva ninguém a lugar nenhum.
  */
 export function TripCard({ summary, onPress }: { summary: TripSummary; onPress: () => void }) {
-  const { trip, countryCodes, progress, status, countdown } = summary;
+  const { trip, countryCodes, progress, status } = summary;
   const isCompleted = status === 'completed';
-  const pending = formatPendingRequiredLabel(progress);
+
+  const moment = buildTripMoment(trip);
+  const tone = tripMomentColors[moment.tone];
+  const dates = formatTripDates(trip.start_date, trip.end_date);
+  const fraction = formatProgressFraction(progress);
+  const pending = isCompleted ? null : formatPendingRequiredLabel(progress);
+  // Véspera e dia do embarque: é o único momento em que o pendente vira pressa.
+  const isUrgent = moment.tone === 'imminent';
+
+  const spoken = [
+    trip.name,
+    moment.label,
+    countryCodes.map(getCountryName).join(', '),
+    dates,
+    isCompleted ? null : fraction,
+    pending ? `${pending} pendentes` : null,
+  ].filter(Boolean);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={
-        isCompleted
-          ? `${trip.name}, viagem concluída`
-          : `${trip.name}, ${progress.percent}% preparada`
-      }
+      accessibilityLabel={spoken.join('. ')}
+      accessibilityHint="Abre a checklist da viagem"
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
@@ -38,53 +80,59 @@ export function TripCard({ summary, onPress }: { summary: TripSummary; onPress: 
         pressed && styles.cardPressed,
       ]}>
       <View style={styles.top}>
-        <FlagRow codes={countryCodes} />
-        {isCompleted ? (
-          <View style={styles.completedTag}>
-            <Ionicons name="checkmark" size={13} color={colors.textSecondary} />
-            <Text style={styles.completedText}>Viagem concluída</Text>
-          </View>
-        ) : (
-          <Text style={styles.percent}>{progress.percent}%</Text>
-        )}
+        <Text style={styles.name} numberOfLines={2}>
+          {trip.name}
+        </Text>
+
+        {/* O percentual fica dentro do anel: o arco sozinho dá a impressão, e o
+            número diz o quanto de fato já foi verificado. */}
+        <ProgressRing percent={progress.percent} size={48} strokeWidth={4} color={tone.accent} />
       </View>
 
-      <Text style={styles.name} numberOfLines={1}>
-        {trip.name}
-      </Text>
+      <View style={[styles.moment, { backgroundColor: tone.soft }]}>
+        <View style={[styles.momentDot, { backgroundColor: tone.accent }]} />
+        <Text style={[styles.momentLabel, { color: tone.text }]} numberOfLines={1}>
+          {moment.label}
+        </Text>
+      </View>
 
-      {isCompleted ? (
-        <Text style={styles.dates}>{formatTripDates(trip.start_date, trip.end_date)}</Text>
-      ) : (
-        <>
-          {status === 'ongoing' ? (
-            <View style={styles.ongoingRow}>
-              <View style={styles.ongoingDot} />
-              <Text style={styles.ongoingText}>Viagem em andamento</Text>
-            </View>
-          ) : countdown ? (
-            <Text style={styles.countdown}>{countdown}</Text>
-          ) : null}
+      <TripCountryChips codes={countryCodes} />
 
-          <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
+      <View style={styles.divider} />
 
-          <ProgressBar percent={progress.percent} />
+      <View style={styles.footer}>
+        <View style={styles.facts}>
+          <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
+          <Text style={styles.dates} numberOfLines={1}>
+            {dates}
+          </Text>
+          {isCompleted ? null : (
+            <Text style={styles.fraction} numberOfLines={1}>
+              {fraction}
+            </Text>
+          )}
+        </View>
 
-          <View style={styles.bottom}>
-            <Text style={styles.dates}>{formatTripDates(trip.start_date, trip.end_date)}</Text>
-
-            {pending ? (
-              <View style={styles.pendingPill}>
-                <Text style={styles.pendingText}>{pending}</Text>
-              </View>
-            ) : progress.isReady ? (
-              <View style={styles.readyPill}>
-                <Text style={styles.readyText}>Pronta 🎉</Text>
-              </View>
-            ) : null}
+        {pending ? (
+          <View
+            style={[
+              styles.pill,
+              {
+                backgroundColor: isUrgent
+                  ? prioritySoftColors.required
+                  : prioritySoftColors.recommended,
+              },
+            ]}>
+            <Text style={[styles.pillText, { color: isUrgent ? PILL_URGENT_INK : PILL_CALM_INK }]}>
+              {pending}
+            </Text>
           </View>
-        </>
-      )}
+        ) : !isCompleted && progress.isReady ? (
+          <View style={[styles.pill, styles.readyPill]}>
+            <Text style={[styles.pillText, styles.readyText]}>Pronta 🎉</Text>
+          </View>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
@@ -96,7 +144,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   cardActive: {
     ...shadow.card,
@@ -111,85 +159,74 @@ const styles = StyleSheet.create({
   },
   top: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.md,
-  },
-  percent: {
-    ...typography.bodyStrong,
-    color: colors.primary,
-  },
-  completedTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  completedText: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
   },
   name: {
     ...typography.title,
     color: colors.text,
+    flex: 1,
   },
-  ongoingRow: {
+  // A faixa ocupa a largura toda de propósito: ela é a legenda do card, e não
+  // mais uma etiqueta disputando espaço com as outras.
+  moment: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
   },
-  ongoingDot: {
-    width: 8,
-    height: 8,
+  momentDot: {
+    width: 7,
+    height: 7,
     borderRadius: radius.pill,
-    backgroundColor: colors.primary,
   },
-  ongoingText: {
+  momentLabel: {
     ...typography.caption,
     fontWeight: '600',
-    color: colors.primary,
+    flexShrink: 1,
   },
-  countdown: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.primary,
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.divider,
   },
-  progressLabel: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  bottom: {
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
-    marginTop: spacing.xs,
+  },
+  facts: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexShrink: 1,
   },
   dates: {
+    ...typography.caption,
+    color: colors.text,
+    flexShrink: 1,
+  },
+  fraction: {
     ...typography.caption,
     color: colors.textSecondary,
     flexShrink: 1,
   },
-  pendingPill: {
-    backgroundColor: '#FDECEC',
+  pill: {
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
-  pendingText: {
+  pillText: {
     ...typography.caption,
     fontWeight: '600',
-    color: '#C6383C',
   },
   readyPill: {
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
   },
   readyText: {
-    ...typography.caption,
-    fontWeight: '600',
     color: colors.primary,
   },
 });

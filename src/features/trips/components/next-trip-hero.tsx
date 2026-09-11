@@ -32,8 +32,14 @@ import type { Season } from '@/types/models';
  * e um pouco vivo, então divisor, etiqueta e contorno do próximo passo são
  * tintas translúcidas — elas escurecem o que estiver atrás em vez de tapar,
  * o que é o que mantém a leitura de "conteúdo no ambiente".
+ *
+ * `INK_RULE` é a mesma tinta mais carregada, para as linhas que existem
+ * sozinhas: no contorno de uma etiqueta o olho completa o retângulo, mas um
+ * traço solto de um fio translúcido some no fundo — principalmente em tela de
+ * densidade alta, onde a espessura de fio cai para menos de meio ponto.
  */
 const INK_LINE = 'rgba(22,22,26,0.07)';
+const INK_RULE = 'rgba(22,22,26,0.14)';
 const INK_CHIP = 'rgba(22,22,26,0.05)';
 const PRIMARY_WASH = 'rgba(108,78,227,0.08)';
 const PRIMARY_EDGE = 'rgba(108,78,227,0.14)';
@@ -572,8 +578,8 @@ const styles = StyleSheet.create({
   // atravessam a tela como o divisor logo abaixo faria.
   rule: {
     width: 28,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: INK_LINE,
+    height: 1,
+    backgroundColor: INK_RULE,
   },
   departureDates: {
     ...typography.caption,
@@ -581,8 +587,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: INK_LINE,
+    height: 1,
+    backgroundColor: INK_RULE,
   },
   preparation: {
     gap: spacing.sm,
