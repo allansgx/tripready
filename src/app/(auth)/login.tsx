@@ -9,6 +9,7 @@ import { ListRow } from '@/components/ui/list-row';
 import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
 import { getRedirectDiagnostics } from '@/features/auth/auth-redirect';
+import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 export default function LoginScreen() {
@@ -80,10 +81,7 @@ export default function LoginScreen() {
           ) : null}
         </View>
 
-        <Text style={styles.footer}>
-          Ao continuar, você concorda com os <Text style={styles.footerLink}>Termos de uso</Text> e
-          com a <Text style={styles.footerLink}>Política de privacidade</Text>.
-        </Text>
+        <LegalConsentNotice lead="Ao continuar" />
 
         {/* Bloco só de desenvolvimento: mostra a URL exata que precisa estar em
             Supabase → Authentication → URL Configuration → Redirect URLs. */}
@@ -154,17 +152,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.danger,
     flex: 1,
-  },
-  footer: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-    marginTop: Platform.OS === 'web' ? spacing.lg : 0,
-  },
-  footerLink: {
-    color: colors.primary,
-    fontWeight: '600',
   },
   debug: {
     gap: spacing.xs,

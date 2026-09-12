@@ -63,6 +63,22 @@ export default function ProfileScreen() {
         <PassportsSection />
 
         <View>
+          <SectionLabel>Legal</SectionLabel>
+          <Card>
+            <ListRow
+              label="Política de Privacidade"
+              icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />}
+              onPress={() => router.push('/legal/privacidade')}
+            />
+            <ListRow
+              label="Termos de Uso"
+              icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
+              onPress={() => router.push('/legal/termos')}
+            />
+          </Card>
+        </View>
+
+        <View>
           <SectionLabel>Conta</SectionLabel>
           <Card>
             <ListRow

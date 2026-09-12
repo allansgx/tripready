@@ -8,7 +8,7 @@ type ScreenHeaderProps = {
   title: string;
   subtitle?: string;
   /** Para onde voltar quando a tela foi aberta direto por deep link. */
-  fallbackHref?: '/login';
+  fallbackHref?: '/login' | '/profile';
 };
 
 /** Cabeçalho com botão voltar, título e texto de apoio. */

@@ -12,6 +12,7 @@ import { toAuthMessage } from '@/features/auth/auth-errors';
 import { normalizeEmail, validateEmail } from '@/features/auth/email';
 import { isPasswordValid, MIN_PASSWORD_LENGTH } from '@/features/auth/password';
 import { PasswordField } from '@/features/auth/password-field';
+import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
 import { spacing } from '@/theme/tokens';
 
 /** TEMPORÁRIO — cadastro por e-mail/senha para testes no Expo Go. */
@@ -140,6 +141,8 @@ export default function SignUpScreen() {
         {error ? <FormMessage text={error} /> : null}
 
         <Button label="Criar conta" onPress={submit} loading={busy} disabled={!canSubmit} />
+
+        <LegalConsentNotice lead="Ao criar sua conta" />
       </View>
     </FormLayout>
   );

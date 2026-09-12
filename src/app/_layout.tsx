@@ -161,6 +161,11 @@ function RootNavigator() {
       {/* Fora dos grupos protegidos: o retorno do OAuth chega antes da sessão
           existir e precisa continuar acessível depois que ela existe. */}
       <Stack.Screen name="auth/callback" options={{ animation: 'fade' }} />
+
+      {/* Também fora: os documentos legais são alcançados da tela de login,
+          onde ainda não há sessão, e do Perfil, onde já há. */}
+      <Stack.Screen name="legal/privacidade" />
+      <Stack.Screen name="legal/termos" />
     </Stack>
   );
 }

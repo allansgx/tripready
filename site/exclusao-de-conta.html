@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Excluir minha conta · TripReady</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f5f7;
+        --surface: #ffffff;
+        --text: #16161a;
+        --muted: #8a8a8f;
+        --primary: #6c4ee3;
+        --border: #ececef;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0 20px 64px;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      header {
+        padding: 32px 0 8px;
+      }
+      header a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      main {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 32px 0 0;
+      }
+      h3 {
+        font-size: 16px;
+        margin: 24px 0 0;
+      }
+      p,
+      ul {
+        margin: 12px 0 0;
+      }
+      ul {
+        padding-left: 20px;
+      }
+      li {
+        margin-top: 8px;
+      }
+      a {
+        color: var(--primary);
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0 0 24px;
+      }
+      .footer {
+        color: var(--muted);
+        font-size: 14px;
+        margin-top: 40px;
+      }
+      .links {
+        list-style: none;
+        padding: 0;
+      }
+      .links li {
+        margin-top: 12px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --bg: #121214;
+          --surface: #1c1c1f;
+          --text: #f2f2f4;
+          --muted: #9a9aa0;
+          --border: #2a2a2f;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header><a href="/">← TripReady</a></header>
+      <main>
+        <h1>Excluir minha conta</h1>
+
+        <p>
+          Você pode apagar a sua conta do TripReady e todos os dados ligados a ela. A exclusão é
+          <strong>permanente e irreversível</strong>.
+        </p>
+        <h2>Pelo aplicativo</h2>
+        <p>É o caminho mais rápido, e não depende de ninguém:</p>
+        <ul>
+          <li>abra o TripReady e vá em <strong>Perfil</strong>;</li>
+          <li>toque em <strong>Excluir conta</strong>, no fim da tela;</li>
+          <li>digite a palavra de confirmação e conclua.</li>
+        </ul>
+        <p>A conta é apagada na hora.</p>
+        <h2>Sem o aplicativo</h2>
+        <p>
+          Se você já desinstalou ou não consegue entrar, escreva para
+          <a href="mailto:{{EMAIL_CONTATO}}">{{EMAIL_CONTATO}}</a> pedindo a exclusão, a partir do
+          endereço de e-mail da conta. Confirmamos que o pedido parte do titular e concluímos a
+          exclusão.
+        </p>
+        <h2>O que é apagado</h2>
+        <ul>
+          <li>a conta e os dados de login;</li>
+          <li>o perfil;</li>
+          <li>os passaportes cadastrados;</li>
+          <li>as viagens, com destinos e datas;</li>
+          <li>as checklists e os itens marcados.</li>
+        </ul>
+        <h2>O que fica guardado</h2>
+        <p>
+          <strong>Nada.</strong> Não mantemos cópia de segurança de onde esses dados possam ser
+          recuperados depois, então não há prazo de retenção a cumprir: a exclusão é definitiva no
+          momento em que acontece.
+        </p>
+        <p>
+          Detalhes sobre o tratamento dos seus dados estão na
+          <a href="/privacidade.html">Política de Privacidade</a>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>
