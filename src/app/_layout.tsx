@@ -3,12 +3,13 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '@/components/ui/button';
 import { DialogHost } from '@/components/ui/dialog';
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
 import { PassportsProvider, usePassports } from '@/features/passports/passports-context';
-import { colors } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,7 +44,12 @@ export default function RootLayout() {
  */
 function RootNavigator() {
   const { session, isLoading: isLoadingSession } = useAuth();
-  const { hasPassport, isLoading: isLoadingPassports } = usePassports();
+  const {
+    hasPassport,
+    isLoading: isLoadingPassports,
+    hasLoadError: passportsFailed,
+    refresh: refreshPassports,
+  } = usePassports();
 
   /**
    * A serifada do dia do embarque, carregada em tempo de execução porque o app
@@ -72,6 +78,20 @@ function RootNavigator() {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  /**
+   * A leitura dos passaportes falhou. Sem ela não dá para escolher entre
+   * onboarding e área principal, e chutar "não tem passaporte" mandaria para o
+   * cadastro alguém que já tem — daí uma tela própria, com a saída na mão.
+   */
+  if (session && passportsFailed) {
+    return (
+      <View style={styles.loading}>
+        <Text style={styles.retryText}>Sua conexão oscilou.</Text>
+        <Button label="Tentar de novo" onPress={() => void refreshPassports().catch(() => {})} />
       </View>
     );
   }
@@ -150,6 +170,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.lg,
+    padding: spacing.xl,
     backgroundColor: colors.background,
+  },
+  retryText: {
+    ...typography.body,
+    color: colors.text,
+    textAlign: 'center',
   },
 });

@@ -15,6 +15,7 @@ import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
 import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
+import { toPassportMessage } from '@/features/passports/passport-messages';
 import { usePassports } from '@/features/passports/passports-context';
 import type { Passport } from '@/types/models';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
@@ -30,10 +31,7 @@ export function PassportsSection() {
     try {
       await action();
     } catch (error) {
-      showDialog(
-        'Não foi possível concluir',
-        error instanceof Error ? error.message : 'Tente novamente.',
-      );
+      showDialog('Não foi possível concluir', toPassportMessage(error));
     } finally {
       setBusyId(null);
     }

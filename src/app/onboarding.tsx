@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { showDialog } from '@/components/ui/dialog';
 import type { Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
+import { toPassportMessage } from '@/features/passports/passport-messages';
 import { usePassports } from '@/features/passports/passports-context';
 import { colors, spacing, typography } from '@/theme/tokens';
 
@@ -28,10 +29,7 @@ export default function OnboardingScreen() {
     try {
       await addPassport(country.code);
     } catch (error) {
-      showDialog(
-        'Não foi possível salvar',
-        error instanceof Error ? error.message : 'Tente novamente.',
-      );
+      showDialog('Não foi possível salvar', toPassportMessage(error));
       setBusyCode(null);
     }
   }

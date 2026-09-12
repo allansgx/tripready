@@ -25,6 +25,13 @@ type PassportsContextValue = {
   passports: Passport[];
   /** `true` enquanto a primeira carga da sessão não terminou. */
   isLoading: boolean;
+  /**
+   * A carga falhou e não se sabe o que o usuário tem.
+   *
+   * Diferente de "não tem passaporte": o layout raiz precisa distinguir os dois
+   * para não mandar ao onboarding quem só perdeu a conexão.
+   */
+  hasLoadError: boolean;
   /** Usado pelo layout raiz para decidir entre onboarding e área principal. */
   hasPassport: boolean;
   primary: Passport | null;
@@ -60,16 +67,23 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
    * conta" saem todos de uma comparação na renderização — não é preciso um
    * efeito zerando estado no logout, que faria uma renderização a mais
    * mostrando a lista da sessão anterior.
+   *
+   * A falha é um estado próprio, e não uma lista vazia: quem não conseguiu ler
+   * não descobriu que o usuário está sem passaporte.
    */
-  const [loaded, setLoaded] = useState<{ userId: string; rows: Passport[] } | null>(null);
+  const [state, setState] = useState<
+    { userId: string; rows: Passport[] } | { userId: string; failed: true } | null
+  >(null);
 
-  const isCurrent = loaded !== null && loaded.userId === userId;
-  const passports = isCurrent ? loaded.rows : NO_PASSPORTS;
+  const isCurrent = state !== null && state.userId === userId;
+  const loadedRows = isCurrent && 'rows' in state ? state.rows : null;
+  const passports = loadedRows ?? NO_PASSPORTS;
   const isLoading = userId !== null && !isCurrent;
+  const hasLoadError = isCurrent && loadedRows === null;
 
   const refresh = useCallback(async () => {
     if (!userId) return;
-    setLoaded({ userId, rows: await passportsService.listByUser(userId) });
+    setState({ userId, rows: await passportsService.listByUser(userId) });
   }, [userId]);
 
   useEffect(() => {
@@ -80,11 +94,10 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
     passportsService
       .listByUser(userId)
       .then((rows) => {
-        if (active) setLoaded({ userId, rows });
+        if (active) setState({ userId, rows });
       })
-      // Sem passaportes é um estado válido: o onboarding assume daqui.
       .catch(() => {
-        if (active) setLoaded({ userId, rows: [] });
+        if (active) setState({ userId, failed: true });
       });
 
     return () => {
@@ -98,6 +111,7 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
     return {
       passports,
       isLoading,
+      hasLoadError,
       hasPassport: passports.length > 0,
       primary,
       usedCountryCodes: passports.map((passport) => passport.country_code),
@@ -165,7 +179,7 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
 
       refresh,
     };
-  }, [passports, isLoading, userId, refresh]);
+  }, [passports, isLoading, hasLoadError, userId, refresh]);
 
   return <PassportsContext.Provider value={value}>{children}</PassportsContext.Provider>;
 }
