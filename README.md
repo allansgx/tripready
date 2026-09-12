@@ -6,9 +6,13 @@ Node próprio.
 
 ## Requisitos
 
-- Node 20+
+- Node 22+ — os testes e o gerador do site rodam TypeScript direto no Node, sem
+  passo de build
 - Conta e projeto no [Supabase](https://supabase.com)
-- Supabase CLI (`npx supabase`) para aplicar as migrations
+- Supabase CLI (`npx supabase`) para aplicar as migrations e publicar a Edge
+  Function
+- [Deno](https://deno.com) apenas para checar a Edge Function (`npm run
+functions:check`)
 
 ## Configuração
 
@@ -36,10 +40,19 @@ Node próprio.
    npx supabase db push
    ```
 
-4. Em **Supabase → Authentication → Providers**, habilite Google e Apple com os
+4. Publique a Edge Function da exclusão de conta:
+
+   ```bash
+   npx supabase functions deploy delete-account
+   ```
+
+   Sem ela o botão **Excluir conta** não funciona. A chave de serviço que a
+   função usa é injetada pelo runtime do Supabase e nunca chega ao aplicativo.
+
+5. Em **Supabase → Authentication → Providers**, habilite Google e Apple com os
    respectivos client id/secret.
 
-5. Em **Supabase → Authentication → URL Configuration → Redirect URLs**,
+6. Em **Supabase → Authentication → URL Configuration → Redirect URLs**,
    adicione:
 
    - `tripready://auth/callback` (development/production build)
@@ -56,7 +69,7 @@ Node próprio.
    Nada precisa mudar no Google Cloud Console: o Google só enxerga o callback
    do Supabase (`https://<ref>.supabase.co/auth/v1/callback`).
 
-6. Rode o app:
+7. Rode o app:
 
    ```bash
    npx expo start
@@ -72,15 +85,53 @@ Node próprio.
 src/
   app/                  rotas do Expo Router
     _layout.tsx         providers + proteção de rotas por sessão
-    (auth)/login.tsx    tela de login
+    (auth)/             login, cadastro e recuperação de senha
     (app)/              área autenticada (abas Início, Viagens, Perfil)
+    legal/              Política e Termos — fora dos grupos protegidos, porque
+                        são alcançados com e sem sessão
+    onboarding.tsx      escolha do primeiro passaporte
   components/ui/        componentes visuais reutilizáveis
+  constants/            países, cidades e destinos
   features/auth/        AuthProvider + serviço de autenticação
+  features/passports/   passaportes do usuário e passaporte principal
+  features/trips/       viagens, checklist e regras de requisitos
+  features/legal/       texto dos documentos legais + renderização
   lib/                  env e cliente Supabase
   services/             camada de acesso a dados (uma por entidade)
   theme/                tokens visuais
   types/                tipos do banco e aliases das entidades
-supabase/migrations/    schema e policies de RLS versionados
+scripts/                utilitários de linha de comando
+site/                   site público estático (gerado — ver abaixo)
+supabase/
+  migrations/           schema e policies de RLS versionados
+  functions/            Edge Function da exclusão de conta
 ```
 
 Regra: telas não chamam `supabase.from(...)` direto — sempre via `src/services`.
+
+## Scripts
+
+```bash
+npm run check       # eslint + tsc + prettier + testes
+npm test            # testes unitários das regras de negócio
+npm run site        # gera o site público em site/
+npm run functions:check   # checa a Edge Function (precisa de Deno)
+```
+
+## Site público
+
+As lojas exigem uma URL pública de política de privacidade, e a App Store exige
+também uma URL de suporte. `npm run site` gera `index.html`, `privacidade.html`,
+`termos.html` e `suporte.html` em `site/`, a partir do mesmo
+`src/features/legal/data/legal-documents.ts` que alimenta as telas do app — não
+existe segunda cópia do texto.
+
+O que vai para o ar é apenas a pasta `site/`: HTML e CSS, sem bundle do
+aplicativo. Na Vercel, basta apontar o **Root Directory** para `site`, sem build
+command.
+
+> **Antes de apontar um domínio:** a identidade do responsável (razão social,
+> CNPJ, e-mail, domínio e foro) ainda está preenchida com marcadores `{{...}}`.
+> Substitua-os em `LEGAL_IDENTITY`, rode `npm run site` de novo e confira que
+> `grep -r "{{" site/` não devolve nada. Detalhes em
+> [tasks/plano-legal.md](tasks/plano-legal.md).
