@@ -22,8 +22,20 @@ const MONTH_NAMES = [
 
 export type DateRange = { start: string | null; end: string | null };
 
+type Month = { year: number; month: number };
+
 function toISO(year: number, month: number, day: number): string {
   return `${year}-${`${month + 1}`.padStart(2, '0')}-${`${day}`.padStart(2, '0')}`;
+}
+
+function monthFromISO(value: string): Month {
+  const [year, month] = value.split('-').map(Number);
+  return { year, month: month - 1 };
+}
+
+/** Meses em linha reta, para comparar meses de anos diferentes. */
+function monthKey({ year, month }: Month): number {
+  return year * 12 + month;
 }
 
 /**
@@ -42,13 +54,29 @@ export function DateRangePicker({
   onChange: (range: DateRange) => void;
 }) {
   const today = new Date();
-  const [cursor, setCursor] = useState(() => {
-    if (value.start) {
-      const [year, month] = value.start.split('-').map(Number);
-      return { year, month: month - 1 };
-    }
-    return { year: today.getFullYear(), month: today.getMonth() };
+  const todayISO = toISO(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const [cursor, setCursor] = useState<Month>(() =>
+    value.start
+      ? monthFromISO(value.start)
+      : { year: today.getFullYear(), month: today.getMonth() },
+  );
+
+  /**
+   * Até onde o calendário volta no tempo.
+   *
+   * Viagem nenhuma começa em 1998, e sem limite a seta da esquerda leva a um
+   * passado que ninguém procurava. O piso é o mês atual — exceto na edição de
+   * uma viagem que já começou, cujo mês precisa continuar alcançável.
+   */
+  const [floor] = useState<Month>(() => {
+    const current = { year: today.getFullYear(), month: today.getMonth() };
+    const started = value.start ? monthFromISO(value.start) : null;
+    return started && monthKey(started) < monthKey(current) ? started : current;
   });
+
+  const [pickingMonth, setPickingMonth] = useState(false);
+  const [pickerYear, setPickerYear] = useState(cursor.year);
 
   const cells = useMemo(() => {
     const firstWeekday = new Date(cursor.year, cursor.month, 1).getDay();
@@ -57,6 +85,8 @@ export function DateRangePicker({
     for (let day = 1; day <= daysInMonth; day++) result.push(day);
     return result;
   }, [cursor]);
+
+  const canGoBack = monthKey(cursor) > monthKey(floor);
 
   function shiftMonth(delta: number) {
     setCursor((current) => {
@@ -81,21 +111,112 @@ export function DateRangePicker({
     onChange({ start: value.start, end: iso });
   }
 
+  /**
+   * Escolha direta de mês e ano.
+   *
+   * Uma viagem marcada para daqui a um ano custava doze toques na seta; aqui
+   * custa dois. Ocupa o lugar do calendário, e não uma camada sobre ele, para o
+   * cartão continuar sendo uma coisa só.
+   */
+  if (pickingMonth) {
+    const canGoBackYear = pickerYear > floor.year;
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.monthRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ano anterior"
+            accessibilityState={{ disabled: !canGoBackYear }}
+            hitSlop={10}
+            onPress={canGoBackYear ? () => setPickerYear((year) => year - 1) : undefined}
+            style={styles.monthButton}>
+            <Ionicons
+              name="chevron-back"
+              size={18}
+              color={canGoBackYear ? colors.text : colors.border}
+            />
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar ao calendário"
+            hitSlop={10}
+            onPress={() => setPickingMonth(false)}>
+            <Text style={styles.monthLabel}>{pickerYear}</Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Próximo ano"
+            hitSlop={10}
+            onPress={() => setPickerYear((year) => year + 1)}
+            style={styles.monthButton}>
+            <Ionicons name="chevron-forward" size={18} color={colors.text} />
+          </Pressable>
+        </View>
+
+        <View style={styles.monthGrid}>
+          {MONTH_NAMES.map((name, index) => {
+            const blocked = monthKey({ year: pickerYear, month: index }) < monthKey(floor);
+            const isCurrent = cursor.year === pickerYear && cursor.month === index;
+
+            return (
+              <Pressable
+                key={name}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: blocked, selected: isCurrent }}
+                onPress={
+                  blocked
+                    ? undefined
+                    : () => {
+                        setCursor({ year: pickerYear, month: index });
+                        setPickingMonth(false);
+                      }
+                }
+                style={[
+                  styles.monthCell,
+                  isCurrent && styles.monthCellSelected,
+                  blocked && styles.monthCellBlocked,
+                ]}>
+                <Text style={[styles.monthCellLabel, isCurrent && styles.monthCellLabelSelected]}>
+                  {name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.monthRow}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Mês anterior"
+          accessibilityState={{ disabled: !canGoBack }}
           hitSlop={10}
-          onPress={() => shiftMonth(-1)}
+          onPress={canGoBack ? () => shiftMonth(-1) : undefined}
           style={styles.monthButton}>
-          <Ionicons name="chevron-back" size={18} color={colors.text} />
+          <Ionicons name="chevron-back" size={18} color={canGoBack ? colors.text : colors.border} />
         </Pressable>
 
-        <Text style={styles.monthLabel}>
-          {MONTH_NAMES[cursor.month]} de {cursor.year}
-        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${MONTH_NAMES[cursor.month]} de ${cursor.year}. Escolher outro mês`}
+          hitSlop={10}
+          onPress={() => {
+            setPickerYear(cursor.year);
+            setPickingMonth(true);
+          }}
+          style={styles.monthLabelRow}>
+          <Text style={styles.monthLabel}>
+            {MONTH_NAMES[cursor.month]} de {cursor.year}
+          </Text>
+          <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+        </Pressable>
 
         <Pressable
           accessibilityRole="button"
@@ -127,6 +248,12 @@ export function DateRangePicker({
           const inRange =
             Boolean(value.start && value.end) && iso > value.start! && iso < value.end!;
 
+          // A trilha do intervalo não pode morrer antes das pontas: as células
+          // do primeiro e do último dia recebem meia pintura, do lado de
+          // dentro, para a faixa encostar no círculo em vez de deixar buraco.
+          const spans = Boolean(value.start && value.end && value.end > value.start);
+          const edge = spans ? (isStart ? styles.edgeRight : isEnd ? styles.edgeLeft : null) : null;
+
           return (
             <Pressable
               key={iso}
@@ -135,7 +262,13 @@ export function DateRangePicker({
               accessibilityState={{ selected: isStart || isEnd }}
               onPress={() => handlePress(day)}
               style={[styles.cell, inRange && styles.cellInRange]}>
-              <View style={[styles.dayCircle, (isStart || isEnd) && styles.dayCircleSelected]}>
+              {edge ? <View style={[styles.edge, edge]} /> : null}
+              <View
+                style={[
+                  styles.dayCircle,
+                  iso === todayISO && styles.dayCircleToday,
+                  (isStart || isEnd) && styles.dayCircleSelected,
+                ]}>
                 <Text style={[styles.day, (isStart || isEnd) && styles.daySelected]}>{day}</Text>
               </View>
             </Pressable>
@@ -167,11 +300,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.pill,
   },
-  monthLabel: {
-    ...typography.bodyStrong,
-    color: colors.text,
-    textTransform: 'capitalize',
+  monthLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  monthLabel: { ...typography.bodyStrong, color: colors.text },
+  monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  monthCell: {
+    width: `${100 / 3}%`,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
   },
+  monthCellSelected: { backgroundColor: colors.primarySoft },
+  monthCellBlocked: { opacity: 0.35 },
+  monthCellLabel: { ...typography.body, color: colors.text },
+  monthCellLabelSelected: { color: colors.primary, fontWeight: '700' },
   weekRow: { flexDirection: 'row' },
   weekday: {
     ...typography.caption,
@@ -187,6 +329,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellInRange: { backgroundColor: colors.primarySoft },
+  edge: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '50%',
+    backgroundColor: colors.primarySoft,
+  },
+  edgeLeft: { left: 0 },
+  edgeRight: { right: 0 },
   dayCircle: {
     width: 34,
     height: 34,
@@ -194,7 +345,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayCircleSelected: { backgroundColor: colors.primary },
+  dayCircleToday: { borderWidth: 1.5, borderColor: colors.primary },
+  dayCircleSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   day: { ...typography.body, color: colors.text },
   daySelected: { color: colors.contrastText, fontWeight: '700' },
 });

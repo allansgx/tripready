@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import type { DateRange } from '@/components/ui/date-range-picker';
+import { normalizeSearch } from '@/constants/countries';
 import type { SelectedCity } from '@/features/trips/components/city-step';
 import { suggestTripName } from '@/features/trips/domain/trip-format';
 
@@ -18,8 +19,15 @@ const EMPTY: TripDraft = {
   range: { start: null, end: null },
 };
 
+/**
+ * Mesma cidade, ignorando acento e caixa: quem digita "sao paulo" com "São
+ * Paulo" já na lista está falando da mesma cidade, e o `unique` de
+ * `trip_cities` deixaria as duas entrarem.
+ */
 function sameCity(a: SelectedCity, b: SelectedCity) {
-  return a.countryCode === b.countryCode && a.cityName === b.cityName;
+  return (
+    a.countryCode === b.countryCode && normalizeSearch(a.cityName) === normalizeSearch(b.cityName)
+  );
 }
 
 /** Comparação estável para detectar alterações não salvas. */

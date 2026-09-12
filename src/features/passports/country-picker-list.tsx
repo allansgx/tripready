@@ -52,8 +52,9 @@ export function CountryPickerList({
 }: CountryPickerListProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const listRef = useRef<FlatList<DestinationMatch>>(null);
 
-  const results = useMemo(
+  const results = useMemo<DestinationMatch[]>(
     () =>
       searchByCity
         ? searchDestinations(query)
@@ -65,21 +66,31 @@ export function CountryPickerList({
   const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
 
   /**
-   * Escolher um destino devolve a lista ao estado inicial.
+   * Escolher um destino devolve a lista ao estado inicial — mas só quando
+   * houve busca.
    *
    * Quem monta um roteiro escolhe vários países seguidos, e a busca anterior
    * só atrapalha o próximo: em vez de apagar "Budapeste" letra por letra, o
    * campo se limpa sozinho e continua com o foco, pronto para o próximo
    * destino. O país escolhido segue marcado, agora na lista completa.
+   *
+   * Sem nada digitado é o contrário: marcar um país é navegar na lista
+   * inteira, e devolver o foco abriria o teclado, encolhendo a lista e
+   * empurrando justamente a linha de baixo — que costuma ser o próximo país
+   * do roteiro.
    */
   function handleSelect(country: Country) {
     onSelect(country);
+    if (!query) return;
+
     setQuery('');
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
     inputRef.current?.focus();
   }
 
   return (
     <FlatList
+      ref={listRef}
       data={results}
       keyExtractor={(item) => item.country.code}
       keyboardShouldPersistTaps="handled"

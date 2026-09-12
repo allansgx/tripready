@@ -5,6 +5,7 @@ import {
   buildTripCountdown,
   buildTripDayCount,
   buildTripMoment,
+  countTripDays,
   daysUntilStart,
   formatReturnCountdown,
   getTripStatus,
@@ -151,4 +152,16 @@ test('viagem sem data mostra o próximo passo no lugar da contagem', () => {
     tone: 'upcoming',
     label: 'Escolha as datas',
   });
+});
+
+test('a duração conta o primeiro e o último dia', () => {
+  assert.equal(countTripDays('2026-10-12', '2026-10-24'), 13);
+  assert.equal(countTripDays('2026-10-12', '2026-10-12'), 1);
+  assert.equal(countTripDays('2026-12-28', '2027-01-03'), 7);
+});
+
+test('sem as duas datas, ou com o intervalo invertido, não há duração', () => {
+  assert.equal(countTripDays('2026-10-12', null), null);
+  assert.equal(countTripDays(null, '2026-10-24'), null);
+  assert.equal(countTripDays('2026-10-24', '2026-10-12'), null);
 });

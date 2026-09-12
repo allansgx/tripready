@@ -55,6 +55,21 @@ function daysBetween(from: string, to: string): number | null {
 }
 
 /**
+ * Duração da viagem em dias, contando o primeiro e o último: quem vai de 12 a
+ * 14 viaja três dias, não dois.
+ *
+ * `null` sem as duas datas ou com o intervalo invertido — nesse caso não há
+ * duração a afirmar.
+ */
+export function countTripDays(start: string | null, end: string | null): number | null {
+  if (!start || !end) return null;
+
+  const span = daysBetween(start, end);
+  if (span === null || span < 0) return null;
+  return span + 1;
+}
+
+/**
  * Dias que faltam para a viagem começar.
  *
  * `0` no dia da partida e `null` quando não há data de início ou ela é

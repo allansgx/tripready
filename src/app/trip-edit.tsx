@@ -23,14 +23,17 @@ import { getCountryName, type Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { usePassports } from '@/features/passports/passports-context';
 import { CityStep } from '@/features/trips/components/city-step';
+import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import {
   updateTripWithDestinations,
   type TripEditBaseline,
 } from '@/features/trips/data/trip-persistence';
-import { formatTripDates } from '@/features/trips/domain/trip-format';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+
+/** O nome cabe no card da lista e no destaque da Home; acima disso, não cabe. */
+const NAME_MAX_LENGTH = 60;
 
 /**
  * "Editar viagem" — tela única com as mesmas seções do fluxo de criação.
@@ -211,6 +214,8 @@ export default function EditTripScreen() {
               onChangeText={changeName}
               placeholder="Europa Central"
               returnKeyType="done"
+              maxLength={NAME_MAX_LENGTH}
+              selectTextOnFocus
             />
           </View>
 
@@ -256,13 +261,10 @@ export default function EditTripScreen() {
           <View style={styles.section}>
             <SectionLabel>Datas</SectionLabel>
             <DateRangePicker value={draft.range} onChange={setRange} />
-            <Text style={styles.datesSummary}>
-              {draft.range.start && draft.range.end
-                ? formatTripDates(draft.range.start, draft.range.end)
-                : draft.range.start
-                  ? 'Agora escolha a data de volta.'
-                  : 'Escolha a data de ida.'}
-            </Text>
+            <DateRangeSummary
+              value={draft.range}
+              onClear={() => setRange({ start: null, end: null })}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -322,7 +324,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   countryName: { ...typography.body, color: colors.text, flex: 1 },
-  datesSummary: { ...typography.body, color: colors.text, textAlign: 'center' },
   savedBanner: {
     backgroundColor: colors.primarySoft,
     borderRadius: radius.md,

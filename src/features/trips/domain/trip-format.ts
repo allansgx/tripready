@@ -47,6 +47,13 @@ export function formatTripDates(start: string | null, end: string | null): strin
   return `${from.day}–${to.day} ${MONTHS[from.month]} ${from.year}`;
 }
 
+/** "12 out 2026" — uma data solta, fora de um intervalo. */
+export function formatTripDate(value: string): string {
+  const date = parseDate(value);
+  if (!date) return '';
+  return `${date.day} ${MONTHS[date.month]} ${date.year}`;
+}
+
 /**
  * Regiões usadas para sugerir o nome da viagem quando todos os destinos
  * pertencem ao mesmo grupo. É só uma conveniência de nomeação — o usuário pode

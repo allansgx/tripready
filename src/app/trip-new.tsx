@@ -19,13 +19,16 @@ import type { Country } from '@/constants/countries';
 import { useAuth } from '@/features/auth/auth-context';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { CityStep } from '@/features/trips/components/city-step';
+import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import { createTripWithDestinations } from '@/features/trips/data/trip-persistence';
-import { formatTripDates } from '@/features/trips/domain/trip-format';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 const STEPS = ['countries', 'cities', 'dates', 'name'] as const;
 type Step = (typeof STEPS)[number];
+
+/** O nome cabe no card da lista e no destaque da Home; acima disso, não cabe. */
+const NAME_MAX_LENGTH = 60;
 
 const TITLES: Record<Step, string> = {
   countries: 'Para onde você vai?',
@@ -38,7 +41,7 @@ const SUBTITLES: Record<Step, string> = {
   countries: 'Escolha um ou mais países do seu roteiro.',
   cities: 'Escolha as cidades que já estão no plano. Dá para decidir isso depois.',
   dates: 'Toque na data de ida e depois na de volta.',
-  name: 'Sugerimos um nome pelos destinos. Ajuste se quiser.',
+  name: 'Confira o roteiro e ajuste o nome se quiser.',
 };
 
 export default function NewTripScreen() {
@@ -65,8 +68,20 @@ export default function NewTripScreen() {
     setStepIndex((current) => current - 1);
   }
 
+  /**
+   * Tirar um país do roteiro na etapa das cidades.
+   *
+   * Sem país nenhum não há cidade a escolher, então a etapa deixa de existir e
+   * o fluxo volta para a escolha de destinos — em vez de mostrar uma tela vazia
+   * com um botão que não leva a lugar algum.
+   */
+  function removeCountry(code: string) {
+    toggleCountry(code);
+    if (countryCodes.length === 1) setStepIndex(0);
+  }
+
   async function createTrip() {
-    if (!user) return;
+    if (!user || busy) return;
 
     setBusy(true);
     setNotice(null);
@@ -85,6 +100,22 @@ export default function NewTripScreen() {
       : step === 'dates'
         ? Boolean(range.start && range.end)
         : true;
+
+  /**
+   * Um botão só por etapa.
+   *
+   * Nas cidades havia dois — "Continuar" e "Pular por enquanto" — fazendo
+   * exatamente a mesma coisa. Sem cidade escolhida, seguir é pular, e é isso
+   * que o rótulo diz.
+   */
+  const continueLabel =
+    step === 'countries' && countryCodes.length > 0
+      ? `Continuar com ${countryCodes.length} ${countryCodes.length === 1 ? 'país' : 'países'}`
+      : step === 'cities'
+        ? cities.length === 0
+          ? 'Pular por enquanto'
+          : `Continuar com ${cities.length} ${cities.length === 1 ? 'cidade' : 'cidades'}`
+        : 'Continuar';
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -131,30 +162,53 @@ export default function NewTripScreen() {
                 selected={cities}
                 onToggle={toggleCity}
                 onAdd={addCity}
+                onRemoveCountry={removeCountry}
               />
             ) : null}
 
             {step === 'dates' ? (
               <View style={styles.datesArea}>
                 <DateRangePicker value={range} onChange={setRange} />
-                <Text style={styles.datesSummary}>
-                  {range.start && range.end
-                    ? formatTripDates(range.start, range.end)
-                    : range.start
-                      ? 'Agora escolha a data de volta.'
-                      : 'Escolha a data de ida.'}
-                </Text>
+                <DateRangeSummary
+                  value={range}
+                  onClear={() => setRange({ start: null, end: null })}
+                />
               </View>
             ) : null}
 
             {step === 'name' ? (
-              <TextField
-                label="Nome da viagem"
-                value={name}
-                onChangeText={changeName}
-                placeholder="Minha viagem"
-                returnKeyType="done"
-              />
+              <View style={styles.nameArea}>
+                <TextField
+                  label="Nome da viagem"
+                  value={name}
+                  onChangeText={changeName}
+                  placeholder="Minha viagem"
+                  returnKeyType="done"
+                  maxLength={NAME_MAX_LENGTH}
+                  // O nome sugerido já vem escrito no campo: tocar seleciona
+                  // tudo, para trocá-lo custar uma digitada e não uma apagada.
+                  selectTextOnFocus
+                  onSubmitEditing={() => void createTrip()}
+                />
+
+                {/*
+                  A conferência repete os blocos das etapas anteriores em vez de
+                  resumi-los em outro formato, mas aqui eles são informação: o
+                  que muda cada um é o "Alterar" do cabeçalho, que devolve a
+                  pessoa à etapa dona daquela decisão. Um chip que responde ao
+                  toque no meio de uma revisão é o que se desfaz sem querer — e
+                  tirar um país leva junto as cidades dele.
+                */}
+                <View style={styles.block}>
+                  <ReviewHeader label="Datas" onEdit={() => setStepIndex(2)} />
+                  <DateRangeSummary value={range} />
+                </View>
+
+                <View style={styles.block}>
+                  <ReviewHeader label="Roteiro" onEdit={() => setStepIndex(1)} />
+                  <CityStep countryCodes={countryCodes} selected={cities} />
+                </View>
+              </View>
             ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
@@ -167,29 +221,33 @@ export default function NewTripScreen() {
           <Button label="Criar viagem" onPress={() => void createTrip()} loading={busy} />
         ) : (
           <Button
-            label={
-              step === 'countries' && countryCodes.length > 0
-                ? `Continuar com ${countryCodes.length} ${countryCodes.length === 1 ? 'país' : 'países'}`
-                : 'Continuar'
-            }
+            label={continueLabel}
             onPress={() => setStepIndex((current) => current + 1)}
             disabled={!canContinue}
           />
         )}
-
-        {step === 'cities' ? (
-          <Button
-            label="Pular por enquanto"
-            variant="ghost"
-            onPress={() => setStepIndex((current) => current + 1)}
-          />
-        ) : null}
 
         {step === 'countries' && countryCodes.length === 0 ? (
           <Text style={styles.hint}>Escolha ao menos um país para continuar.</Text>
         ) : null}
       </View>
     </SafeAreaView>
+  );
+}
+
+/** O que é o bloco e o único caminho para mudá-lo. */
+function ReviewHeader({ label, onEdit }: { label: string; onEdit: () => void }) {
+  return (
+    <View style={styles.blockHeader}>
+      <Text style={styles.blockLabel}>{label.toUpperCase()}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Alterar ${label.toLowerCase()}`}
+        hitSlop={10}
+        onPress={onEdit}>
+        <Text style={styles.blockAction}>Alterar</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -225,11 +283,16 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   datesArea: { gap: spacing.md },
-  datesSummary: {
-    ...typography.body,
-    color: colors.text,
-    textAlign: 'center',
+  nameArea: { gap: spacing.xl },
+  block: { gap: spacing.sm },
+  blockHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
   },
+  blockLabel: { ...typography.sectionLabel, color: colors.textSecondary },
+  blockAction: { ...typography.caption, fontWeight: '600', color: colors.primary },
   footer: {
     paddingHorizontal: spacing.xl - spacing.xs,
     paddingTop: spacing.md,
