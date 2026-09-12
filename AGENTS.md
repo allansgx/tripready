@@ -6,7 +6,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 
 ## Stack
 
-React Native · Expo · Expo Router · TypeScript · Supabase (PostgreSQL) · pnpm
+React Native · Expo · Expo Router · TypeScript · Supabase (PostgreSQL) · npm
 
 Estrutura atual em `src/`: `app/` (rotas), `features/` (domínios: auth, trips, passports), `components/ui/`, `services/` (acesso a dados), `lib/`, `theme/`, `constants/`, `types/`.
 
@@ -33,7 +33,7 @@ Estrutura atual em `src/`: `app/` (rotas), `features/` (domínios: auth, trips, 
 Antes de considerar uma implementação concluída, executar:
 
 ```
-pnpm check
+npm check
 ```
 
 Verifica ESLint, TypeScript e Prettier.
@@ -47,6 +47,40 @@ Não esconder erros com `any`, `@ts-ignore` ou `@ts-nocheck`.
 - Nunca usar `service_role` ou `SUPABASE_SECRET_KEY` no app.
 - Respeitar RLS.
 - Não alterar o schema do banco sem necessidade.
+
+### Migrations
+
+O app fala direto com o banco. Quem protege os dados é a policy, não o código do
+cliente — uma tabela sem RLS fica aberta para qualquer usuário logado, sem erro e
+sem aviso.
+
+Toda migration que cria tabela precisa, no mesmo arquivo:
+
+1. `enable row level security` — sem isso a tabela nasce legível e gravável,
+   porque `20260905120200_table_grants.sql` deixou um `alter default privileges`
+   concedendo tudo a `authenticated` em cada tabela nova do schema.
+2. Policies explícitas por operação, sempre `to authenticated`, filtrando pelo
+   dono (`auth.uid()` ou `is_trip_owner`).
+3. `grant` só do que a tabela precisa e `revoke` do que ela não deve aceitar —
+   tabela de catálogo é somente leitura para o cliente.
+4. Nada para `anon`: o app não tem dado público.
+
+`using (true)` só vale em SELECT de tabela de catálogo. Nunca em dado de usuário.
+
+Funções: `security invoker` por padrão. `security definer` apenas quando a
+operação exigir privilégio que o usuário não tem e, nesse caso, sempre com
+`set search_path = ''` e `revoke execute ... from public, anon`.
+
+Antes de `db push`, conferir que as duas listas batem:
+
+```bash
+diff \
+  <(grep -h "^create table public\." supabase/migrations/*.sql | sed 's/create table public\.//;s/ (//' | sort) \
+  <(grep -h "^alter table public\..*enable row level security" supabase/migrations/*.sql | sed 's/alter table public\.//;s/ enable row level security;//' | sort)
+```
+
+Os padrões são ancorados em `^` de propósito: sem isso, a mesma frase escrita no
+comentário de uma migration entra na contagem e o resultado mente.
 
 ## Regras de negócio
 
