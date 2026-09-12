@@ -17,6 +17,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { NextTripHero } from '@/features/trips/components/next-trip-hero';
 import type { FieldPointer } from '@/features/trips/components/season-field';
 import { SeasonalBackdrop } from '@/features/trips/components/seasonal-backdrop';
+import { TravelTipsCarousel } from '@/features/trips/components/travel-tips-carousel';
 import { tripSeasons } from '@/features/trips/domain/requirement-matching';
 import {
   buildTripSummaries,
@@ -216,6 +217,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <View style={styles.emptyAction}>
         <Button label="Criar viagem" onPress={onCreate} />
       </View>
+      <TravelTipsCarousel />
     </View>
   );
 }
