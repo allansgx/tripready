@@ -17,6 +17,7 @@ import {
   type TripContext,
   type VisaRule,
 } from '../domain/requirement-matching.ts';
+import { computeTripProgress } from '../domain/trip-progress.ts';
 
 /**
  * Testes da regra de aplicabilidade dos requisitos.
@@ -225,9 +226,12 @@ test('requisito sazonal respeita a estação no hemisfério do destino', () => {
     templates: [template({ id: 'winter-clothes', title: 'Roupa de frio', season: 'winter' })],
   };
 
-  // Dezembro na Europa é inverno; no Brasil, verão.
-  const europe = resolve(catalog, trip({ countryCodes: ['AT'] }));
-  const brazil = resolve(catalog, trip({ countryCodes: ['BR'] }));
+  // Depois do solstício de dezembro é inverno na Europa e verão no Brasil. As
+  // datas são explícitas porque o padrão do `trip()` cai antes do solstício,
+  // quando a Europa ainda está no outono.
+  const dates = { startDate: '2026-12-26', endDate: '2026-12-30' };
+  const europe = resolve(catalog, trip({ countryCodes: ['AT'], ...dates }));
+  const brazil = resolve(catalog, trip({ countryCodes: ['BR'], ...dates }));
 
   assert.equal(europe.length, 1);
   assert.deepEqual(brazil, []);
@@ -517,6 +521,32 @@ test('a checklist se ajusta quando a viagem deixa de ser doméstica', () => {
   );
   // O documento de embarque deixou de valer e ainda não foi verificado: sai.
   assert.deepEqual(diff.toRemoveIds, ['req-id-card']);
+});
+
+test('viagem doméstica recebe obrigatório e pode ser declarada pronta', () => {
+  // O beco sem saída que o obrigatório doméstico fecha: enquanto todo item
+  // `required` do catálogo pressupunha fronteira, uma viagem dentro do próprio
+  // país terminava sem nenhum — e sem obrigatório a viagem nunca é declarada
+  // pronta, por mais que a pessoa verifique tudo o que existe na checklist.
+  const catalog = {
+    templates: [
+      template({ id: 'passport', title: 'Passaporte válido', tripKind: 'international' }),
+      template({ id: 'id-card', title: 'Documento com foto', tripKind: 'domestic' }),
+      template({ id: 'luggage', title: 'Montar a bagagem', priority: 'recommended' }),
+    ],
+  };
+
+  const items = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }));
+
+  assert.deepEqual(
+    items.filter((item) => item.priority === 'required').map((item) => item.title),
+    ['Documento com foto'],
+  );
+
+  const progress = computeTripProgress(
+    items.map((item) => ({ priority: item.priority, completed: true })),
+  );
+  assert.equal(progress.isReady, true);
 });
 
 test('item já verificado sobrevive à mudança de natureza da viagem', () => {
@@ -924,27 +954,56 @@ test('dentro da seção, os itens saem por prioridade e depois por criação', (
 });
 
 test('a estação segue o hemisfério do destino', () => {
-  assert.equal(seasonAt('AT', '2026-12-10'), 'winter');
-  assert.equal(seasonAt('BR', '2026-12-10'), 'summer');
+  assert.equal(seasonAt('AT', '2026-12-26'), 'winter');
+  assert.equal(seasonAt('BR', '2026-12-26'), 'summer');
   assert.equal(seasonAt('AU', '2026-07-01'), 'winter');
+});
 
-  // Uma viagem longa atravessa mais de uma estação.
-  assert.deepEqual([...seasonsInRange('AT', '2026-11-20', '2026-12-05')], ['autumn', 'winter']);
-  assert.deepEqual([...seasonsInRange('AT', '2026-12-10', '2026-12-20')], ['winter']);
+test('a estação vira no equinócio, e não no primeiro dia do mês', () => {
+  // O caso que motivou a regra: quem sai da Alemanha em 21 de setembro parte
+  // no verão, e só entra no outono no dia seguinte.
+  assert.equal(seasonAt('DE', '2026-09-21'), 'summer');
+  assert.equal(seasonAt('DE', '2026-09-22'), 'autumn');
+
+  // Os outros três limites, com o dia anterior a cada um.
+  assert.equal(seasonAt('DE', '2026-03-19'), 'winter');
+  assert.equal(seasonAt('DE', '2026-03-20'), 'spring');
+  assert.equal(seasonAt('DE', '2026-06-20'), 'spring');
+  assert.equal(seasonAt('DE', '2026-06-21'), 'summer');
+  assert.equal(seasonAt('DE', '2026-12-20'), 'autumn');
+  assert.equal(seasonAt('DE', '2026-12-21'), 'winter');
+
+  // No sul o limite é o mesmo dia do calendário, com a estação oposta.
+  assert.equal(seasonAt('BR', '2026-09-21'), 'winter');
+  assert.equal(seasonAt('BR', '2026-09-22'), 'spring');
+});
+
+test('o intervalo encontra a virada mesmo no meio do mês', () => {
+  // Setembro inteiro: amostrar só o primeiro dia do mês lia tudo como verão.
+  assert.deepEqual([...seasonsInRange('DE', '2026-09-01', '2026-09-30')], ['summer', 'autumn']);
+
+  // A viagem curta que atravessa a virada.
+  assert.deepEqual([...seasonsInRange('DE', '2026-09-21', '2026-09-25')], ['summer', 'autumn']);
+
+  // Começar no próprio dia da virada já é a estação nova, e só ela.
+  assert.deepEqual([...seasonsInRange('DE', '2026-09-22', '2026-09-30')], ['autumn']);
+
+  // Duas datas dentro da mesma estação, sem limite no caminho.
+  assert.deepEqual([...seasonsInRange('AT', '2026-11-20', '2026-12-05')], ['autumn']);
 });
 
 test('as estações da viagem saem dos destinos, em ordem cronológica', () => {
   // Um destino, uma estação.
-  assert.deepEqual(tripSeasons(['AT'], '2026-12-10', '2026-12-20'), ['winter']);
+  assert.deepEqual(tripSeasons(['AT'], '2026-12-26', '2026-12-30'), ['winter']);
 
   // A virada de estação aparece na ordem em que a viagem a atravessa.
-  assert.deepEqual(tripSeasons(['AT'], '2026-11-20', '2026-12-05'), ['autumn', 'winter']);
+  assert.deepEqual(tripSeasons(['AT'], '2026-12-15', '2026-12-25'), ['autumn', 'winter']);
 
   // Hemisférios opostos na mesma viagem: sai do inverno europeu para o verão.
-  assert.deepEqual(tripSeasons(['AT', 'BR'], '2026-12-10', '2026-12-20'), ['winter', 'summer']);
+  assert.deepEqual(tripSeasons(['AT', 'BR'], '2026-12-26', '2026-12-30'), ['winter', 'summer']);
 
   // Países diferentes no mesmo hemisfério não repetem a estação.
-  assert.deepEqual(tripSeasons(['AT', 'HU', 'CZ'], '2026-12-10', '2026-12-20'), ['winter']);
+  assert.deepEqual(tripSeasons(['AT', 'HU', 'CZ'], '2026-12-26', '2026-12-30'), ['winter']);
 
   // Sem datas não há estação a afirmar.
   assert.deepEqual(tripSeasons(['AT'], null, null), []);

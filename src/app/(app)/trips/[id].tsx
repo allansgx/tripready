@@ -323,13 +323,6 @@ export default function TripChecklistScreen() {
           </Pressable>
         </View>
 
-        {progress.isReady ? (
-          <View style={styles.readyCard}>
-            <Text style={styles.readyTitle}>Viagem pronta! 🎉</Text>
-            <Text style={styles.readyText}>Você verificou todos os itens obrigatórios.</Text>
-          </View>
-        ) : null}
-
         <View
           style={[
             styles.progressCard,
@@ -345,7 +338,7 @@ export default function TripChecklistScreen() {
             <ProgressRing percent={progress.percent} />
             <View style={styles.progressTexts}>
               <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
-              <PendingLine progress={progress} />
+              <RequiredLine progress={progress} />
             </View>
           </View>
 
@@ -414,14 +407,27 @@ export default function TripChecklistScreen() {
 }
 
 /**
- * O que ainda falta para a viagem ficar pronta.
+ * Como estão os obrigatórios da viagem.
  *
- * Fica em silêncio quando não há checklist, quando a viagem não tem nenhum item
- * obrigatório e quando já está pronta — nesse último caso o card verde acima já
- * deu a notícia, e repeti-la aqui só ocuparia espaço.
+ * A linha tem dois estados, e os dois dizem algo: o que ainda falta, e a
+ * confirmação de que não falta mais nada. Sumir quando a pessoa termina seria
+ * tirar a resposta justamente no momento em que ela é boa — o card de cima
+ * comemora a virada, mas some do caminho quando a tela é reaberta, e é esta
+ * linha que continua respondendo "estou em dia com o que é obrigatório?".
+ *
+ * Fica em silêncio só quando não há o que responder: checklist vazia, ou viagem
+ * sem nenhum item obrigatório.
  */
-function PendingLine({ progress }: { progress: ReturnType<typeof computeTripProgress> }) {
-  if (progress.total === 0 || progress.requiredTotal === 0 || progress.isReady) return null;
+function RequiredLine({ progress }: { progress: ReturnType<typeof computeTripProgress> }) {
+  if (progress.total === 0 || progress.requiredTotal === 0) return null;
+
+  if (progress.isReady) {
+    return (
+      <Text style={[styles.progressPending, { color: colors.primary }]}>
+        ✓ Tudo certo com os itens obrigatórios!
+      </Text>
+    );
+  }
 
   const pending = formatPendingRequiredLabel(progress);
   if (!pending) return null;

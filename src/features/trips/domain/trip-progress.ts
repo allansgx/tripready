@@ -97,11 +97,11 @@ export function formatPendingLabel(progress: TripProgress): string {
  * O que a checklist oferece a quem já embarcou.
  *
  * Conta os itens de prioridade `informational`: os que não pedem ação e, por
- * isso, ficam fora do progresso. Hoje o catálogo traz quatro — contatos de
- * emergência, regras de bagagem da companhia, orçamento da viagem e a
- * confirmação de entrada sem visto. Nem todos nasceram para a viagem em si, e é
- * por isso que a frase convida a consultar em vez de prometer conteúdo de
- * destino: ela envelhece bem se o catálogo ganhar itens de uso no local.
+ * isso, ficam fora do progresso. Hoje o catálogo traz um só — a confirmação de
+ * entrada sem visto. Os demais informativos viraram recomendados ou saíram,
+ * porque pediam ação antes de viajar. Ainda assim a frase convida a consultar
+ * em vez de prometer conteúdo de destino: ela envelhece bem se o catálogo
+ * ganhar itens de uso no local.
  */
 export function formatReferenceLabel(progress: TripProgress): string {
   if (progress.informationalTotal === 0) return 'Sua checklist continua à mão.';

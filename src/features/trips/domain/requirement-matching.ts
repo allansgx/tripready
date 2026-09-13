@@ -42,20 +42,28 @@ const SOUTHERN_HEMISPHERE = new Set(
   ).split(' '),
 );
 
-/** Estação de cada mês (1–12) no hemisfério norte. */
-const NORTHERN_SEASON_BY_MONTH: readonly Season[] = [
-  'winter', // janeiro
-  'winter',
-  'spring',
-  'spring',
-  'spring',
-  'summer',
-  'summer',
-  'summer',
-  'autumn',
-  'autumn',
-  'autumn',
-  'winter', // dezembro
+/**
+ * Dia em que cada estação começa no hemisfério norte.
+ *
+ * São os equinócios e solstícios, e não o primeiro dia do mês: uma viagem que
+ * sai em 21 de setembro parte no verão europeu, e só entra no outono no dia
+ * seguinte. Dizer "outono" no dia 21 é errar a estação por um dia inteiro, e o
+ * erro aparece na tela justamente nas viagens de virada de estação, que são as
+ * que mais precisam de acerto na hora de fazer a mala.
+ *
+ * As datas são fixas de propósito. O instante astronômico oscila um dia entre
+ * um ano e outro, e calcular isso de verdade exigiria efemérides — muito preço
+ * por uma diferença que ninguém percebe ao arrumar a bagagem. O que valia a
+ * pena corrigir era a diferença de três semanas do mapa por mês.
+ *
+ * No hemisfério sul o limite é o mesmo dia do calendário: é o mesmo evento
+ * astronômico, só que entrando na estação oposta — daí `OPPOSITE_SEASON`.
+ */
+const NORTHERN_SEASON_STARTS: readonly { month: number; day: number; season: Season }[] = [
+  { month: 3, day: 20, season: 'spring' },
+  { month: 6, day: 21, season: 'summer' },
+  { month: 9, day: 22, season: 'autumn' },
+  { month: 12, day: 21, season: 'winter' },
 ];
 
 const OPPOSITE_SEASON: Record<Season, Season> = {
@@ -69,45 +77,70 @@ export function isSouthernHemisphere(countryCode: string): boolean {
   return SOUTHERN_HEMISPHERE.has(countryCode.toUpperCase());
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 /** Estação em um destino numa data `YYYY-MM-DD`. */
 export function seasonAt(countryCode: string, isoDate: string): Season | null {
-  const month = Number(isoDate.slice(5, 7));
-  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+  if (!ISO_DATE.test(isoDate)) return null;
 
-  const northern = NORTHERN_SEASON_BY_MONTH[month - 1];
+  const month = Number(isoDate.slice(5, 7));
+  const day = Number(isoDate.slice(8, 10));
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  // Antes do equinócio de março o ano ainda está no inverno que começou em
+  // dezembro, então é ele o ponto de partida da varredura.
+  let northern: Season = 'winter';
+  for (const start of NORTHERN_SEASON_STARTS) {
+    if (month > start.month || (month === start.month && day >= start.day)) {
+      northern = start.season;
+    }
+  }
+
   return isSouthernHemisphere(countryCode) ? OPPOSITE_SEASON[northern] : northern;
 }
 
-/** Limite de meses percorridos — uma viagem mais longa cobre o ano inteiro. */
-const MAX_MONTHS_IN_RANGE = 12;
+/**
+ * Anos de limites percorridos além do ano de partida.
+ *
+ * Uma viagem que passa de um ano para o outro já atravessa as quatro estações,
+ * então varrer dois anos de limites encontra todas elas. O teto existe só para
+ * a varredura não depender do tamanho do intervalo.
+ */
+const MAX_EXTRA_YEARS = 1;
 
 /**
- * Datas a consultar para cobrir a viagem: o dia de partida e o primeiro dia de
- * cada mês seguinte, em ordem. Um mês é a menor unidade em que a estação muda,
- * então essa amostragem encontra toda estação atravessada sem percorrer dia a
- * dia.
+ * Datas a consultar para cobrir a viagem.
+ *
+ * São o dia de partida, o dia de volta e cada virada de estação entre os dois.
+ * Amostrar o primeiro dia de cada mês não serve mais: com os limites caindo no
+ * meio do mês, uma viagem de 1 a 30 de setembro seria lida inteira como verão,
+ * quando na verdade vira outono no dia 22.
+ *
+ * Como a estação só muda nesses limites, consultar a partida, a volta e as
+ * viradas encontra toda estação atravessada — sem percorrer dia a dia e sem
+ * depender da duração da viagem.
  *
  * Sem data de início não há o que percorrer, e a lista volta vazia.
  */
 function datesInRange(startDate: string | null, endDate: string | null): string[] {
-  if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return [];
+  if (!startDate || !ISO_DATE.test(startDate)) return [];
 
-  const dates = [startDate];
   const last = endDate && endDate > startDate ? endDate : startDate;
-  let year = Number(startDate.slice(0, 4));
-  let month = Number(startDate.slice(5, 7));
+  const dates = [startDate];
 
-  for (let step = 0; step < MAX_MONTHS_IN_RANGE; step++) {
-    month += 1;
-    if (month > 12) {
-      month = 1;
-      year += 1;
+  const firstYear = Number(startDate.slice(0, 4));
+  const lastYear = Math.min(Number(last.slice(0, 4)), firstYear + MAX_EXTRA_YEARS);
+
+  // Os limites saem em ordem cronológica — anos crescentes, meses crescentes —,
+  // que é a ordem que `tripSeasons` promete à tela.
+  for (let year = firstYear; year <= lastYear; year++) {
+    for (const start of NORTHERN_SEASON_STARTS) {
+      const boundary = `${year}-${`${start.month}`.padStart(2, '0')}-${`${start.day}`.padStart(2, '0')}`;
+      if (boundary > startDate && boundary <= last) dates.push(boundary);
     }
-
-    const cursor = `${year}-${`${month}`.padStart(2, '0')}-01`;
-    if (cursor > last) break;
-    dates.push(cursor);
   }
+
+  if (last !== startDate) dates.push(last);
 
   return dates;
 }

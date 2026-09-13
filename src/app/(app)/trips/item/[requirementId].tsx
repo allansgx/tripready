@@ -44,6 +44,14 @@ import type { RequirementOffer } from '@/types/models';
 const AFFILIATE_DISCLOSURE =
   'Algumas indicações podem gerar comissão para o TripReady, sem custo adicional para você.';
 
+/**
+ * Rodapé do bloco de fonte oficial.
+ *
+ * Só aparece em item que tem fonte a citar. Nos demais — montar a mala,
+ * organizar os meios de pagamento — não existe canal oficial nenhum a
+ * confirmar, e o aviso vira ruído repetido em toda tela: quando um alerta
+ * aparece sempre, ele para de significar alguma coisa.
+ */
 const OFFICIAL_REMINDER = 'Confirme sempre nos canais oficiais antes de viajar.';
 
 export default function RequirementDetailScreen() {
@@ -126,6 +134,20 @@ export default function RequirementDetailScreen() {
     };
   }, [requirementId, primary?.country_code]);
 
+  /**
+   * Marca ou desmarca o item.
+   *
+   * Marcar encerra a visita: o item saiu da lista de pendências e o próximo
+   * passo está na checklist, não aqui. Por isso a tela volta sozinha em vez de
+   * deixar a pessoa olhando um item que ela acabou de resolver.
+   *
+   * Desmarcar não volta. Quem desmarca está reabrindo o item para reler o que
+   * precisa fazer, e tirá-lo da tela nesse momento seria o oposto do que ele
+   * pediu.
+   *
+   * A volta só acontece depois da escrita dar certo. Se a conexão falhar, a
+   * pessoa continua aqui, com o aviso e o botão para tentar de novo.
+   */
   async function toggleCompleted() {
     if (!requirement) return;
 
@@ -136,6 +158,7 @@ export default function RequirementDetailScreen() {
     try {
       await tripRequirementsService.setCompleted(requirement.id, next);
       setRequirement({ ...requirement, completed: next });
+      if (next) goBack();
     } catch {
       setNotice('Sua conexão oscilou. Toque de novo para salvar.');
     } finally {
@@ -170,6 +193,7 @@ export default function RequirementDetailScreen() {
   const scope = describeRequirementScope(requirement, getCountryName);
   const sourceName = requirement.source_name;
   const sourceUrl = requirement.source_url;
+  const hasSource = Boolean(sourceName && sourceUrl);
   const hasAffiliate = offers.some((offer) => offer.is_affiliate);
 
   return (
@@ -211,14 +235,14 @@ export default function RequirementDetailScreen() {
           <View>
             <SectionLabel>O que verificar</SectionLabel>
             <View style={styles.card}>
-              <Text style={styles.description}>{requirement.description}</Text>
+              <RequirementDescription text={requirement.description} />
             </View>
           </View>
         ) : null}
 
         {offers.length > 0 ? (
           <View>
-            <SectionLabel>Onde contratar</SectionLabel>
+            <SectionLabel>Opções para contratar</SectionLabel>
             <View style={styles.offers}>
               {offers.map((offer) => (
                 <OfferRow key={offer.id} offer={offer} />
@@ -244,9 +268,11 @@ export default function RequirementDetailScreen() {
           </View>
         ) : null}
 
-        <View style={styles.reminder}>
-          <Text style={styles.reminderText}>💡 {OFFICIAL_REMINDER}</Text>
-        </View>
+        {hasSource ? (
+          <View style={styles.reminder}>
+            <Text style={styles.reminderText}>💡 {OFFICIAL_REMINDER}</Text>
+          </View>
+        ) : null}
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       </ScrollView>
@@ -312,6 +338,40 @@ function OfferRow({ offer }: { offer: RequirementOffer }) {
 
       <Ionicons name="arrow-forward" size={16} color={colors.textSecondary} />
     </Pressable>
+  );
+}
+
+/**
+ * A descrição do item, quebrada em tópicos.
+ *
+ * O texto do catálogo chega com a primeira linha dizendo o que fazer e as
+ * seguintes listando o que conferir, uma por linha. Um parágrafo único de três
+ * ou quatro frases é difícil de varrer no celular, e é justamente na tela de
+ * detalhe que a pessoa está procurando o próximo passo.
+ *
+ * A observação oficial de uma regra de visto chega em uma linha só e continua
+ * saindo como parágrafo, sem marcador — não é lista.
+ */
+function RequirementDescription({ text }: { text: string }) {
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return null;
+
+  const [lead, ...topics] = lines;
+
+  return (
+    <View style={styles.description}>
+      <Text style={styles.descriptionLead}>{lead}</Text>
+      {topics.map((topic) => (
+        <View key={topic} style={styles.topic}>
+          <Text style={styles.topicBullet}>•</Text>
+          <Text style={styles.topicText}>{topic}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -390,7 +450,13 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   cardPressed: { backgroundColor: colors.background },
-  description: { ...typography.body, color: colors.text },
+  description: { gap: spacing.md },
+  descriptionLead: { ...typography.body, color: colors.text },
+  topic: { flexDirection: 'row', gap: spacing.sm },
+  // O marcador fora do bloco de texto é o que dá a indentação pendurada: a
+  // segunda linha de um tópico longo alinha com a primeira, e não com o ponto.
+  topicBullet: { ...typography.body, color: colors.primary },
+  topicText: { ...typography.body, color: colors.text, flex: 1 },
   offers: { gap: spacing.sm },
   offer: {
     flexDirection: 'row',
