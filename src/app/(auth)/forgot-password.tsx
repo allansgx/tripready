@@ -41,7 +41,7 @@ export default function ForgotPasswordScreen() {
     <FormLayout>
       <ScreenHeader
         title="Recuperar senha"
-        subtitle="Enviamos um link para você voltar a acessar a conta."
+        subtitle="Enviaremos um link para você voltar a acessar a conta."
       />
 
       <View style={styles.form}>
