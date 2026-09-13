@@ -63,20 +63,80 @@ export function getAvatarIconSource(url: string | null, pixelSize = 96) {
 }
 
 /**
- * Nome de exibição, com o e-mail como último recurso.
+ * O nome cadastrado, ou `null` quando não há nenhum.
  *
  * `display_name` vem do cadastro por e-mail (é o campo que o painel do Supabase
- * mostra com esse nome); `full_name` e `name` vêm dos provedores OAuth.
+ * mostra com esse nome); `full_name` e `name` vêm dos provedores OAuth. Ao
+ * contrário de `getDisplayName`, não cai no e-mail — é o valor certo para
+ * preencher um campo "Nome" editável, onde mostrar o e-mail faria a pessoa
+ * salvar o próprio e-mail como nome sem perceber.
  */
+export function getStoredName(user: User | null): string | null {
+  return firstString(metadataSources(user), [
+    'display_name',
+    'full_name',
+    'name',
+    'preferred_username',
+  ]);
+}
+
+/** Nome de exibição, com o e-mail e por fim "Usuário" como últimos recursos. */
 export function getDisplayName(user: User | null): string {
-  return (
-    firstString(metadataSources(user), [
-      'display_name',
-      'full_name',
-      'name',
-      'preferred_username',
-    ]) ??
-    user?.email ??
-    'Usuário'
+  return getStoredName(user) ?? user?.email ?? 'Usuário';
+}
+
+export type AccountProvider = 'email' | 'google' | 'apple';
+
+const KNOWN_PROVIDERS: readonly AccountProvider[] = ['google', 'apple'];
+
+/** Rótulo de exibição de cada provedor externo, para textos como "Gerenciado pela conta Google". */
+export const PROVIDER_LABELS: Record<Exclude<AccountProvider, 'email'>, string> = {
+  google: 'Google',
+  apple: 'Apple',
+};
+
+/**
+ * Provedor de login da conta.
+ *
+ * `'email'` sempre que existir uma identidade de senha — é a única condição que
+ * libera a troca de senha, e ela é conferida antes das outras porque uma conta
+ * pode ter mais de uma identidade vinculada. Na ausência de `identities`, cai no
+ * `app_metadata.provider`. Sem nenhuma informação, o padrão é `'email'`: é o
+ * formato que só mostra campos, sem prometer uma configuração em conta externa
+ * que talvez não exista.
+ */
+export function getAccountProvider(user: User | null): AccountProvider {
+  const identityProviders = (user?.identities ?? []).map((identity) => identity.provider);
+
+  if (identityProviders.includes('email')) return 'email';
+
+  const knownIdentity = identityProviders.find((provider): provider is AccountProvider =>
+    KNOWN_PROVIDERS.includes(provider as AccountProvider),
   );
+  if (knownIdentity) return knownIdentity;
+
+  const appMetadataProvider = user?.app_metadata?.provider;
+  if (KNOWN_PROVIDERS.includes(appMetadataProvider as AccountProvider)) {
+    return appMetadataProvider as AccountProvider;
+  }
+
+  return 'email';
+}
+
+/**
+ * Primeira letra do nome (ou do e-mail, na falta dele) para o avatar sem foto.
+ *
+ * `[...value]` em vez de `value[0]`: um caractere fora do plano básico (emoji,
+ * por exemplo) no início do nome partiria ao meio com indexação direta. A
+ * maiúscula é aplicada aqui, no valor, e não via `textTransform` no estilo.
+ */
+export function getAvatarInitial(user: User | null): string | null {
+  const source = getStoredName(user) ?? user?.email ?? null;
+  if (!source) return null;
+
+  const trimmed = source.trim();
+  if (!trimmed) return null;
+
+  const [first] = trimmed;
+  return first.toLocaleUpperCase('pt-BR');
 }

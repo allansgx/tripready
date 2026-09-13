@@ -268,6 +268,37 @@ export const authService = {
     if (error) throw error;
   },
 
+  /**
+   * Grava o nome de exibição. Os dois campos pelo mesmo motivo do cadastro:
+   * `display_name` é o que o painel do Supabase mostra, `full_name` é o formato
+   * que o Google devolve, e `getDisplayName` lê os dois.
+   */
+  async updateDisplayName(name: string): Promise<void> {
+    const displayName = name.trim();
+    const { error } = await supabase.auth.updateUser({
+      data: { display_name: displayName, full_name: displayName },
+    });
+    if (error) throw error;
+  },
+
+  /**
+   * Troca a senha.
+   *
+   * `current_password` é conferido pelo próprio GoTrue quando o projeto tem a
+   * opção "Secure password change" ligada (sem ela, o campo é ignorado e a
+   * troca segue normalmente) — não é preciso reautenticar com
+   * `signInWithPassword` à parte. Uma senha atual errada ou ausente volta como
+   * `AuthApiError` com `code` `current_password_invalid` ou
+   * `current_password_required`, tratados em `toAuthMessage`.
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+      current_password: currentPassword,
+    });
+    if (error) throw error;
+  },
+
   async signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;

@@ -16,6 +16,19 @@ const MESSAGES: Record<string, string> = {
     'Por segurança, aguarde 60 segundos antes de tentar de novo.',
 };
 
+/**
+ * Tradução por `code` — a via confiável para alguns erros do GoTrue, que usam
+ * a mesma mensagem em inglês para situações diferentes. É o caso da troca de
+ * senha: senha atual ausente e senha atual errada devolvem exatamente
+ * "Current password required when setting new password.", e só o `code`
+ * (`current_password_required` / `current_password_invalid`) distingue os dois.
+ */
+const CODE_MESSAGES: Record<string, string> = {
+  current_password_required: 'Informe sua senha atual.',
+  current_password_invalid: 'A senha atual não confere.',
+  same_password: 'A nova senha precisa ser diferente da atual.',
+};
+
 /** A recusa do GoTrue lista os caracteres exigidos e muda com a política. */
 const PASSWORD_REJECTION_PREFIX = 'Password should';
 const PASSWORD_REJECTION_MESSAGE = 'A senha ainda não cumpre todos os requisitos da lista.';
@@ -23,6 +36,11 @@ const PASSWORD_REJECTION_MESSAGE = 'A senha ainda não cumpre todos os requisito
 export function toAuthMessage(error: unknown): string {
   if (!(error instanceof Error)) {
     return 'Erro inesperado na autenticação.';
+  }
+
+  const code = (error as { code?: unknown }).code;
+  if (typeof code === 'string' && CODE_MESSAGES[code]) {
+    return CODE_MESSAGES[code];
   }
 
   const mapped = MESSAGES[error.message];

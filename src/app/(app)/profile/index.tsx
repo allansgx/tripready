@@ -1,28 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ListRow } from '@/components/ui/list-row';
 import { SectionLabel } from '@/components/ui/section-label';
+import { appVersionLabel } from '@/constants/app-version';
 import { useAuth } from '@/features/auth/auth-context';
 import { DeleteAccountModal } from '@/features/auth/delete-account-modal';
-import { getAvatarUrl, getDisplayName } from '@/features/auth/user-profile';
+import { getAvatarInitial, getAvatarUrl, getDisplayName } from '@/features/auth/user-profile';
 import { PassportsSection } from '@/features/passports/passports-section';
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const [avatarFailed, setAvatarFailed] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-
-  const avatarUrl = getAvatarUrl(user);
-  const showAvatar = Boolean(avatarUrl) && !avatarFailed;
 
   /** O modal confirma; quem exclui é a tela de processamento. */
   function startDeletion() {
@@ -36,20 +33,7 @@ export default function ProfileScreen() {
         <Text style={styles.title}>Perfil</Text>
 
         <View style={styles.identity}>
-          <View style={styles.avatar}>
-            {showAvatar ? (
-              <Image
-                source={{ uri: avatarUrl! }}
-                style={styles.avatarImage}
-                contentFit="cover"
-                transition={150}
-                accessibilityLabel="Foto do perfil"
-                onError={() => setAvatarFailed(true)}
-              />
-            ) : (
-              <Ionicons name="person" size={26} color={colors.primary} />
-            )}
-          </View>
+          <Avatar url={getAvatarUrl(user)} initial={getAvatarInitial(user)} size={56} />
           <View style={styles.identityTexts}>
             <Text style={styles.name} numberOfLines={1}>
               {getDisplayName(user)}
@@ -58,6 +42,12 @@ export default function ProfileScreen() {
               {user?.email ?? user?.id}
             </Text>
           </View>
+          <Button
+            label="Editar"
+            variant="soft"
+            size="sm"
+            onPress={() => router.push('/profile/edit')}
+          />
         </View>
 
         <PassportsSection />
@@ -101,6 +91,8 @@ export default function ProfileScreen() {
             onPress={() => setIsDeleteOpen(true)}
           />
         </View>
+
+        {appVersionLabel ? <Text style={styles.version}>{appVersionLabel}</Text> : null}
       </ScrollView>
 
       <DeleteAccountModal
@@ -117,21 +109,13 @@ const styles = StyleSheet.create({
   content: { padding: spacing.xl - spacing.xs, gap: spacing.xl },
   title: { ...typography.screenTitle, color: colors.text },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
   dangerZone: { marginTop: spacing.sm },
   identityTexts: { flex: 1, gap: 2 },
   name: { ...typography.bodyStrong, color: colors.text },
   email: { ...typography.caption, color: colors.textSecondary },
+  version: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
 });

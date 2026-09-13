@@ -8,10 +8,10 @@ type ScreenHeaderProps = {
   title: string;
   subtitle?: string;
   /** Para onde voltar quando a tela foi aberta direto por deep link. */
-  fallbackHref?: '/login' | '/profile';
+  fallbackHref?: '/login' | '/profile' | '/profile/edit';
 };
 
-/** Cabeçalho com botão voltar, título e texto de apoio. */
+/** Cabeçalho com botão voltar ao lado do título, e o texto de apoio abaixo. */
 export function ScreenHeader({ title, subtitle, fallbackHref = '/login' }: ScreenHeaderProps) {
   const router = useRouter();
 
@@ -26,27 +26,34 @@ export function ScreenHeader({ title, subtitle, fallbackHref = '/login' }: Scree
         <Ionicons name="chevron-back" size={22} color={colors.text} />
       </Pressable>
 
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <View style={styles.texts}>
+        <Text style={styles.title}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
   back: {
     width: 36,
     height: 36,
     marginLeft: -spacing.sm,
-    marginBottom: spacing.sm,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backPressed: {
     backgroundColor: colors.primarySoft,
+  },
+  texts: {
+    flex: 1,
+    gap: 2,
   },
   title: {
     ...typography.screenTitle,

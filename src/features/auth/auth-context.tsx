@@ -44,6 +44,13 @@ type AuthContextValue = {
     name: string,
   ) => Promise<'signed-in' | 'confirm-email'>;
   sendPasswordReset: (email: string) => Promise<void>;
+  /** Grava o nome de exibição. **Lança** o erro — a tela mostra a mensagem inline. */
+  updateDisplayName: (name: string) => Promise<void>;
+  /**
+   * Troca a senha, conferindo a senha atual. **Lança** o erro; só chamável em
+   * contas com identidade de e-mail (`getAccountProvider(user) === 'email'`).
+   */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -130,6 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await authService.deleteAccount();
       },
       signOutLocal: () => authService.signOutLocal(),
+      updateDisplayName: (name) => authService.updateDisplayName(name),
+      changePassword: (currentPassword, newPassword) =>
+        authService.changePassword(currentPassword, newPassword),
     };
   }, [session, isLoading, isSigningIn, error]);
 

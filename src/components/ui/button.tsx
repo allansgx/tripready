@@ -2,8 +2,9 @@ import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
-type ButtonVariant = 'primary' | 'ghost' | 'outline';
+type ButtonVariant = 'primary' | 'ghost' | 'outline' | 'soft';
 type ButtonTone = 'default' | 'danger';
+type ButtonSize = 'md' | 'sm';
 
 type ButtonProps = {
   label: string;
@@ -11,6 +12,8 @@ type ButtonProps = {
   variant?: ButtonVariant;
   /** `danger` pinta a ação destrutiva; o desenho continua sendo o da variante. */
   tone?: ButtonTone;
+  /** `sm` é a pílula compacta usada ao lado de um título, como "Editar". */
+  size?: ButtonSize;
   loading?: boolean;
   disabled?: boolean;
 };
@@ -33,6 +36,7 @@ const tones = {
 function resolveLabelColor(variant: ButtonVariant, tone: ButtonTone, muted: boolean) {
   if (muted) return colors.textSecondary;
   if (variant === 'primary') return colors.contrastText;
+  if (variant === 'soft') return tones[tone].text;
   if (tone === 'danger') return colors.danger;
   return variant === 'outline' ? colors.text : colors.primary;
 }
@@ -42,6 +46,7 @@ export function Button({
   onPress,
   variant = 'primary',
   tone = 'default',
+  size = 'md',
   loading = false,
   disabled = false,
 }: ButtonProps) {
@@ -56,13 +61,21 @@ export function Button({
   const muted = variant === 'primary' && tone === 'danger' && blocked;
 
   const background =
-    variant === 'primary' ? palette.solid : variant === 'outline' ? colors.surface : 'transparent';
+    variant === 'primary'
+      ? palette.solid
+      : variant === 'outline'
+        ? colors.surface
+        : variant === 'soft'
+          ? palette.soft
+          : 'transparent';
   const pressedBackground =
     variant === 'primary'
       ? palette.solidPressed
       : variant === 'outline'
         ? colors.background
-        : palette.soft;
+        : variant === 'soft'
+          ? colors.border
+          : palette.soft;
 
   return (
     <Pressable
@@ -71,6 +84,7 @@ export function Button({
       onPress={blocked ? undefined : onPress}
       style={({ pressed }) => [
         styles.base,
+        size === 'sm' && styles.baseSmall,
         variant === 'outline' && styles.outline,
         { backgroundColor: pressed && !blocked ? pressedBackground : background },
         blocked && (muted ? styles.muted : styles.blocked),
@@ -81,7 +95,11 @@ export function Button({
           color={variant === 'primary' ? colors.contrastText : palette.text}
         />
       ) : (
-        <Text style={[styles.label, { color: resolveLabelColor(variant, tone, muted) }]}>
+        <Text
+          style={[
+            size === 'sm' ? styles.labelSmall : styles.label,
+            { color: resolveLabelColor(variant, tone, muted) },
+          ]}>
           {label}
         </Text>
       )}
@@ -97,6 +115,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
+  baseSmall: {
+    minHeight: 36,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+  },
   outline: {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
@@ -109,5 +132,9 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.bodyStrong,
+  },
+  labelSmall: {
+    ...typography.caption,
+    fontWeight: '600',
   },
 });

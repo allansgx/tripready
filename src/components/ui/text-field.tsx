@@ -1,4 +1,6 @@
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { FormMessage } from '@/components/ui/form-message';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
@@ -10,18 +12,63 @@ type TextFieldProps = TextInputProps & {
    * foi — o contorno só muda de cor quando há o que corrigir.
    */
   error?: string | null;
+  /** Campo apenas de leitura: fundo apagado e cadeado à direita. */
+  locked?: boolean;
 };
 
-/** Campo de formulário no mesmo padrão visual dos cartões da referência. */
-export function TextField({ label, error, style, ...rest }: TextFieldProps) {
+/**
+ * Campo de formulário no mesmo padrão visual dos cartões da referência.
+ *
+ * `secureTextEntry` ganha o olho de mostrar/ocultar de qualquer campo de senha
+ * do app — a alternância é interna, então quem passa `secureTextEntry` não
+ * precisa gerenciar visibilidade por conta própria.
+ */
+export function TextField({
+  label,
+  error,
+  locked,
+  secureTextEntry,
+  style,
+  ...rest
+}: TextFieldProps) {
+  const [revealed, setRevealed] = useState(false);
+  const isPassword = Boolean(secureTextEntry);
+
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        placeholderTextColor={colors.textSecondary}
-        style={[styles.input, error ? styles.inputError : null, style]}
-        {...rest}
-      />
+      <View>
+        <TextInput
+          editable={!locked}
+          secureTextEntry={isPassword && !revealed}
+          placeholderTextColor={colors.textSecondary}
+          style={[
+            styles.input,
+            error ? styles.inputError : null,
+            locked ? styles.inputLocked : null,
+            locked || isPassword ? styles.inputWithAccessory : null,
+            style,
+          ]}
+          {...rest}
+        />
+        {locked ? (
+          <Ionicons
+            name="lock-closed"
+            size={16}
+            color={colors.textSecondary}
+            style={styles.accessoryIcon}
+          />
+        ) : isPassword ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Ocultar senha' : 'Mostrar senha'}
+            hitSlop={8}
+            onPress={() => setRevealed((current) => !current)}
+            style={styles.accessoryIcon}>
+            <Ionicons name={revealed ? 'eye-off' : 'eye'} size={18} color={colors.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <FormMessage text={error} /> : null}
     </View>
   );
@@ -49,5 +96,18 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: colors.danger,
+  },
+  inputLocked: {
+    backgroundColor: colors.background,
+    color: colors.textSecondary,
+  },
+  inputWithAccessory: {
+    paddingRight: spacing.xxl,
+  },
+  accessoryIcon: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: '50%',
+    marginTop: -9,
   },
 });
