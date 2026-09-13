@@ -3,6 +3,7 @@
     "strict": true,
     "lib": ["deno.window", "esnext"]
   },
+  "nodeModulesDir": "none",
   "lint": {
     "rules": {
       "tags": ["recommended"]

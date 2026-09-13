@@ -57,7 +57,7 @@
     "site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-legal-site.mjs && prettier --write site",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/**/*.test.ts\"",
     "check": "expo lint && tsc --noEmit && prettier --check . && npm test",
-    "functions:check": "deno check supabase/functions/delete-account/index.ts && deno lint supabase/functions"
+    "functions:check": "cd supabase/functions && deno check delete-account/index.ts && deno lint ."
   },
   "private": true
 }

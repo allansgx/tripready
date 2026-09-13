@@ -19,9 +19,9 @@
 // existe (200 `already_deleted`).
 // =============================================================================
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
-type AdminClient = ReturnType<typeof createClient>;
+type AdminClient = SupabaseClient;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
