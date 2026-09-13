@@ -1,17 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 
-/**
- * Dados de exibição do usuário vindos do provedor de login.
- *
- * O Supabase guarda o que o provedor devolveu em `user_metadata` e em
- * `identities[].identity_data`. Cada provedor usa um nome de campo diferente
- * para a foto (`avatar_url` no Google via Supabase, `picture` no payload OIDC
- * cru), por isso a busca passa por ambos.
- *
- * A Apple não devolve foto — nesse caso o retorno é `null` e a tela mostra o
- * avatar padrão.
- */
-
+// O Supabase guarda o que o provedor devolveu em `user_metadata` e em
+// `identities[].identity_data`, e cada um usa nomes de campo diferentes.
 type Metadata = Record<string, unknown>;
 
 function firstString(sources: Metadata[], keys: string[]): string | null {
@@ -39,11 +29,82 @@ export function getAvatarUrl(user: User | null): string | null {
   return firstString(metadataSources(user), ['avatar_url', 'picture']);
 }
 
-/** Nome de exibição do provedor, com o e-mail como último recurso. */
+/**
+ * Foto como ícone de aba nativa: o `scale` é fixo porque a tab bar desenha a
+ * imagem no tamanho declarado. Recebe a URL, e não o usuário, para o resultado
+ * poder ser memoizado — identidade nova a cada render recarrega a imagem.
+ */
+export function getAvatarIconSource(url: string | null, pixelSize = 96) {
+  if (!url) return null;
+
+  const sized = url.includes('googleusercontent.com')
+    ? `${url.replace(/=s\d+(-c)?$/, '')}=s${pixelSize}-c`
+    : url;
+
+  return { uri: sized, scale: 3 } as const;
+}
+
+/**
+ * O nome cadastrado, ou `null`. Ao contrário de `getDisplayName`, não cai no
+ * e-mail: é o valor certo para preencher um campo "Nome" editável.
+ */
+export function getStoredName(user: User | null): string | null {
+  return firstString(metadataSources(user), [
+    'display_name',
+    'full_name',
+    'name',
+    'preferred_username',
+  ]);
+}
+
+/** Nome de exibição, com o e-mail e por fim "Usuário" como últimos recursos. */
 export function getDisplayName(user: User | null): string {
-  return (
-    firstString(metadataSources(user), ['full_name', 'name', 'preferred_username']) ??
-    user?.email ??
-    'Usuário'
+  return getStoredName(user) ?? user?.email ?? 'Usuário';
+}
+
+export type AccountProvider = 'email' | 'google' | 'apple';
+
+const KNOWN_PROVIDERS: readonly AccountProvider[] = ['google', 'apple'];
+
+/** Rótulo de exibição de cada provedor externo, para textos como "Gerenciado pela conta Google". */
+export const PROVIDER_LABELS: Record<Exclude<AccountProvider, 'email'>, string> = {
+  google: 'Google',
+  apple: 'Apple',
+};
+
+/**
+ * `'email'` sempre que existir identidade de senha — é a única condição que
+ * libera a troca de senha, e uma conta pode ter mais de uma identidade.
+ */
+export function getAccountProvider(user: User | null): AccountProvider {
+  const identityProviders = (user?.identities ?? []).map((identity) => identity.provider);
+
+  if (identityProviders.includes('email')) return 'email';
+
+  const knownIdentity = identityProviders.find((provider): provider is AccountProvider =>
+    KNOWN_PROVIDERS.includes(provider as AccountProvider),
   );
+  if (knownIdentity) return knownIdentity;
+
+  const appMetadataProvider = user?.app_metadata?.provider;
+  if (KNOWN_PROVIDERS.includes(appMetadataProvider as AccountProvider)) {
+    return appMetadataProvider as AccountProvider;
+  }
+
+  return 'email';
+}
+
+/**
+ * Primeira letra para o avatar sem foto. Desestruturação em vez de `[0]`: um
+ * emoji no início do nome partiria ao meio com indexação direta.
+ */
+export function getAvatarInitial(user: User | null): string | null {
+  const source = getStoredName(user) ?? user?.email ?? null;
+  if (!source) return null;
+
+  const trimmed = source.trim();
+  if (!trimmed) return null;
+
+  const [first] = trimmed;
+  return first.toLocaleUpperCase('pt-BR');
 }

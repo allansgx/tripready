@@ -1,0 +1,56 @@
+-- =============================================================================
+-- TripReady — tabela nova nasce fechada
+--
+-- `20260905120200_table_grants.sql` deixou um `alter default privileges`
+-- concedendo select/insert/update/delete a `authenticated` em toda tabela nova
+-- do schema `public`. A intenção era evitar o 403 do PostgREST na próxima
+-- tabela; o efeito colateral é o modo de falhar.
+--
+-- Com ele, uma tabela criada sem `enable row level security` nasce legível e
+-- gravável por qualquer usuário logado — sem erro, sem aviso, sem nada na tela
+-- que denuncie. A falha é silenciosa, e silêncio é a pior propriedade possível
+-- numa falha de permissão.
+--
+-- Sem ele, o mesmo esquecimento vira um 403 imediato na primeira consulta.
+-- Continua sendo um erro, mas um erro que aparece em segundos e se corrige
+-- acrescentando o `grant` que deveria estar lá desde o início.
+--
+-- Ou seja: a troca é conveniência por falha ruidosa. Vale a pena.
+--
+-- -----------------------------------------------------------------------------
+-- O que esta migration NÃO faz
+--
+-- Não mexe em nenhuma tabela existente. `alter default privileges` só governa
+-- objetos criados **depois** dele: privilégio já concedido a uma tabela que
+-- existe fica onde está. As treze tabelas atuais também não dependiam do
+-- padrão — todas têm `grant` explícito nas migrations que as criaram, das
+-- tabelas de usuário ao catálogo somente leitura.
+--
+-- Nada a desfazer para funções ou sequences: o `alter default privileges`
+-- original cobria apenas `on tables`.
+--
+-- -----------------------------------------------------------------------------
+-- Detalhe de execução
+--
+-- `alter default privileges` é por papel. Sem `for role`, vale para o papel que
+-- executa o comando — e precisa ser o mesmo que concedeu, senão o Postgres
+-- apenas registra uma entrada nova e inerte, sem cancelar a antiga. Concessão e
+-- revogação saem as duas de `supabase db push`, pelo mesmo papel, então se
+-- anulam como esperado.
+--
+-- Para conferir depois do push, o catálogo deve deixar de listar a linha de
+-- `authenticated` para `public`:
+--
+--   select defaclrole::regrole, defaclnamespace::regnamespace, defaclacl
+--   from pg_default_acl;
+--
+-- -----------------------------------------------------------------------------
+-- A partir daqui
+--
+-- Toda migration que criar tabela precisa conceder explicitamente o que aquela
+-- tabela usa, além de ligar a RLS e escrever as policies. A regra está em
+-- AGENTS.md, na subseção "Migrations".
+-- =============================================================================
+
+alter default privileges in schema public
+  revoke select, insert, update, delete on tables from authenticated;

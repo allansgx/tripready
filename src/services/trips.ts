@@ -1,10 +1,64 @@
 import { supabase } from '@/lib/supabase/client';
 import { unwrap, unwrapRequired } from '@/services/errors';
-import type { Trip, TripCity, TripCountry } from '@/types/models';
+import type {
+  RequirementPriority,
+  Trip,
+  TripCity,
+  TripCountry,
+  TripRequirement,
+} from '@/types/models';
 
 export type TripWithDestinations = Trip & {
   trip_countries: TripCountry[];
   trip_cities: TripCity[];
+};
+
+/** Requisito reduzido ao que as telas de visão geral precisam. */
+export type TripRequirementBrief = {
+  id: string;
+  title: string;
+  priority: RequirementPriority;
+  completed: boolean;
+  created_at: string;
+};
+
+/** Viagem com o mínimo necessário para montar o card da listagem. */
+export type TripWithRelations = Trip & {
+  trip_countries: { country_code: string }[];
+  trip_requirements: TripRequirementBrief[];
+};
+
+/** Requisito com o nome do grupo embutido, para evitar uma segunda consulta. */
+export type TripRequirementWithGroup = TripRequirement & {
+  destination_groups: { id: string; code: string; name: string } | null;
+};
+
+/** Viagem completa, para a tela de detalhe/checklist. */
+export type TripDetail = Trip & {
+  trip_countries: TripCountry[];
+  trip_cities: TripCity[];
+  trip_requirements: TripRequirementWithGroup[];
+};
+
+/**
+ * O mínimo para recalcular a checklist de uma viagem: os países, as datas e a
+ * origem dos itens que já existem.
+ */
+export type TripForRebuild = Pick<Trip, 'id' | 'start_date' | 'end_date'> & {
+  trip_countries: { country_code: string }[];
+  trip_requirements: {
+    id: string;
+    template_id: string | null;
+    group_id: string | null;
+    country_code: string | null;
+    completed: boolean;
+  }[];
+};
+
+/** Espaço para paginação futura sem mudar as chamadas existentes. */
+export type ListOptions = {
+  limit?: number;
+  offset?: number;
 };
 
 export const tripsService = {
@@ -16,8 +70,60 @@ export const tripsService = {
         .eq('user_id', userId)
         .order('start_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false }),
-      'Falha ao listar viagens',
+      'Tente carregar suas viagens novamente',
     );
+  },
+
+  /** Viagens com países e requisitos em uma consulta só. */
+  async listWithRelations(userId: string, options: ListOptions = {}): Promise<TripWithRelations[]> {
+    let query = supabase
+      .from('trips')
+      .select(
+        '*, trip_countries(country_code), trip_requirements(id, title, priority, completed, created_at)',
+      )
+      .eq('user_id', userId)
+      .order('start_date', { ascending: true, nullsFirst: false });
+
+    if (options.limit !== undefined) {
+      const offset = options.offset ?? 0;
+      query = query.range(offset, offset + options.limit - 1);
+    }
+
+    const rows = unwrapRequired(await query, 'Tente carregar suas viagens novamente');
+    return rows as unknown as TripWithRelations[];
+  },
+
+  /**
+   * Viagens que ainda podem ter a checklist recalculada. Concluídas ficam de
+   * fora: são o registro do que a pessoa de fato preparou.
+   */
+  async listForRebuild(userId: string, today: string): Promise<TripForRebuild[]> {
+    const rows = unwrapRequired(
+      await supabase
+        .from('trips')
+        .select(
+          'id, start_date, end_date, trip_countries(country_code), trip_requirements(id, template_id, group_id, country_code, completed)',
+        )
+        .eq('user_id', userId)
+        .or(`end_date.is.null,end_date.gte.${today}`),
+      'Tente atualizar suas checklists novamente',
+    );
+
+    return rows as unknown as TripForRebuild[];
+  },
+
+  async getDetail(tripId: string): Promise<TripDetail | null> {
+    const row = unwrap(
+      await supabase
+        .from('trips')
+        .select(
+          '*, trip_countries(*), trip_cities(*), trip_requirements(*, destination_groups(id, code, name))',
+        )
+        .eq('id', tripId)
+        .maybeSingle(),
+      'Tente abrir esta viagem novamente',
+    );
+    return row as unknown as TripDetail | null;
   },
 
   async getWithDestinations(tripId: string): Promise<TripWithDestinations | null> {
@@ -27,7 +133,7 @@ export const tripsService = {
         .select('*, trip_countries(*), trip_cities(*)')
         .eq('id', tripId)
         .maybeSingle(),
-      'Falha ao carregar a viagem',
+      'Tente abrir esta viagem novamente',
     );
   },
 
@@ -48,7 +154,7 @@ export const tripsService = {
         })
         .select('*')
         .single(),
-      'Falha ao criar viagem',
+      'Tente criar a viagem novamente',
     );
   },
 
@@ -67,14 +173,14 @@ export const tripsService = {
         .eq('id', tripId)
         .select('*')
         .single(),
-      'Falha ao atualizar viagem',
+      'Tente salvar a viagem novamente',
     );
   },
 
   async remove(tripId: string): Promise<void> {
     unwrap(
       await supabase.from('trips').delete().eq('id', tripId).select('id'),
-      'Falha ao remover viagem',
+      'Tente remover a viagem novamente',
     );
   },
 };

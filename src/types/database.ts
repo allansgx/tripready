@@ -19,6 +19,20 @@ export type RequirementCategory =
   | 'connectivity'
   | 'luggage';
 
+export type RequirementScope = 'global' | 'each_country' | 'group' | 'country' | 'visa';
+
+export type Season = 'winter' | 'spring' | 'summer' | 'autumn';
+
+export type TripKind = 'domestic' | 'international';
+
+export type VisaRequirementType =
+  | 'visa_free'
+  | 'visa_required'
+  | 'evisa'
+  | 'eta'
+  | 'visa_on_arrival'
+  | 'conditional';
+
 export type Database = {
   public: {
     Tables: {
@@ -165,7 +179,14 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'trip_cities_trip_id_country_code_fkey';
+            foreignKeyName: 'trip_cities_trip_id_fkey';
+            columns: ['trip_id'];
+            isOneToOne: false;
+            referencedRelation: 'trips';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trip_cities_trip_country_fkey';
             columns: ['trip_id', 'country_code'];
             isOneToOne: false;
             referencedRelation: 'trip_countries';
@@ -183,6 +204,10 @@ export type Database = {
           priority: RequirementPriority;
           category: RequirementCategory;
           completed: boolean;
+          template_id: string | null;
+          group_id: string | null;
+          source_name: string | null;
+          source_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -195,6 +220,10 @@ export type Database = {
           priority: RequirementPriority;
           category: RequirementCategory;
           completed?: boolean;
+          template_id?: string | null;
+          group_id?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -207,6 +236,10 @@ export type Database = {
           priority?: RequirementPriority;
           category?: RequirementCategory;
           completed?: boolean;
+          template_id?: string | null;
+          group_id?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -219,20 +252,331 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'trip_requirements_trip_id_country_code_fkey';
+            foreignKeyName: 'trip_requirements_trip_country_fkey';
             columns: ['trip_id', 'country_code'];
             isOneToOne: false;
             referencedRelation: 'trip_countries';
             referencedColumns: ['trip_id', 'country_code'];
           },
+          {
+            foreignKeyName: 'trip_requirements_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trip_requirements_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'destination_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      visa_rules: {
+        Row: {
+          id: string;
+          passport_country_code: string;
+          destination_country_code: string;
+          requirement_type: VisaRequirementType;
+          source_name: string;
+          source_url: string;
+          verified_at: string;
+          notes: string | null;
+          valid_from: string | null;
+          valid_until: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          passport_country_code: string;
+          destination_country_code: string;
+          requirement_type: VisaRequirementType;
+          source_name: string;
+          source_url: string;
+          verified_at: string;
+          notes?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          passport_country_code?: string;
+          destination_country_code?: string;
+          requirement_type?: VisaRequirementType;
+          source_name?: string;
+          source_url?: string;
+          verified_at?: string;
+          notes?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      destination_groups: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          description: string | null;
+          source_name: string | null;
+          source_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          description?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          description?: string | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      destination_group_members: {
+        Row: {
+          id: string;
+          group_id: string;
+          country_code: string;
+          valid_from: string | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          country_code: string;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          country_code?: string;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'destination_group_members_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'destination_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      requirement_templates: {
+        Row: {
+          id: string;
+          code: string;
+          title: string;
+          description: string | null;
+          priority: RequirementPriority;
+          category: RequirementCategory;
+          scope: RequirementScope;
+          season: Season | null;
+          passport_country_code: string | null;
+          trip_kind: TripKind | null;
+          visa_requirement_type: VisaRequirementType | null;
+          source_name: string | null;
+          source_url: string | null;
+          valid_from: string | null;
+          valid_until: string | null;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          title: string;
+          description?: string | null;
+          priority: RequirementPriority;
+          category: RequirementCategory;
+          scope: RequirementScope;
+          season?: Season | null;
+          passport_country_code?: string | null;
+          trip_kind?: TripKind | null;
+          visa_requirement_type?: VisaRequirementType | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          title?: string;
+          description?: string | null;
+          priority?: RequirementPriority;
+          category?: RequirementCategory;
+          scope?: RequirementScope;
+          season?: Season | null;
+          passport_country_code?: string | null;
+          trip_kind?: TripKind | null;
+          visa_requirement_type?: VisaRequirementType | null;
+          source_name?: string | null;
+          source_url?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      requirement_template_groups: {
+        Row: {
+          requirement_template_id: string;
+          group_id: string;
+        };
+        Insert: {
+          requirement_template_id: string;
+          group_id: string;
+        };
+        Update: {
+          requirement_template_id?: string;
+          group_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'requirement_template_groups_requirement_template_id_fkey';
+            columns: ['requirement_template_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'requirement_template_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'destination_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      requirement_template_countries: {
+        Row: {
+          requirement_template_id: string;
+          country_code: string;
+        };
+        Insert: {
+          requirement_template_id: string;
+          country_code: string;
+        };
+        Update: {
+          requirement_template_id?: string;
+          country_code?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'requirement_template_countries_requirement_template_id_fkey';
+            columns: ['requirement_template_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      requirement_offers: {
+        Row: {
+          id: string;
+          requirement_template_id: string;
+          name: string;
+          description: string | null;
+          url: string;
+          icon: string | null;
+          destination_country_code: string | null;
+          passport_country_code: string | null;
+          is_affiliate: boolean;
+          position: number;
+          active: boolean;
+          valid_from: string | null;
+          valid_until: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          requirement_template_id: string;
+          name: string;
+          description?: string | null;
+          url: string;
+          icon?: string | null;
+          destination_country_code?: string | null;
+          passport_country_code?: string | null;
+          is_affiliate?: boolean;
+          position?: number;
+          active?: boolean;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          requirement_template_id?: string;
+          name?: string;
+          description?: string | null;
+          url?: string;
+          icon?: string | null;
+          destination_country_code?: string | null;
+          passport_country_code?: string | null;
+          is_affiliate?: boolean;
+          position?: number;
+          active?: boolean;
+          valid_from?: string | null;
+          valid_until?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'requirement_offers_requirement_template_id_fkey';
+            columns: ['requirement_template_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
         ];
       };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      apply_requirement_diff: {
+        Args: { p_remove_ids: string[]; p_inserts: Json };
+        Returns: undefined;
+      };
+    };
     Enums: {
       requirement_priority: RequirementPriority;
       requirement_category: RequirementCategory;
+      requirement_scope: RequirementScope;
+      season: Season;
+      trip_kind: TripKind;
+      visa_requirement_type: VisaRequirementType;
     };
     CompositeTypes: Record<never, never>;
   };

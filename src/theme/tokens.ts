@@ -1,9 +1,3 @@
-/**
- * Tokens visuais do TripReady, extraídos da referência do Figma Make
- * (tela de Perfil). Toda tela nova deve consumir estes valores em vez de
- * hardcodar cores/espaçamentos.
- */
-
 import { Platform } from 'react-native';
 
 export const colors = {
@@ -24,6 +18,70 @@ export const colors = {
   contrast: '#111114',
   contrastText: '#FFFFFF',
   danger: '#D93025',
+  dangerPressed: '#B4261C',
+  /** Vermelho bem claro, usado atrás de ícones e em botões destrutivos. */
+  dangerSoft: '#FDECEA',
+  /** Trilho cinza das barras de progresso. */
+  progressTrack: '#ECEBF2',
+} as const;
+
+/** Cores por prioridade de requisito, usadas nos pontos e etiquetas. */
+export const priorityColors = {
+  required: '#E5484D',
+  recommended: '#F5A524',
+  informational: '#3E63DD',
+} as const;
+
+/** Fundos claros das etiquetas de prioridade. */
+export const prioritySoftColors = {
+  required: '#FDECEC',
+  recommended: '#FDF3E0',
+  informational: '#EBEFFD',
+} as const;
+
+/** Cores por momento da viagem: `accent` no anel, `soft` na faixa, `text` na frase. */
+export const tripMomentColors = {
+  ongoing: { accent: colors.primary, soft: colors.primarySoft, text: colors.primary },
+  imminent: {
+    accent: priorityColors.recommended,
+    soft: prioritySoftColors.recommended,
+    text: '#946200',
+  },
+  upcoming: { accent: '#2FA36B', soft: '#E8F5EE', text: '#1E7A4E' },
+  completed: { accent: '#C4C4CA', soft: '#F0F0F2', text: colors.textSecondary },
+} as const;
+
+/** Cor de destaque de cada estação, usada no texto e no ícone. */
+export const seasonColors = {
+  winter: '#3E7FD5',
+  spring: '#D4568F',
+  summer: '#E08A15',
+  autumn: '#B4652F',
+} as const;
+
+/** Fundos das estações: a mesma cor bem diluída. */
+export const seasonSoftColors = {
+  winter: '#EDF4FD',
+  spring: '#FCEEF4',
+  summer: '#FDF4E7',
+  autumn: '#F9F0E9',
+} as const;
+
+/** Bordas das estações: entre o fundo diluído e a cor de destaque. */
+export const seasonBorderColors = {
+  winter: '#C9DDF5',
+  spring: '#F2CFDF',
+  summer: '#F5DEB8',
+  autumn: '#EBD5C4',
+} as const;
+
+/** O fundo da Home: `base` quente, com o halo da estação por cima. */
+export const seasonBackdropColors = {
+  base: '#F8F6F2',
+  winter: '#5A9BE6',
+  spring: '#FFA0C3',
+  summer: '#FFCD46',
+  autumn: '#C36428',
 } as const;
 
 export const spacing = {
@@ -39,6 +97,8 @@ export const radius = {
   sm: 10,
   md: 14,
   lg: 16,
+  /** Blocos protagonistas, como a contagem regressiva da Home. */
+  xl: 24,
   pill: 999,
 } as const;
 
@@ -51,6 +111,9 @@ export const fontFamily = Platform.select({
   default: { sans: 'normal', rounded: 'normal' },
 })!;
 
+/** Fonte de exibição, registrada pelo `expo-font` no layout raiz. */
+const displayFont = 'Fraunces_700Bold';
+
 export const typography = {
   /** Título de tela: "Perfil" na referência. */
   screenTitle: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const },
@@ -60,6 +123,28 @@ export const typography = {
   bodyStrong: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const },
   /** Texto de apoio (e-mail, descrições). */
   caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' as const },
+  /** Contagem da Home. A entrelinha folgada evita o Android cortar os dígitos. */
+  countdown: {
+    fontSize: 104,
+    lineHeight: 112,
+    fontWeight: '800' as const,
+    letterSpacing: -4,
+    fontFamily: fontFamily.rounded,
+  },
+  /** Frase que substitui o número quando não há dias a contar ("É hoje! ✈️"). */
+  countdownMessage: {
+    fontSize: 32,
+    lineHeight: 40,
+    fontWeight: '700' as const,
+    fontFamily: fontFamily.rounded,
+  },
+  /** Sem `fontWeight`: a família já é a Bold, e o Android engrossaria de novo. */
+  departureName: {
+    fontSize: 40,
+    lineHeight: 48,
+    letterSpacing: -1,
+    fontFamily: displayFont,
+  },
   /** Rótulos de seção em caixa alta ("PASSAPORTES", "CONTA"). */
   sectionLabel: {
     fontSize: 12,

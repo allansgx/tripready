@@ -1,12 +1,22 @@
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '@/components/ui/button';
+import { DialogHost } from '@/components/ui/dialog';
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
-import { colors } from '@/theme/tokens';
+import { PassportsProvider, usePassports } from '@/features/passports/passports-context';
+import { SplashOverlay } from '@/features/splash/components/splash-overlay';
+import { colors, spacing, typography } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
+
+// O primeiro quadro do overlay repete o splash nativo: o fade curto é só seguro
+// contra diferença de arredondamento entre o PNG e o SVG.
+SplashScreen.setOptions({ fade: true, duration: 150 });
 
 /** Rota âncora para onde o router volta quando um grupo é desprotegido. */
 export const unstable_settings = {
@@ -16,28 +26,73 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="dark" />
-      <RootNavigator />
+      <PassportsProvider>
+        <StatusBar style="dark" />
+        <RootNavigator />
+        {/* Onde os alertas da web aparecem; no nativo não desenha nada. */}
+        <DialogHost />
+      </PassportsProvider>
     </AuthProvider>
   );
 }
 
 /**
- * Proteção de rotas: os grupos são montados conforme a sessão.
- * Sem sessão, `(app)` nem existe na árvore de navegação — não há como
- * navegar para dentro dela por link, deep link ou histórico.
+ * Enquanto sessão, passaportes e fonte não resolvem, só o splash é montado —
+ * nenhuma rota pisca antes de se saber para onde o usuário vai.
  */
 function RootNavigator() {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading: isLoadingSession } = useAuth();
+  const { isLoading: isLoadingPassports } = usePassports();
 
-  useEffect(() => {
-    if (!isLoading) {
-      void SplashScreen.hideAsync();
-    }
-  }, [isLoading]);
+  // Carregada em tempo de execução por causa do Expo Go. Um erro aqui não
+  // segura o app: o nome da viagem sai na fonte do sistema.
+  const [fontsLoaded, fontError] = useFonts({
+    Fraunces_700Bold: require('@/assets/fonts/Fraunces_700Bold.ttf'),
+  });
 
-  if (isLoading) {
-    return null;
+  const isReady =
+    !isLoadingSession && !(session && isLoadingPassports) && (fontsLoaded || fontError !== null);
+
+  const [splashDone, setSplashDone] = useState(false);
+  const handleSplashDone = useCallback(() => setSplashDone(true), []);
+
+  return (
+    <>
+      {isReady ? <AppContent /> : splashDone ? <Readying /> : null}
+      {splashDone ? null : <SplashOverlay isAppReady={isReady} onFinish={handleSplashDone} />}
+    </>
+  );
+}
+
+/**
+ * A espera depois do login, enquanto os passaportes decidem entre onboarding e
+ * área principal. O splash não volta aqui: ele é a chegada ao app.
+ */
+function Readying() {
+  return (
+    <View style={styles.center}>
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  );
+}
+
+/**
+ * Proteção de rotas: sem sessão só existe `(auth)`, e com sessão sem passaporte
+ * só existe o onboarding. Os grupos são montados condicionalmente, então não há
+ * tela piscando nem como burlar por deep link.
+ */
+function AppContent() {
+  const { session } = useAuth();
+  const { hasPassport, hasLoadError: passportsFailed, refresh: refreshPassports } = usePassports();
+
+  // Chutar "não tem passaporte" mandaria para o cadastro alguém que já tem.
+  if (session && passportsFailed) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.retryText}>Sua conexão oscilou.</Text>
+        <Button label="Tentar de novo" onPress={() => void refreshPassports().catch(() => {})} />
+      </View>
+    );
   }
 
   return (
@@ -46,17 +101,82 @@ function RootNavigator() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!session && hasPassport}>
         <Stack.Screen name="(app)" />
+        {/* `modal` usa o card nativo do iOS (o pai fica visível atrás, cantos
+            arredondados) e entrega altura definida ao conteúdo. `formSheet`
+            com detents deixava a lista sem altura e a tela saía em branco. */}
+        <Stack.Screen
+          name="passport-picker"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        <Stack.Screen
+          name="trip-new"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        <Stack.Screen
+          name="trip-edit"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        {/* Sem gesto: a preparação termina navegando sozinha para a viagem. */}
+        <Stack.Screen
+          name="trip-preparing"
+          options={{
+            presentation: 'modal',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        {/* Também sem gesto: no meio da exclusão não há o que cancelar. */}
+        <Stack.Screen
+          name="account-deleting"
+          options={{
+            presentation: 'modal',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!!session && !hasPassport}>
+        <Stack.Screen name="onboarding" />
       </Stack.Protected>
 
       <Stack.Protected guard={!session}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
 
-      {/* Fora dos grupos protegidos: o retorno do OAuth chega antes da sessão
-          existir e precisa continuar acessível depois que ela existe. */}
+      {/* Fora dos grupos protegidos: o retorno do OAuth chega antes da sessão. */}
       <Stack.Screen name="auth/callback" options={{ animation: 'fade' }} />
+
+      {/* Também fora: os documentos legais são alcançados com e sem sessão. */}
+      <Stack.Screen name="legal/privacidade" />
+      <Stack.Screen name="legal/termos" />
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.background,
+  },
+  retryText: {
+    ...typography.body,
+    color: colors.text,
+    textAlign: 'center',
+  },
+});

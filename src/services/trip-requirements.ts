@@ -1,10 +1,8 @@
 import { supabase } from '@/lib/supabase/client';
 import { unwrap, unwrapRequired } from '@/services/errors';
-import type {
-  RequirementCategory,
-  RequirementPriority,
-  TripRequirement,
-} from '@/types/models';
+import type { TripRequirementWithGroup } from '@/services/trips';
+import type { Json } from '@/types/database';
+import type { TripRequirement, TripRequirementInsert } from '@/types/models';
 
 export const tripRequirementsService = {
   async listByTrip(tripId: string): Promise<TripRequirement[]> {
@@ -19,28 +17,30 @@ export const tripRequirementsService = {
     );
   },
 
-  async create(input: {
-    tripId: string;
-    title: string;
-    priority: RequirementPriority;
-    category: RequirementCategory;
-    countryCode?: string | null;
-    description?: string | null;
-  }): Promise<TripRequirement> {
+  /** Um requisito com o grupo que o originou; `null` quando não existe ou é alheio. */
+  async getById(requirementId: string): Promise<TripRequirementWithGroup | null> {
+    const row = unwrap(
+      await supabase
+        .from('trip_requirements')
+        .select('*, destination_groups(id, code, name)')
+        .eq('id', requirementId)
+        .maybeSingle(),
+      'Falha ao carregar o item da checklist',
+    );
+
+    return row as TripRequirementWithGroup | null;
+  },
+
+  /** Insere um lote de requisitos — usado ao preparar a checklist da viagem. */
+  async createMany(inserts: readonly TripRequirementInsert[]): Promise<TripRequirement[]> {
+    if (inserts.length === 0) return [];
+
     return unwrapRequired(
       await supabase
         .from('trip_requirements')
-        .insert({
-          trip_id: input.tripId,
-          title: input.title,
-          priority: input.priority,
-          category: input.category,
-          country_code: input.countryCode ? input.countryCode.toUpperCase() : null,
-          description: input.description ?? null,
-        })
-        .select('*')
-        .single(),
-      'Falha ao criar requisito',
+        .insert([...inserts])
+        .select('*'),
+      'Tente preparar a checklist novamente',
     );
   },
 
@@ -56,10 +56,22 @@ export const tripRequirementsService = {
     );
   },
 
-  async remove(requirementId: string): Promise<void> {
+  /**
+   * Aplica de uma vez o que sai e o que entra. A atomicidade vem da função
+   * `apply_requirement_diff`: o PostgREST trata cada chamada como uma transação.
+   */
+  async applyDiff(
+    removeIds: readonly string[],
+    inserts: readonly TripRequirementInsert[],
+  ): Promise<void> {
+    if (removeIds.length === 0 && inserts.length === 0) return;
+
     unwrap(
-      await supabase.from('trip_requirements').delete().eq('id', requirementId).select('id'),
-      'Falha ao remover requisito',
+      await supabase.rpc('apply_requirement_diff', {
+        p_remove_ids: [...removeIds],
+        p_inserts: inserts as unknown as Json,
+      }),
+      'Tente atualizar a checklist novamente',
     );
   },
 };

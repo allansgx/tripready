@@ -3,10 +3,8 @@ import { unwrap, unwrapRequired } from '@/services/errors';
 import type { TripCity, TripCountry } from '@/types/models';
 
 /**
- * Países e cidades de uma viagem.
- *
- * `trip_cities` tem chave estrangeira composta para `trip_countries`
- * (trip_id, country_code): uma cidade só existe se o país já estiver na viagem.
+ * Países e cidades de uma viagem. `trip_cities` tem chave estrangeira composta
+ * para `trip_countries`: uma cidade só existe se o país já estiver na viagem.
  */
 export const tripDestinationsService = {
   async listCountries(tripId: string): Promise<TripCountry[]> {
@@ -27,14 +25,67 @@ export const tripDestinationsService = {
         .insert({ trip_id: tripId, country_code: countryCode.toUpperCase() })
         .select('*')
         .single(),
-      'Falha ao adicionar país à viagem',
+      'Tente adicionar o país novamente',
+    );
+  },
+
+  /** Insere os países da viagem de uma vez, na criação. */
+  async addCountries(tripId: string, countryCodes: readonly string[]): Promise<TripCountry[]> {
+    if (countryCodes.length === 0) return [];
+
+    return unwrapRequired(
+      await supabase
+        .from('trip_countries')
+        .insert(countryCodes.map((code) => ({ trip_id: tripId, country_code: code.toUpperCase() })))
+        .select('*'),
+      'Tente adicionar os países novamente',
+    );
+  },
+
+  /** Insere as cidades da viagem de uma vez, na criação. */
+  async addCities(
+    tripId: string,
+    cities: readonly { countryCode: string; cityName: string }[],
+  ): Promise<TripCity[]> {
+    if (cities.length === 0) return [];
+
+    return unwrapRequired(
+      await supabase
+        .from('trip_cities')
+        .insert(
+          cities.map((city) => ({
+            trip_id: tripId,
+            country_code: city.countryCode.toUpperCase(),
+            city_name: city.cityName,
+          })),
+        )
+        .select('*'),
+      'Tente adicionar as cidades novamente',
     );
   },
 
   async removeCountry(tripCountryId: string): Promise<void> {
     unwrap(
       await supabase.from('trip_countries').delete().eq('id', tripCountryId).select('id'),
-      'Falha ao remover país da viagem',
+      'Tente remover o país novamente',
+    );
+  },
+
+  /** Remove países pelo código; a cascata leva cidades e requisitos junto. */
+  async removeCountriesByCode(tripId: string, countryCodes: readonly string[]): Promise<void> {
+    if (countryCodes.length === 0) return;
+
+    unwrap(
+      await supabase
+        .from('trip_countries')
+        .delete()
+        .eq('trip_id', tripId)
+        .in(
+          'country_code',
+          countryCodes.map((code) => code.toUpperCase()),
+        )
+        .select('id'),
+      'Tente remover os países novamente',
     );
   },
 
@@ -66,6 +117,15 @@ export const tripDestinationsService = {
         .select('*')
         .single(),
       'Falha ao adicionar cidade à viagem',
+    );
+  },
+
+  async removeCitiesByIds(cityIds: readonly string[]): Promise<void> {
+    if (cityIds.length === 0) return;
+
+    unwrap(
+      await supabase.from('trip_cities').delete().in('id', cityIds).select('id'),
+      'Tente remover as cidades novamente',
     );
   },
 

@@ -9,19 +9,9 @@ export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.
 export const devServerHost = Constants.expoConfig?.hostUri ?? null;
 
 /**
- * URL de retorno do OAuth.
- *
- * Atenção ao comportamento do Expo Go: `expo-linking` ignora silenciosamente o
- * `scheme` custom quando `executionEnvironment === StoreClient`
- * (ver `resolveScheme` em expo-linking/build/Schemes.js) e monta o link a partir
- * do host do dev server. Ou seja:
- *
- * - Expo Go:            `exp://<host-do-dev-server>/--/auth/callback`
- * - Build nativo:       `tripready://auth/callback`
- * - Web (dev):          `http://localhost:8081/auth/callback`
- *
- * No Expo Go a URL muda junto com o IP/porta da máquina, por isso o allow list
- * do Supabase precisa de um padrão com curinga (`exp://**`) além das URLs fixas.
+ * URL de retorno do OAuth. No Expo Go o `expo-linking` ignora o `scheme` custom
+ * e monta o link a partir do host do dev server, que muda com o IP/porta — daí
+ * o allow list do Supabase precisar de `exp://**` além das URLs fixas.
  */
 export const authRedirectUri = AuthSession.makeRedirectUri({
   scheme: 'tripready',
@@ -34,8 +24,7 @@ export const authRedirectUri = AuthSession.makeRedirectUri({
  * cadastrada no Supabase.
  */
 export function getRedirectDiagnostics() {
-  const isLoopback =
-    Platform.OS !== 'web' && /:\/\/(localhost|127\.0\.0\.1)/.test(authRedirectUri);
+  const isLoopback = Platform.OS !== 'web' && /:\/\/(localhost|127\.0\.0\.1)/.test(authRedirectUri);
 
   return {
     uri: authRedirectUri,
@@ -51,8 +40,7 @@ export function getRedirectDiagnostics() {
 if (__DEV__) {
   const { uri, warning } = getRedirectDiagnostics();
   console.log(
-    `[auth] redirect_to = ${uri}` +
-      (isExpoGo ? ' (Expo Go — cadastre exp://** no Supabase)' : ''),
+    `[auth] redirect_to = ${uri}` + (isExpoGo ? ' (Expo Go — cadastre exp://** no Supabase)' : ''),
   );
   if (warning) {
     console.warn(`[auth] ${warning}`);

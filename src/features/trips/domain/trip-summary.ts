@@ -1,0 +1,91 @@
+import { selectNextRequirement } from '@/features/trips/domain/requirement-matching';
+import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
+import { getTripStatus, todayISO, type TripStatus } from '@/features/trips/domain/trip-status';
+import type { TripRequirementBrief, TripWithRelations } from '@/services/trips';
+import type { Trip } from '@/types/models';
+
+export type TripSummary = {
+  trip: Trip;
+  countryCodes: string[];
+  progress: TripProgress;
+  status: TripStatus;
+  /** Item pendente mais importante da checklist; `null` quando não há nenhum. */
+  nextStep: TripRequirementBrief | null;
+};
+
+/** Prioridade de exibição: em andamento, depois próximas, depois concluídas. */
+const STATUS_ORDER: Record<TripStatus, number> = {
+  ongoing: 0,
+  upcoming: 1,
+  completed: 2,
+};
+
+export function toTripSummary(row: TripWithRelations, today: string = todayISO()): TripSummary {
+  const { trip_countries, trip_requirements, ...trip } = row;
+  const requirements = trip_requirements ?? [];
+
+  return {
+    trip,
+    countryCodes: (trip_countries ?? []).map((country) => country.country_code),
+    progress: computeTripProgress(requirements),
+    status: getTripStatus(trip, today),
+    nextStep: selectNextRequirement(requirements),
+  };
+}
+
+/**
+ * Ordena por relevância: em andamento (término mais próximo), próximas (início
+ * mais próximo) e concluídas (término mais recente). Fica aqui, e não no SQL,
+ * porque depende da data de hoje no fuso do usuário.
+ */
+export function buildTripSummaries(rows: readonly TripWithRelations[]): TripSummary[] {
+  const today = todayISO();
+
+  return rows
+    .map((row) => toTripSummary(row, today))
+    .sort((a, b) => {
+      const orderA = STATUS_ORDER[a.status];
+      const orderB = STATUS_ORDER[b.status];
+      if (orderA !== orderB) return orderA - orderB;
+
+      if (a.status === 'completed') {
+        const endA = a.trip.end_date ?? a.trip.start_date ?? '';
+        const endB = b.trip.end_date ?? b.trip.start_date ?? '';
+        return endB.localeCompare(endA);
+      }
+
+      if (a.status === 'ongoing') {
+        const endA = a.trip.end_date ?? a.trip.start_date ?? '';
+        const endB = b.trip.end_date ?? b.trip.start_date ?? '';
+        return endA.localeCompare(endB);
+      }
+
+      // Próximas: sem data vão para o fim, entre si pela criação mais recente.
+      const startA = a.trip.start_date;
+      const startB = b.trip.start_date;
+      if (!startA && !startB) return b.trip.created_at.localeCompare(a.trip.created_at);
+      if (!startA) return 1;
+      if (!startB) return -1;
+      return startA.localeCompare(startB);
+    });
+}
+
+/** Os filtros da lista são os próprios estados da viagem, mais "Todas". */
+export type TripFilter = 'all' | TripStatus;
+
+/** Aplica o filtro preservando a ordem de `buildTripSummaries`. */
+export function filterTripSummaries(
+  summaries: readonly TripSummary[],
+  filter: TripFilter,
+): TripSummary[] {
+  if (filter === 'all') return [...summaries];
+  return summaries.filter((summary) => summary.status === filter);
+}
+
+/** Separa a lista nas seções da tela: ativas (em andamento + próximas) e histórico. */
+export function splitTripSections(summaries: readonly TripSummary[]) {
+  return {
+    active: summaries.filter((summary) => summary.status !== 'completed'),
+    history: summaries.filter((summary) => summary.status === 'completed'),
+  };
+}

@@ -1,0 +1,21 @@
+-- =============================================================================
+-- TripReady — escopo `visa` no catálogo de requisitos
+--
+-- Esta migration faz uma coisa só, e é de propósito.
+--
+-- No Postgres, um valor acrescentado a um enum por `alter type ... add value`
+-- não pode ser *usado* na mesma transação em que foi criado. O CLI do Supabase
+-- roda cada arquivo de migration em sua própria transação, então separar o
+-- `add value` em um arquivo é o que permite que as migrations seguintes
+-- comparem `scope = 'visa'` em constraints e insiram templates com esse escopo.
+--
+-- Juntar isto à criação de `visa_rules` faria a carga falhar no deploy, não
+-- aqui — daí o arquivo separado.
+--
+-- O que o escopo significa: "para cada país da viagem cuja regra de visto, com
+-- o passaporte principal do viajante, seja de um determinado tipo, gere um
+-- item". A regra em si mora em `visa_rules`, criada na migration seguinte; o
+-- template de escopo `visa` responde apenas por como ela aparece na checklist.
+-- =============================================================================
+
+alter type public.requirement_scope add value 'visa';

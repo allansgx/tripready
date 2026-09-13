@@ -2,19 +2,17 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Os testes de regra rodam direto no Node (`node --test`), que resolve o
+    // arquivo pelo caminho real — daí o import terminar em `.ts`.
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/assets/*": [
-        "./assets/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./assets/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  // As Edge Functions rodam em Deno e têm a própria checagem, em
+  // `npm run functions:check`.
+  "exclude": ["supabase/functions"]
 }

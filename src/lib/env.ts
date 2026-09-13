@@ -1,9 +1,6 @@
 /**
- * Variáveis de ambiente públicas do app.
- *
- * Apenas chaves `EXPO_PUBLIC_*` podem existir aqui: elas são embutidas no bundle
- * e, portanto, são públicas. Nenhuma chave secreta (service_role, JWT secret,
- * client secret de OAuth) deve entrar neste arquivo ou em qualquer código do app.
+ * Só chaves `EXPO_PUBLIC_*`: elas são embutidas no bundle. Nenhum secret
+ * (service_role, JWT secret, client secret) entra aqui nem no resto do app.
  */
 
 function requireEnv(name: string, value: string | undefined): string {

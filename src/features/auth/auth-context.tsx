@@ -2,6 +2,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { toAuthMessage } from '@/features/auth/auth-errors';
 import {
   AuthCancelledError,
   authService,
@@ -20,6 +21,36 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Exclui a conta, sem encerrar a sessão. **Lança** `DeleteAccountError`: a
+   * tela de confirmação mostra a mensagem no seu próprio contexto, e não no
+   * erro global da tela de login.
+   */
+  deleteAccount: () => Promise<void>;
+  /**
+   * Encerra a sessão só no dispositivo, fechando o fluxo de exclusão depois que
+   * a confirmação já foi mostrada. Nunca levanta erro.
+   */
+  signOutLocal: () => Promise<void>;
+  /**
+   * Métodos de e-mail/senha (temporários, para testes no Expo Go).
+   * Diferente dos de OAuth, estes **lançam** o erro: cada tela de formulário
+   * mostra a mensagem no seu próprio contexto, em vez do erro global.
+   */
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<'signed-in' | 'confirm-email'>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  /** Grava o nome de exibição. **Lança** o erro — a tela mostra a mensagem inline. */
+  updateDisplayName: (name: string) => Promise<void>;
+  /**
+   * Troca a senha, conferindo a senha atual. **Lança** o erro; só chamável em
+   * contas com identidade de e-mail (`getAccountProvider(user) === 'email'`).
+   */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -86,6 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       signInWithGoogle: () => run(() => authService.signInWithGoogle()),
       signInWithApple: () => run(() => authService.signInWithApple()),
+      signInWithEmail: async (email, password) => {
+        setError(null);
+        await authService.signInWithEmail(email, password);
+      },
+      signUpWithEmail: (email, password, name) =>
+        authService.signUpWithEmail(email, password, name),
+      sendPasswordReset: (email) => authService.sendPasswordReset(email),
       signOut: async () => {
         setError(null);
         try {
@@ -94,6 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setError(toMessage(err));
         }
       },
+      deleteAccount: async () => {
+        setError(null);
+        await authService.deleteAccount();
+      },
+      signOutLocal: () => authService.signOutLocal(),
+      updateDisplayName: (name) => authService.updateDisplayName(name),
+      changePassword: (currentPassword, newPassword) =>
+        authService.changePassword(currentPassword, newPassword),
     };
   }, [session, isLoading, isSigningIn, error]);
 
@@ -109,5 +155,5 @@ export function useAuth() {
 }
 
 function toMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Erro inesperado na autenticação.';
+  return toAuthMessage(error);
 }

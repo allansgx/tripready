@@ -1,0 +1,15 @@
+# Dependências e saídas de build
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Ferramentas locais e temporários de CLI
+.claude/
+supabase/.temp/
+
+# Arquivos escritos por outras ferramentas
+expo-env.d.ts
+package-lock.json
+assets/expo.icon/
+src/types/database.ts
