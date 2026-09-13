@@ -3,22 +3,10 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { colors, typography } from '@/theme/tokens';
 
-/**
- * Fração mínima desenhada do arco.
- *
- * Em 0% o anel continua mostrando uma marca no topo: um anel completamente
- * vazio parece um desenho quebrado, e o ponto diz por onde o progresso começa.
- * O valor lido pelo leitor de tela continua sendo o real.
- */
+/** Em 0% sobra uma marca no topo: anel vazio parece desenho quebrado. */
 const MIN_ARC = 0.015;
 
-/**
- * Progresso em anel, para quando o número é o protagonista do bloco.
- *
- * Irmão do `ProgressBar`, que continua servindo aos lugares onde o progresso é
- * uma linha fina ao lado de outro conteúdo — a Home e o cabeçalho de cada
- * categoria da checklist.
- */
+/** Progresso em anel, para quando o número é o protagonista do bloco. */
 export function ProgressRing({
   percent,
   size = 56,

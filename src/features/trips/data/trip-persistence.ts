@@ -29,13 +29,7 @@ export type ChecklistInput = {
   passportCountryCode: string | null;
 };
 
-/**
- * Requisitos que a viagem deveria ter hoje, segundo o catálogo.
- *
- * Ponto único de entrada da checklist: a criação usa o resultado inteiro, e a
- * edição o compara com o que já está gravado. Ninguém mais precisa saber como
- * o catálogo é carregado nem como a aplicabilidade é decidida.
- */
+/** Requisitos que a viagem deveria ter hoje, segundo o catálogo. */
 export async function resolveChecklist(input: ChecklistInput): Promise<ResolvedRequirement[]> {
   const catalog = await requirementCatalogService.loadForTrip(
     input.countryCodes,
@@ -56,20 +50,8 @@ export async function resolveChecklist(input: ChecklistInput): Promise<ResolvedR
 }
 
 /**
- * Recalcula as checklists depois de uma troca de passaporte principal.
- *
- * As regras de visto dependem do passaporte, então trocar o principal muda o
- * que vale para viagens já criadas. Sem isto, quem cadastrasse um segundo
- * passaporte e o promovesse continuaria vendo os itens do passaporte anterior.
- *
- * Viagens concluídas não entram: são registro do que a pessoa já preparou.
- * Entre as demais, `diffTripRequirements` preserva o que ela marcou — só saem
- * os itens gerados pelo catálogo que deixaram de valer e ainda não foram
- * verificados.
- *
- * O catálogo é carregado por viagem, e não uma vez só, porque cada uma tem os
- * seus países. É uma ação rara e deliberada do usuário, então o custo cabe;
- * se um dia incomodar, o passo a mudar é este, sem tocar na regra.
+ * Recalcula as checklists depois de uma troca de passaporte principal, porque
+ * as regras de visto dependem dele. Viagens concluídas ficam de fora.
  */
 export async function rebuildChecklistsForPassport(
   userId: string,
@@ -95,17 +77,11 @@ export async function rebuildChecklistsForPassport(
     inserts.push(...diff.toInsert);
   }
 
-  // Uma escrita só para todas as viagens: a troca de passaporte ou vale
-  // inteira, ou não vale — nunca deixa metade das checklists atualizadas.
+  // Uma escrita só: a troca de passaporte ou vale inteira, ou não vale.
   await tripRequirementsService.applyDiff(removeIds, inserts);
 }
 
-/**
- * Cria a viagem e seus destinos.
- *
- * A checklist não entra aqui: ela é montada na tela de preparação, para a
- * animação corresponder à gravação real.
- */
+/** Cria a viagem e seus destinos; a checklist é montada na tela de preparação. */
 export async function createTripWithDestinations(
   userId: string,
   draft: TripDraft,
@@ -133,17 +109,8 @@ export type TripEditBaseline = {
 };
 
 /**
- * Salva a edição preservando o que continua válido.
- *
- * O ponto central é **não recriar** destinos e checklist: só a diferença é
- * aplicada. Países que saem são removidos pelo código, e a cascata do banco
- * leva junto as cidades e os requisitos exclusivos daquele país; tudo o mais —
- * inclusive os itens já verificados — permanece intocado.
- *
- * A checklist é recalculada inteira pelo catálogo e comparada com a que existe.
- * Assim a edição também acerta o que não depende de um país só: mudar as datas
- * pode ativar ou desativar um requisito sazonal, e tirar o último país de um
- * bloco faz o requisito daquele grupo deixar de valer.
+ * Salva a edição aplicando só a diferença: destinos e checklist não são
+ * recriados, e o que a pessoa já verificou permanece intocado.
  */
 export async function updateTripWithDestinations(
   tripId: string,
@@ -164,13 +131,11 @@ export async function updateTripWithDestinations(
   const removedCountries = currentCountries.filter((code) => !desiredCountries.includes(code));
   const addedCountries = desiredCountries.filter((code) => !currentCountries.includes(code));
 
-  // Ordem importa: remover primeiro deixa a cascata limpar cidades e requisitos
-  // dos países que saíram antes de qualquer inserção.
+  // Remover primeiro: a cascata limpa cidades e requisitos dos países que saíram.
   await tripDestinationsService.removeCountriesByCode(tripId, removedCountries);
   await tripDestinationsService.addCountries(tripId, addedCountries);
 
-  // Cidades de países removidos já saíram pela cascata; aqui só a diferença
-  // dentro dos países que continuam.
+  // Cidades de países removidos já saíram pela cascata.
   const survivingCities = baseline.cities.filter((city) =>
     desiredCountries.includes(city.country_code),
   );

@@ -1,9 +1,6 @@
 /**
- * Tradução das mensagens de erro do Supabase Auth.
- *
- * O `AuthError` chega em inglês e é o texto que o usuário vê na tela, então as
- * mensagens mais comuns são mapeadas aqui. O que não estiver no mapa passa
- * direto — é melhor mostrar o texto original do que uma mensagem genérica.
+ * Tradução das mensagens do Supabase Auth. O que não estiver no mapa passa
+ * direto: melhor o texto original do que uma mensagem genérica.
  */
 const MESSAGES: Record<string, string> = {
   'Invalid login credentials': 'E-mail ou senha incorretos.',
@@ -17,11 +14,8 @@ const MESSAGES: Record<string, string> = {
 };
 
 /**
- * Tradução por `code` — a via confiável para alguns erros do GoTrue, que usam
- * a mesma mensagem em inglês para situações diferentes. É o caso da troca de
- * senha: senha atual ausente e senha atual errada devolvem exatamente
- * "Current password required when setting new password.", e só o `code`
- * (`current_password_required` / `current_password_invalid`) distingue os dois.
+ * Tradução por `code`: alguns erros do GoTrue usam a mesma mensagem em inglês
+ * para situações diferentes, como senha atual ausente e senha atual errada.
  */
 const CODE_MESSAGES: Record<string, string> = {
   current_password_required: 'Informe sua senha atual.',

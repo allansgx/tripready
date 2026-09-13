@@ -7,18 +7,9 @@ import { getAvatarIconSource, getAvatarUrl } from '@/features/auth/user-profile'
 import { colors } from '@/theme/tokens';
 
 /**
- * Navegação inferior nativa da plataforma.
- *
- * `NativeTabs` monta o componente de abas do próprio sistema — UITabBarController
- * no iOS e BottomNavigationView (Material 3) no Android — via react-native-screens.
- * Nada de tab bar desenhada em JS: transparência, blur, minimização ao rolar e a
- * estética do iOS 26 ficam por conta do sistema, então nenhuma dessas
- * propriedades é sobrescrita aqui. A única customização é o `tintColor` da marca.
- *
- * Os rótulos ficam ocultos apenas no iOS (padrão de apps como o Instagram). No
- * Android eles permanecem visíveis, que é o comportamento nativo esperado lá.
- * Como o rótulo some no iOS, cada aba declara `accessibilityLabel` para o
- * VoiceOver continuar anunciando o destino.
+ * Navegação inferior nativa: `NativeTabs` monta as abas do próprio sistema, e
+ * nada aqui sobrescreve transparência, blur ou minimização. Os rótulos somem só
+ * no iOS, por isso cada aba declara `accessibilityLabel`.
  */
 const hideLabels = Platform.OS === 'ios';
 

@@ -68,13 +68,7 @@ export default function NewTripScreen() {
     setStepIndex((current) => current - 1);
   }
 
-  /**
-   * Tirar um país do roteiro na etapa das cidades.
-   *
-   * Sem país nenhum não há cidade a escolher, então a etapa deixa de existir e
-   * o fluxo volta para a escolha de destinos — em vez de mostrar uma tela vazia
-   * com um botão que não leva a lugar algum.
-   */
+  // Sem país nenhum não há cidade a escolher, e o fluxo volta para os destinos.
   function removeCountry(code: string) {
     toggleCountry(code);
     if (countryCodes.length === 1) setStepIndex(0);
@@ -101,13 +95,7 @@ export default function NewTripScreen() {
         ? Boolean(range.start && range.end)
         : true;
 
-  /**
-   * Um botão só por etapa.
-   *
-   * Nas cidades havia dois — "Continuar" e "Pular por enquanto" — fazendo
-   * exatamente a mesma coisa. Sem cidade escolhida, seguir é pular, e é isso
-   * que o rótulo diz.
-   */
+  // Um botão só por etapa: sem cidade escolhida, seguir é pular.
   const continueLabel =
     step === 'countries' && countryCodes.length > 0
       ? `Continuar com ${countryCodes.length} ${countryCodes.length === 1 ? 'país' : 'países'}`

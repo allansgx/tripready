@@ -2,12 +2,7 @@ import { supabase } from '@/lib/supabase/client';
 import { unwrap, unwrapRequired } from '@/services/errors';
 import type { TripRequirementWithGroup } from '@/services/trips';
 import type { Json } from '@/types/database';
-import type {
-  RequirementCategory,
-  RequirementPriority,
-  TripRequirement,
-  TripRequirementInsert,
-} from '@/types/models';
+import type { TripRequirement, TripRequirementInsert } from '@/types/models';
 
 export const tripRequirementsService = {
   async listByTrip(tripId: string): Promise<TripRequirement[]> {
@@ -22,14 +17,7 @@ export const tripRequirementsService = {
     );
   },
 
-  /**
-   * Um requisito com o grupo que o originou — o que a tela de detalhe precisa
-   * para mostrar de onde o item veio.
-   *
-   * Devolve `null` quando a linha não existe ou não é do usuário: a policy
-   * `trip_requirements_select_own` já barra a viagem alheia, e para a tela as
-   * duas situações têm a mesma resposta.
-   */
+  /** Um requisito com o grupo que o originou; `null` quando não existe ou é alheio. */
   async getById(requirementId: string): Promise<TripRequirementWithGroup | null> {
     const row = unwrap(
       await supabase
@@ -41,31 +29,6 @@ export const tripRequirementsService = {
     );
 
     return row as TripRequirementWithGroup | null;
-  },
-
-  async create(input: {
-    tripId: string;
-    title: string;
-    priority: RequirementPriority;
-    category: RequirementCategory;
-    countryCode?: string | null;
-    description?: string | null;
-  }): Promise<TripRequirement> {
-    return unwrapRequired(
-      await supabase
-        .from('trip_requirements')
-        .insert({
-          trip_id: input.tripId,
-          title: input.title,
-          priority: input.priority,
-          category: input.category,
-          country_code: input.countryCode ? input.countryCode.toUpperCase() : null,
-          description: input.description ?? null,
-        })
-        .select('*')
-        .single(),
-      'Falha ao criar requisito',
-    );
   },
 
   /** Insere um lote de requisitos — usado ao preparar a checklist da viagem. */
@@ -93,38 +56,9 @@ export const tripRequirementsService = {
     );
   },
 
-  async remove(requirementId: string): Promise<void> {
-    unwrap(
-      await supabase.from('trip_requirements').delete().eq('id', requirementId).select('id'),
-      'Falha ao remover requisito',
-    );
-  },
-
   /**
-   * Remove um lote — usado na edição, quando uma regra do catálogo deixa de se
-   * aplicar à viagem.
-   */
-  async removeMany(requirementIds: readonly string[]): Promise<void> {
-    if (requirementIds.length === 0) return;
-
-    unwrap(
-      await supabase
-        .from('trip_requirements')
-        .delete()
-        .in('id', [...requirementIds])
-        .select('id'),
-      'Falha ao remover requisitos',
-    );
-  },
-
-  /**
-   * Aplica de uma vez o que sai e o que entra na checklist.
-   *
-   * Remoção e inserção precisam valer juntas: separadas, uma falha no meio
-   * deixaria a viagem sem os itens antigos e sem os novos. Como o PostgREST
-   * trata cada chamada como a sua própria transação, a atomicidade vem da
-   * função `apply_requirement_diff`, no banco — que só aplica o que
-   * `diffTripRequirements` já decidiu aqui.
+   * Aplica de uma vez o que sai e o que entra. A atomicidade vem da função
+   * `apply_requirement_diff`: o PostgREST trata cada chamada como uma transação.
    */
   async applyDiff(
     removeIds: readonly string[],

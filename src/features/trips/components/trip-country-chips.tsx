@@ -8,14 +8,8 @@ import { colors, radius, spacing, typography } from '@/theme/tokens';
 const MAX_VISIBLE = 3;
 
 /**
- * Os destinos da viagem em chips de bandeira e nome.
- *
- * Com o nome por extenso — o do catálogo, que é a fonte única de países — três
- * chips já ocupam a largura do card, então o restante entra como "+N" em vez de
- * empurrar a linha para baixo. O card tem altura previsível com um destino ou
- * com doze.
- *
- * Os chips são informação, e não filtros: quem abre a viagem é o card inteiro.
+ * Os destinos em chips de bandeira e nome, com o excedente em "+N": o card tem
+ * altura previsível com um destino ou com doze. São informação, não filtros.
  */
 export function TripCountryChips({ codes }: { codes: readonly string[] }) {
   if (codes.length === 0) return null;

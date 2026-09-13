@@ -3,13 +3,7 @@ import test from 'node:test';
 
 import { computeTripProgress, formatProgressFraction } from '../domain/trip-progress.ts';
 
-/**
- * A fração curta do card da lista.
- *
- * Ela precisa contar exatamente o que a porcentagem conta: o anel e o texto
- * ficam lado a lado no card, e divergir entre eles seria o mesmo card dando
- * duas respostas para a mesma pergunta.
- */
+/** A fração do card precisa contar exatamente o que a porcentagem conta. */
 
 test('a fração usa o mesmo recorte da porcentagem', () => {
   const progress = computeTripProgress([

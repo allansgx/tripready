@@ -1,11 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
-/**
- * Erro de domínio da camada de dados.
- *
- * As telas só precisam tratar `DataAccessError`, sem conhecer o formato de erro
- * do PostgREST/Supabase.
- */
+/** Erro de domínio da camada de dados: as telas não conhecem o formato do Supabase. */
 export class DataAccessError extends Error {
   readonly code?: string;
   readonly details?: string;
@@ -33,11 +28,7 @@ export function unwrap<T>(result: { data: T; error: PostgrestError | null }, con
   return result.data;
 }
 
-/**
- * Igual a `unwrap`, mas garante que houve retorno. Use em listas e em
- * `.single()`, onde `null` significa que a linha não existe ou foi barrada
- * pelas policies de RLS.
- */
+/** Igual a `unwrap`, mas garante retorno. Use em listas e em `.single()`. */
 export function unwrapRequired<T>(
   result: { data: T | null; error: PostgrestError | null },
   context: string,

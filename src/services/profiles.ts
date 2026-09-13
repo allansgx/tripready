@@ -2,12 +2,7 @@ import { supabase } from '@/lib/supabase/client';
 import { unwrap, unwrapRequired } from '@/services/errors';
 import type { Profile } from '@/types/models';
 
-/**
- * Perfil do usuário autenticado.
- *
- * A linha em `profiles` é criada por trigger no banco quando o usuário é criado
- * em `auth.users`, então aqui só existe leitura.
- */
+/** A linha em `profiles` é criada por trigger, então aqui só existe leitura. */
 export const profilesService = {
   async getById(userId: string): Promise<Profile | null> {
     return unwrap(

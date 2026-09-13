@@ -24,21 +24,11 @@ export class AuthCancelledError extends Error {
   }
 }
 
-/**
- * Códigos PKCE já trocados por sessão.
- *
- * O mesmo redirect pode chegar por dois caminhos — o resultado do
- * `openAuthSessionAsync` e o deep link que abre o app — e o `code` do PKCE só
- * pode ser usado uma vez. Sem isso a segunda troca falha e mostra um erro na
- * tela mesmo com o login tendo dado certo.
- */
+// O mesmo redirect chega pelo `openAuthSessionAsync` e pelo deep link, e o
+// `code` do PKCE só pode ser trocado uma vez.
 const exchangedCodes = new Set<string>();
 
-/**
- * Cria a sessão a partir da URL de redirect do provedor.
- * Com PKCE vem um `code`, que é trocado por sessão; o fallback trata o formato
- * antigo com tokens direto na URL.
- */
+/** Cria a sessão a partir da URL de redirect do provedor. */
 export async function createSessionFromUrl(url: string) {
   const { params, errorCode } = getQueryParams(url);
 
@@ -71,10 +61,7 @@ export async function createSessionFromUrl(url: string) {
   return null;
 }
 
-/**
- * Login OAuth pelo navegador (ASWebAuthenticationSession no iOS,
- * Custom Tabs no Android). Não exige client secret no app.
- */
+/** Login OAuth pelo navegador, sem client secret no app. */
 async function signInWithOAuthBrowser(provider: OAuthProvider) {
   if (Platform.OS === 'web') {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -93,8 +80,7 @@ async function signInWithOAuthBrowser(provider: OAuthProvider) {
   if (!data.url) throw new Error('O Supabase não retornou a URL de autenticação.');
 
   if (__DEV__) {
-    // Mostra o `redirect_to` realmente embutido na URL de autorização — é essa
-    // string exata que precisa estar em Supabase → Redirect URLs.
+    // É esta string exata que precisa estar em Supabase → Redirect URLs.
     const sent = new URL(data.url).searchParams.get('redirect_to');
     console.log(`[auth] authorize url = ${data.url}`);
     console.log(`[auth] redirect_to enviado ao Supabase = ${sent}`);
@@ -108,13 +94,8 @@ async function signInWithOAuthBrowser(provider: OAuthProvider) {
   return createSessionFromUrl(result.url);
 }
 
-/**
- * Traduz o erro do `functions.invoke` no motivo que a tela precisa distinguir.
- *
- * `401` é a única resposta que significa "esta sessão não vale mais" — a função
- * responde `200` quando a conta já havia sido excluída, justamente para que
- * repetir a tentativa não pareça uma falha.
- */
+// `401` é a única resposta que significa "sessão inválida": a função responde
+// `200` quando a conta já havia sido excluída.
 function classifyDeleteFailure(error: unknown): DeleteAccountFailure {
   if (error instanceof FunctionsFetchError) {
     return 'connection';
@@ -133,10 +114,7 @@ export const authService = {
     return signInWithOAuthBrowser('google');
   },
 
-  /**
-   * No iOS usa o Sign in with Apple nativo (exigido pela App Store) e envia o
-   * identity token para o Supabase. Nas demais plataformas cai no fluxo OAuth.
-   */
+  /** No iOS, Sign in with Apple nativo (exigido pela App Store). */
   async signInWithApple() {
     const nativeAvailable = Platform.OS === 'ios' && (await AppleAuthentication.isAvailableAsync());
 
@@ -170,17 +148,6 @@ export const authService = {
     }
   },
 
-  // ---------------------------------------------------------------------------
-  // TEMPORÁRIO — login por e-mail/senha.
-  //
-  // Existe para conseguir usar o app autenticado no Expo Go (iPhone) enquanto o
-  // retorno do OAuth não funciona nesse ambiente. É JS puro sobre o Supabase
-  // Auth, sem módulo nativo, então roda no Expo Go sem build.
-  // Para remover: apague estes três métodos, as telas em `src/app/(auth)/`
-  // (email-login, sign-up, forgot-password) e a linha "Entrar com e-mail" da
-  // tela de login.
-  // ---------------------------------------------------------------------------
-
   async signInWithEmail(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -190,11 +157,7 @@ export const authService = {
     return data.session;
   },
 
-  /**
-   * Retorna `'signed-in'` quando a sessão já veio pronta (confirmação de e-mail
-   * desligada no projeto) e `'confirm-email'` quando o Supabase enviou o link
-   * de confirmação e ainda não há sessão.
-   */
+  /** `'confirm-email'` quando o Supabase enviou o link e ainda não há sessão. */
   async signUpWithEmail(
     email: string,
     password: string,
@@ -207,10 +170,8 @@ export const authService = {
       password,
       options: {
         emailRedirectTo: authRedirectUri,
-        // Vira `raw_user_meta_data` em auth.users. `display_name` é o campo que
-        // o painel do Supabase mostra na coluna "Display name"; `full_name`
-        // mantém o mesmo formato que o Google devolve, para o app ler o nome
-        // do mesmo jeito nos dois provedores.
+        // `display_name` é o que o painel do Supabase mostra; `full_name` é o
+        // formato que o Google devolve.
         data: { display_name: displayName, full_name: displayName },
       },
     });
@@ -226,20 +187,9 @@ export const authService = {
   },
 
   /**
-   * Exclusão permanente da conta.
-   *
-   * A Edge Function `delete-account` apaga a linha em `auth.users` — o app não
-   * tem (e não deve ter) privilégio para isso. A partir dali a cascata do banco
-   * leva perfil, passaportes, viagens, destinos e checklists.
-   *
-   * A função responde igual para "apaguei agora" e "já estava apagada", então
-   * uma resposta perdida por rede pode ser reenviada sem virar mensagem de erro
-   * sobre uma conta que já não existe. Só a sessão inválida é tratada como
-   * problema, porque aí a pessoa precisa entrar de novo.
-   *
-   * A sessão **não** é encerrada aqui. Derrubá-la junto trocaria a tela na
-   * mesma hora e a confirmação da exclusão não teria onde aparecer — quem
-   * decide o momento é a tela, com `signOutLocal`.
+   * Exclusão permanente da conta, pela Edge Function — o app não tem privilégio
+   * para apagar `auth.users`. A sessão não é encerrada aqui: quem decide o
+   * momento é a tela, com `signOutLocal`.
    */
   async deleteAccount(): Promise<void> {
     const { error } = await supabase.functions.invoke('delete-account');
@@ -249,14 +199,7 @@ export const authService = {
     }
   },
 
-  /**
-   * Encerra a sessão apenas no dispositivo.
-   *
-   * É o fim do fluxo de exclusão: a conta já não existe, então não há mais nada
-   * a encerrar no servidor e uma ida de rede só poderia falhar. Diferente do
-   * `signOut`, não levanta erro — sair é a última coisa que pode dar errado
-   * para alguém que acabou de apagar a conta.
-   */
+  /** Encerra a sessão só no dispositivo, sem levantar erro: a conta já não existe. */
   async signOutLocal(): Promise<void> {
     await supabase.auth.signOut({ scope: 'local' });
   },
@@ -268,11 +211,7 @@ export const authService = {
     if (error) throw error;
   },
 
-  /**
-   * Grava o nome de exibição. Os dois campos pelo mesmo motivo do cadastro:
-   * `display_name` é o que o painel do Supabase mostra, `full_name` é o formato
-   * que o Google devolve, e `getDisplayName` lê os dois.
-   */
+  /** Os dois campos pelo mesmo motivo do cadastro; `getDisplayName` lê ambos. */
   async updateDisplayName(name: string): Promise<void> {
     const displayName = name.trim();
     const { error } = await supabase.auth.updateUser({
@@ -282,14 +221,8 @@ export const authService = {
   },
 
   /**
-   * Troca a senha.
-   *
-   * `current_password` é conferido pelo próprio GoTrue quando o projeto tem a
-   * opção "Secure password change" ligada (sem ela, o campo é ignorado e a
-   * troca segue normalmente) — não é preciso reautenticar com
-   * `signInWithPassword` à parte. Uma senha atual errada ou ausente volta como
-   * `AuthApiError` com `code` `current_password_invalid` ou
-   * `current_password_required`, tratados em `toAuthMessage`.
+   * `current_password` é conferido pelo GoTrue quando "Secure password change"
+   * está ligada; o erro correspondente é tratado em `toAuthMessage`.
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     const { error } = await supabase.auth.updateUser({

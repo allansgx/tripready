@@ -1,11 +1,7 @@
 /**
- * Gera os PNGs da marca a partir do avião definido em `plane-art.ts`.
- *
- * Existe por um motivo só: o splash nativo é um PNG e o primeiro quadro da
- * animação é um SVG. Se os dois forem desenhados por mãos diferentes, a troca
- * de um pelo outro pisca. Rasterizando o mesmo traço, ela some.
- *
- * Roda sob demanda (`npm run brand`), não a cada build — os PNGs são versionados.
+ * Gera os PNGs da marca a partir do avião de `plane-art.ts`, para o splash
+ * nativo e o primeiro quadro da animação saírem do mesmo traço. Roda sob
+ * demanda (`npm run brand`); os PNGs são versionados.
  */
 
 import { deflateSync } from 'node:zlib';
@@ -118,12 +114,8 @@ function quadraticAt(p0, p1, p2, t) {
 // --- Rasterização -----------------------------------------------------------
 
 /**
- * Cobertura de cada pixel por uma forma, entre 0 e 1.
- *
- * Varre linhas de amostragem, cruza as arestas, ordena os cruzamentos e pinta
- * os intervalos internos pela regra não-zero. Na horizontal a cobertura é
- * exata (o pedaço do pixel que o intervalo ocupa); na vertical vem das
- * `SUBSAMPLES` linhas. É o suficiente para a borda não serrilhar.
+ * Cobertura de cada pixel por uma forma, entre 0 e 1: exata na horizontal e por
+ * `SUBSAMPLES` linhas na vertical, o suficiente para a borda não serrilhar.
  */
 function rasterize(polylines, size) {
   const coverage = new Float32Array(size * size);
@@ -292,11 +284,8 @@ const PALETTES = {
 };
 
 /**
- * `planeScale` é a fração da largura do PNG ocupada pelo `viewBox` do avião.
- *
- * No splash nativo ele vale 1: o `viewBox` é o PNG inteiro, e o `imageWidth` do
- * `app.json` passa a ser a largura do mesmo `viewBox` que o `<Svg>` do primeiro
- * quadro desenha. É essa igualdade que mantém a costura invisível.
+ * `planeScale` é a fração da largura do PNG ocupada pelo `viewBox` do avião. No
+ * splash nativo vale 1, que é o que mantém a costura com o SVG invisível.
  */
 const ASSETS = [
   { file: 'splash-icon.png', size: 512, background: null, palette: 'onSky', planeScale: 1 },

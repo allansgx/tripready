@@ -7,15 +7,8 @@ import { countTripDays } from '@/features/trips/domain/trip-status';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /**
- * O que já foi escolhido no calendário, logo abaixo dele.
- *
- * Antes da primeira data é só uma instrução; a partir dela vira o resultado em
- * destaque, com a duração — que é o número que a pessoa quer conferir antes de
- * seguir, e o que separa "12 a 24" de "treze dias de viagem".
- *
- * O "Limpar" só existe junto do calendário. Na conferência final o cartão vai
- * sem ação nenhuma: limpar ali deixaria a viagem sem data e sem calendário à
- * vista, e quem edita é o "Alterar" do cabeçalho do bloco.
+ * O que já foi escolhido no calendário, com a duração. O "Limpar" só existe
+ * junto do calendário: na conferência final quem edita é o "Alterar".
  */
 export function DateRangeSummary({ value, onClear }: { value: DateRange; onClear?: () => void }) {
   const days = countTripDays(value.start, value.end);

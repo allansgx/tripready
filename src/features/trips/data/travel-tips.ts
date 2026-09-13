@@ -5,11 +5,8 @@ export type TravelTip = {
 };
 
 /**
- * Dicas gerais de viagem, para a Home de quem ainda não tem viagem nenhuma.
- *
- * Orientam sem virar regra: nesta tela o destino é desconhecido, então nenhum
- * texto crava exigência, prazo ou consequência. "Alguns destinos exigem", nunca
- * "todo país pede"; "pode ajudar se", nunca "evita".
+ * Dicas gerais para a Home sem viagem. O destino é desconhecido, então nenhum
+ * texto crava exigência, prazo ou consequência.
  */
 export const travelTips: readonly TravelTip[] = [
   {
@@ -90,14 +87,8 @@ export const travelTips: readonly TravelTip[] = [
 ];
 
 /**
- * Sorteia dicas distintas do catálogo.
- *
- * Fisher-Yates parcial: embaralha só as primeiras `count` posições de uma cópia
- * e corta ali. Garante ausência de repetição por construção — sortear até
- * juntar a quantidade pedida daria o mesmo resultado sem hora marcada para
- * terminar.
- *
- * `random` é parâmetro para o teste poder ser determinístico.
+ * Fisher-Yates parcial: embaralha só as primeiras `count` posições e corta ali,
+ * então não repete por construção. `random` é parâmetro por causa do teste.
  */
 export function pickTravelTips(
   count: number,

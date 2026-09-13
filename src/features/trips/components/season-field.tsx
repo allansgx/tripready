@@ -13,32 +13,12 @@ import { useReduceMotion } from '@/lib/animation';
 import { seasonColors } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 
-/**
- * O clima da viagem ocupando a tela inteira, atrás do conteúdo.
- *
- * Cada partícula é um corpo com gravidade, arrasto do ar e balanço: cai a tela
- * toda, sai por baixo e volta pelo topo, sem fim. Não há chão nem acúmulo — é
- * paisagem, e o campo continua sem receber toque nenhum: ele apenas *lê* onde o
- * dedo está, por um ponteiro que a tela alimenta. Nenhum botão, rolagem ou
- * gesto de navegação é disputado por causa disso.
- *
- * A simulação roda inteira na UI thread, em worklets: a thread de JS não
- * participa de nenhum quadro. Fora de foco, o laço para.
- */
-
 /** Quantas estações o campo representa ao mesmo tempo. */
 const MAX_SEASONS = 2;
 /** Divisão das partículas quando a viagem atravessa duas estações. */
 const FIRST_SEASON_SHARE = 0.6;
 
-/**
- * Teto de partículas na tela.
- *
- * O limite é de custo por quadro (um `useAnimatedStyle` por partícula), mas
- * também de composição: acima disso a Home vira uma tela de neve, e o texto
- * passa a competir com o fundo. É paisagem — quem não reparar nela está
- * exatamente com a atenção onde deveria.
- */
+/** Teto de partículas: um `useAnimatedStyle` por quadro em cada uma. */
 const MAX_PARTICLES = 16;
 
 /** Área de referência do sorteio de contagem — um celular comum, em pontos. */
@@ -57,14 +37,7 @@ const AIR_DRAG = 0.99;
 /** Achatamento mínimo no giro em profundidade — `scaleX: 0` é um quadro perdido. */
 const MIN_FLATTEN = 0.08;
 
-/**
- * A profundidade é deliberadamente discreta.
- *
- * O que ela precisa entregar é paralaxe — o fundo andando mais devagar que a
- * frente —, não uma tela com partículas de tamanhos muito diferentes. Por isso
- * os fatores partem de 0,7 e não de zero: nada encolhe ou apaga a ponto de
- * parecer uma segunda camada de enfeite.
- */
+// Pisos altos: a profundidade entrega paralaxe, não tamanhos muito diferentes.
 const DEPTH_SIZE_FLOOR = 0.7;
 const DEPTH_OPACITY_FLOOR = 0.6;
 const DEPTH_FALL_FLOOR = 0.75;
@@ -72,28 +45,15 @@ const DEPTH_FALL_FLOOR = 0.75;
 /** Abaixo disto a partícula é desenhada sem detalhe interno. */
 const SOFT_DEPTH = 0.45;
 
-/**
- * O alcance do sopro do dedo, em pontos de tela.
- *
- * Precisa ser bem maior do que a intuição sugere. Uma dúzia e meia de
- * partículas espalhadas por uma tela de celular fica, em média, a mais de cem
- * pontos uma da outra: um raio pequeno faz a maioria dos toques não encontrar
- * partícula nenhuma, e o efeito simplesmente não acontece. O raio é o que
- * garante que passar o dedo pela tela sempre pegue alguma coisa.
- */
+// Raio grande: com poucas partículas espalhadas, um raio pequeno faz a maioria
+// dos toques não encontrar nenhuma.
 const POINTER_RADIUS = 220;
 /** Aceleração que o dedo aplica no limite máximo, em pontos/s². */
 const POINTER_FORCE = 2600;
 /** O dedo espalha mais do que levanta. */
 const POINTER_LIFT_SHARE = 0.6;
-/**
- * Quanto a profundidade reduz o sopro.
- *
- * Ao contrário do tamanho e da opacidade, aqui o piso é alto: quem está ao
- * fundo reage com 60% da força, não com 20%. Como a maioria das partículas está
- * ao fundo, um piso baixo faria o efeito quase não existir — e profundidade
- * deve mudar a *intensidade* da reação, nunca a existência dela.
- */
+// Piso alto: a maioria das partículas está ao fundo, e profundidade deve mudar
+// a intensidade da reação, não a existência dela.
 const POINTER_DEPTH_FLOOR = 0.6;
 /** Teto da velocidade empurrada, em múltiplos da velocidade terminal. */
 const PUSH_SPEED_LIMIT = 6;
@@ -120,19 +80,6 @@ type SeasonPhysics = {
   flattens: boolean;
 };
 
-/**
- * O peso de cada estação.
- *
- * Folha grande cai mais rápido e balança mais que floco pequeno, e o giro em
- * profundidade só existe em folha e pétala — floco e partícula de luz não têm
- * lado. A luz do verão desce quase parada, como poeira suspensa no sol.
- *
- * Tamanho e contagem são deliberadamente discretos: o campo é o clima da
- * viagem por trás do conteúdo, e assim que uma partícula fica grande ou
- * frequente o bastante para ser seguida com o olho ela deixa de ser ambiente e
- * passa a disputar a tela com o texto. A luz do verão é a menor de todas —
- * poeira no sol não tem desenho para mostrar.
- */
 const SEASON_PHYSICS: Record<Season, SeasonPhysics> = {
   winter: {
     kind: 'flake',
@@ -215,13 +162,8 @@ type Body = {
   tumble: number;
 };
 
-/**
- * Todo o estado mutável em um valor compartilhado só.
- *
- * É a forma que o Reanimated aceita mutar de dentro de um worklet — via
- * `modify` — e a que o React Compiler não trata como imutável. Cada `modify` é
- * também o aviso que redesenha as partículas.
- */
+// Estado mutável em um valor compartilhado só: é a forma que o Reanimated
+// aceita mutar de dentro de um worklet, via `modify`.
 type FieldState = {
   bodies: Body[];
   /** As posições iniciais já foram distribuídas na tela medida. */
@@ -243,12 +185,7 @@ function createRandom(seed: string): () => number {
   };
 }
 
-/**
- * A camada em que a partícula cai: 55% ao fundo, 30% no meio, 15% à frente.
- *
- * A maioria fica atrás de propósito — é o que mantém o campo discreto por trás
- * do texto, e é de onde vem a sensação de distância.
- */
+/** A camada em que a partícula cai: 55% ao fundo, 30% no meio, 15% à frente. */
 function pickDepth(random: () => number): number {
   const layer = random();
   if (layer < 0.55) return 0.2 + random() * 0.25;
@@ -265,8 +202,6 @@ function createDescriptors(
   if (chosen.length === 0) return [];
 
   const planned = chosen.reduce((total, season) => total + SEASON_PHYSICS[season].count, 0);
-  // Tela maior comporta mais partículas, e o teto vale sempre: em um tablet a
-  // contagem cresce um pouco, em um aparelho pequeno ela encolhe.
   const areaScale = Math.min(
     MAX_AREA_SCALE,
     Math.max(MIN_AREA_SCALE, screenArea / AREA_BASE),
@@ -301,16 +236,13 @@ function createDescriptors(
         flattens: physics.flattens,
         depth,
         xFraction: random(),
-        // Cada uma começa a uma altura diferente acima da tela: a chuva nasce
-        // espalhada, sem agendamento nenhum — só pela distância a percorrer.
+        // Altura inicial variada: a chuva nasce espalhada, sem agendamento.
         riseFraction: 0.1 + random() * 2.4,
       };
     });
   });
 
-  // Ordenado uma vez, na criação: a ordem do array é a ordem de pintura, então
-  // quem está ao fundo fica atrás de quem está à frente para sempre. Ordenar
-  // por quadro seria pagar um sort a 60fps por um resultado que nunca muda.
+  // A ordem do array é a ordem de pintura, e a profundidade nunca muda.
   return descriptors.sort((a, b) => a.depth - b.depth);
 }
 
@@ -342,8 +274,7 @@ export function SeasonField({
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
-  // Sorteado uma vez. Quem troca a viagem ou as estações dela troca a `key` do
-  // componente, e o campo inteiro nasce de novo.
+  // Sorteado uma vez: trocar a viagem troca a `key` do componente.
   const [descriptors] = useState(() =>
     createDescriptors(seasons, seed, screenWidth * screenHeight),
   );
@@ -355,7 +286,7 @@ export function SeasonField({
     if (!box || !state.value.placed) return;
 
     // Passo limitado: depois de uma pausa longa, um `dt` gigante teleportaria
-    // todo mundo para fora da tela em um único quadro.
+    // tudo para fora da tela em um quadro.
     const dt = Math.min((frame.timeSincePreviousFrame ?? 16) / 1000, 0.05);
     const finger = pointer.value;
 
@@ -369,12 +300,9 @@ export function SeasonField({
         body.spin += particle.spin * dt;
 
         body.vy = Math.min(body.vy + particle.gravity * dt, particle.terminal);
-        // O bamboleio acompanha o giro em profundidade: a folha ganha empuxo
-        // lateral quando está de lado, como no ar de verdade.
+        // O bamboleio acompanha o giro: a folha ganha empuxo lateral de lado.
         body.vx = (body.vx + Math.sin(body.tumble) * particle.sway * dt) * AIR_DRAG;
 
-        // O dedo é um sopro, não uma mão: empurra para longe com força maior
-        // quanto mais perto, e quem está à frente sente de mais longe.
         if (finger.active) {
           const dx = body.x + particle.size / 2 - finger.x;
           const dy = body.y + particle.size / 2 - finger.y;
@@ -382,8 +310,6 @@ export function SeasonField({
           const radius = POINTER_RADIUS * (0.8 + 0.3 * particle.depth);
 
           if (distance > 0 && distance < radius) {
-            // Aceleração, e não velocidade: é assim que a força do protótipo
-            // Web, escrita por quadro, vira força por segundo aqui.
             const reach = POINTER_DEPTH_FLOOR + (1 - POINTER_DEPTH_FLOOR) * particle.depth;
             const push = (1 - distance / radius) * POINTER_FORCE * reach * dt;
             body.vx += (dx / distance) * push;
@@ -391,9 +317,7 @@ export function SeasonField({
           }
         }
 
-        // Teto do empurrão: o dedo desloca, não arremessa. Solto o dedo, o
-        // arrasto do ar e a gravidade devolvem a queda natural sozinhos — a
-        // velocidade natural é o atrator do sistema, não um valor guardado.
+        // Teto do empurrão: o dedo desloca, não arremessa.
         const limit = particle.terminal * PUSH_SPEED_LIMIT;
         body.vx = Math.max(-limit, Math.min(limit, body.vx));
         body.vy = Math.max(-limit, Math.min(limit, body.vy));
@@ -410,8 +334,8 @@ export function SeasonField({
           body.vx = -body.vx * WALL_RETENTION;
         }
 
-        // Saiu por baixo: volta pelo topo, em outro ponto e do repouso, para a
-        // chuva não repetir o mesmo desenho a cada volta.
+        // Saiu por baixo: volta pelo topo em outro ponto, para a chuva não
+        // repetir o mesmo desenho.
         if (body.y > box.height + particle.size * RECYCLE_MARGIN) {
           body.x = Math.random() * Math.max(1, maxX);
           body.y = -particle.size - Math.random() * box.height * RESPAWN_RISE;
@@ -424,10 +348,7 @@ export function SeasonField({
     });
   }, false);
 
-  /**
-   * A queda só roda com a Home em foco. Ao voltar, as partículas continuam
-   * exatamente de onde pararam — o campo não recomeça a cada visita.
-   */
+  // A queda só roda com a Home em foco, e continua de onde parou.
   useFocusEffect(
     useCallback(() => {
       if (reduceMotion || !box || descriptors.length === 0) return;
@@ -437,11 +358,8 @@ export function SeasonField({
     }, [reduceMotion, box, descriptors, simulation]),
   );
 
-  /**
-   * As posições iniciais dependem do tamanho da tela, então nascem aqui, na
-   * primeira medição. Uma remedição posterior só atualiza a caixa: reposicionar
-   * tudo faria a chuva saltar.
-   */
+  // Uma remedição posterior só atualiza a caixa: reposicionar tudo faria a
+  // chuva saltar.
   function measure(event: LayoutChangeEvent) {
     const { width, height } = event.nativeEvent.layout;
 
@@ -489,8 +407,7 @@ function Particle({
   const style = useAnimatedStyle(() => {
     const body = state.value.bodies[index];
 
-    // Girar em profundidade é achatar no eixo X: a folha quase some ao passar
-    // de perfil, que é exatamente o que ela faz caindo.
+    // Girar em profundidade é achatar no eixo X.
     const flatten = Math.cos(body.tumble);
     const scaleX = descriptor.flattens
       ? Math.sign(flatten || 1) * Math.max(MIN_FLATTEN, Math.abs(flatten))

@@ -17,11 +17,7 @@ const MONTHS = [
   'dez',
 ] as const;
 
-/**
- * Datas vêm do Postgres como `YYYY-MM-DD`. A leitura é manual de propósito:
- * `new Date('2026-06-15')` é interpretado como UTC e, em fuso negativo,
- * volta um dia.
- */
+// Leitura manual: `new Date('2026-06-15')` é UTC e, em fuso negativo, volta um dia.
 function parseDate(value: string): { day: number; month: number; year: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   if (!match) return null;
@@ -54,11 +50,7 @@ export function formatTripDate(value: string): string {
   return `${date.day} ${MONTHS[date.month]} ${date.year}`;
 }
 
-/**
- * Regiões usadas para sugerir o nome da viagem quando todos os destinos
- * pertencem ao mesmo grupo. É só uma conveniência de nomeação — o usuário pode
- * reescrever o nome à vontade.
- */
+/** Regiões para sugerir o nome quando todos os destinos são do mesmo grupo. */
 const REGIONS: readonly { label: string; codes: readonly string[] }[] = [
   { label: 'Europa Central', codes: ['DE', 'AT', 'CH', 'CZ', 'HU', 'PL', 'SK', 'SI', 'LI'] },
   { label: 'Europa Ocidental', codes: ['FR', 'BE', 'NL', 'LU', 'GB', 'IE', 'MC'] },
@@ -128,13 +120,7 @@ const SEASONS: Record<
   },
 };
 
-/**
- * As estações da viagem em linha: "❄️ Inverno" ou "🍂 Outono · ❄️ Inverno".
- *
- * É a legenda do clima que a Home anima ao fundo — sem ela, folhas caindo são
- * só um enfeite sem explicação. `null` quando a viagem não tem datas e,
- * portanto, não tem estação a afirmar.
- */
+/** As estações em linha: "❄️ Inverno" ou "🍂 Outono · ❄️ Inverno". */
 export function formatSeasonTrail(seasons: readonly Season[]): string | null {
   if (seasons.length === 0) return null;
 
@@ -147,15 +133,7 @@ export type SeasonTip = {
   text: string;
 };
 
-/**
- * A dica da estação no destino, para a Home.
- *
- * É a única estação que interessa aqui: a de quem chega. Atravessando duas, a
- * dica é a da primeira — é o que a pessoa precisa saber para arrumar a mala
- * agora, e o percurso completo já aparece na etiqueta da estação.
- *
- * `null` sem datas: sem estação não há dica a dar.
- */
+/** A dica da estação de chegada; atravessando duas, vale a primeira. */
 export function formatSeasonTip(seasons: readonly Season[]): SeasonTip | null {
   if (seasons.length === 0) return null;
 
@@ -163,10 +141,7 @@ export function formatSeasonTip(seasons: readonly Season[]): SeasonTip | null {
   return { label: `${season.emoji} Dica ${season.possessive}`, text: season.tip };
 }
 
-/**
- * Um broto no lugar dos emojis somados: com duas ou mais estações, empilhar os
- * ícones vira ruído e nenhum deles representa a viagem inteira.
- */
+/** Com duas ou mais estações, empilhar os ícones vira ruído. */
 const MANY_SEASONS_EMOJI = '🌱';
 
 /** A frase muda de tempo verbal conforme a viagem já começou ou terminou. */
@@ -193,15 +168,7 @@ export type TripSeasonSummary = {
   detail: string | null;
 };
 
-/**
- * O aviso de estação da viagem.
- *
- * Uma estação vira uma frase direta; mais de uma vira a contagem seguida do
- * percurso, porque nesse caso o que interessa é a mudança — arrumar mala para
- * inverno e primavera não é a mesma coisa que arrumar para uma só.
- *
- * `null` quando a viagem não tem datas: sem elas não há estação a afirmar.
- */
+/** Uma estação vira frase direta; mais de uma, a contagem e o percurso. */
 export function summarizeTripSeasons(
   seasons: readonly Season[],
   status: TripStatus,

@@ -51,14 +51,7 @@ export default function TripChecklistScreen() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  /**
-   * Volta dentro da pilha da aba Viagens.
-   *
-   * `router.canGoBack()` enxerga o histórico da árvore inteira e podia levar
-   * para outra aba; aqui a pergunta é específica: existe tela abaixo desta
-   * *nesta* pilha? Se não existir (abertura por deep link, por exemplo), a
-   * listagem entra no lugar do detalhe.
-   */
+  // `router.canGoBack()` enxerga a árvore inteira e podia levar para outra aba.
   function goBackToTrips() {
     const state = navigation.getState();
     if ((state?.index ?? 0) > 0) {
@@ -121,13 +114,8 @@ export default function TripChecklistScreen() {
     );
   }
 
-  /**
-   * Abertura inicial das seções, decidida uma única vez por viagem carregada:
-   * a primeira categoria com obrigatório pendente nasce aberta e as demais
-   * ficam recolhidas — o próximo passo em cima, sem obrigar a pessoa a
-   * procurá-lo. Viagem pronta abre nada, e a partir do primeiro toque quem
-   * manda é a pessoa.
-   */
+  // Abertura inicial decidida uma vez por viagem: a primeira categoria com
+  // obrigatório pendente nasce aberta, e depois quem manda é a pessoa.
   const didExpandRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -162,8 +150,7 @@ export default function TripChecklistScreen() {
     }
   }, [id]);
 
-  // Recarrega ao voltar da edição da viagem ou do detalhe de um item — é assim
-  // que um item marcado lá dentro aparece verificado aqui.
+  // Recarrega ao voltar da edição da viagem ou do detalhe de um item.
   useFocusEffect(
     useCallback(() => {
       void load();
@@ -172,10 +159,7 @@ export default function TripChecklistScreen() {
 
   const progress = useMemo(() => computeTripProgress(requirements), [requirements]);
 
-  /**
-   * Estado da leitura anterior. A comemoração dispara só na **virada** — abrir
-   * uma viagem que já estava pronta não comemora de novo.
-   */
+  // A comemoração dispara só na virada, nunca ao reabrir uma viagem pronta.
   const previousRef = useRef<{ ready: boolean; complete: boolean } | null>(null);
 
   useEffect(() => {
@@ -204,11 +188,7 @@ export default function TripChecklistScreen() {
     }
   }, [isLoading, progress]);
 
-  /**
-   * A estação sai dos países da viagem, e não do calendário de quem está
-   * olhando: dezembro é inverno em Viena e verão no Rio. Uma viagem sem datas
-   * não tem estação a mostrar.
-   */
+  // A estação sai dos países da viagem: dezembro é inverno em Viena e verão no Rio.
   const season = useMemo(
     () =>
       summarizeTripSeasons(
@@ -222,11 +202,6 @@ export default function TripChecklistScreen() {
     [countries, range],
   );
 
-  /**
-   * A checklist é agrupada por categoria, que é o eixo dos accordions. De onde
-   * o item veio — viagem inteira, grupo de destinos ou país — continua sendo
-   * informação dele, e aparece na linha e na tela de detalhe.
-   */
   const sections = useMemo(
     () => groupRequirementsByCategory(requirements, CHECKLIST_CATEGORIES),
     [requirements],
@@ -281,11 +256,7 @@ export default function TripChecklistScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      {/* A ScrollView do React Native nasce com `contentInsetAdjustmentBehavior`
-          em "never". Dentro de uma pilha aninhada na aba, o ajuste automático
-          do react-native-screens não chega até aqui e o fim da lista fica sob a
-          tab bar — no iOS 26 ela é flutuante e transparente, e o corte aparece.
-          Com "automatic" o próprio UIKit aplica o inset da tab bar. */}
+      {/* "automatic": sem isso o fim da lista fica sob a tab bar flutuante do iOS. */}
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
@@ -377,8 +348,8 @@ export default function TripChecklistScreen() {
                   />
                 }
                 progress={{ done: section.done, total: section.total }}
-                // Categoria só de informativos não tem fração: são itens de
-                // consulta, e uma barra em zero pareceria trabalho pendente.
+                // Categoria só de informativos não tem fração: uma barra em
+                // zero pareceria trabalho pendente.
                 meta={`${section.items.length} ${section.items.length === 1 ? 'item' : 'itens'}`}
                 expanded={expanded.has(section.category)}
                 onToggle={() => toggleSection(section.category)}>
@@ -406,18 +377,7 @@ export default function TripChecklistScreen() {
   );
 }
 
-/**
- * Como estão os obrigatórios da viagem.
- *
- * A linha tem dois estados, e os dois dizem algo: o que ainda falta, e a
- * confirmação de que não falta mais nada. Sumir quando a pessoa termina seria
- * tirar a resposta justamente no momento em que ela é boa — o card de cima
- * comemora a virada, mas some do caminho quando a tela é reaberta, e é esta
- * linha que continua respondendo "estou em dia com o que é obrigatório?".
- *
- * Fica em silêncio só quando não há o que responder: checklist vazia, ou viagem
- * sem nenhum item obrigatório.
- */
+/** Como estão os obrigatórios: some só quando não há nenhum a responder. */
 function RequiredLine({ progress }: { progress: ReturnType<typeof computeTripProgress> }) {
   if (progress.total === 0 || progress.requiredTotal === 0) return null;
 
@@ -439,13 +399,7 @@ function RequiredLine({ progress }: { progress: ReturnType<typeof computeTripPro
   );
 }
 
-/**
- * Uma linha da checklist.
- *
- * São dois alvos de toque no mesmo espaço: a caixa marca o item, o resto da
- * linha abre o detalhe. O aninhamento funciona porque o responsável pelo toque
- * é sempre o alvo mais interno.
- */
+/** Dois alvos de toque: a caixa marca o item, o resto da linha abre o detalhe. */
 function RequirementRow({
   requirement,
   first,
@@ -579,8 +533,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    // A linha se destaca do resto do card por um filete branco, que sobre o
-    // fundo tingido funciona como separador sem introduzir mais uma cor.
+    // Filete branco: separa sem introduzir mais uma cor sobre o fundo tingido.
     borderTopWidth: 1,
     borderTopColor: colors.surface,
     paddingTop: spacing.md,

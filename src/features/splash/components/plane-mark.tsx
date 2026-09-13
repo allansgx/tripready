@@ -8,11 +8,8 @@ import {
 } from '@/features/splash/domain/plane-art';
 
 /**
- * O avião da marca em SVG.
- *
- * No tamanho `PLANE_MARK_SIZE` e centralizado, este é exatamente o desenho que
- * o `splash-icon.png` mostra — os dois saem do mesmo `plane-art.ts`. É o que
- * permite trocar o splash nativo por esta tela sem piscar.
+ * O avião da marca em SVG. Em `PLANE_MARK_SIZE` é o mesmo desenho do
+ * `splash-icon.png`, o que permite trocar o splash nativo sem piscar.
  */
 export function PlaneMark({
   size,

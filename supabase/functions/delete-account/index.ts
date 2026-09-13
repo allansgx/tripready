@@ -37,13 +37,9 @@ function json(body: Record<string, string>, status: number): Response {
 }
 
 /**
- * Lê o `sub` do token sem validá-lo.
- *
- * Serve só para descobrir de quem era o token quando o usuário já não existe —
- * nesse ponto o GoTrue não resolve mais o `/user`, então não há de quem
- * perguntar. A autenticidade continua garantida pelo `verify_jwt = true` da
- * plataforma, e nenhuma exclusão acontece por este caminho: ele apenas informa
- * que não há nada a apagar.
+ * Lê o `sub` do token sem validá-lo, só para saber de quem ele era quando o
+ * usuário já não existe. A autenticidade vem do `verify_jwt = true`, e nenhuma
+ * exclusão acontece por este caminho.
  */
 function readSubject(token: string): string | null {
   const payload = token.split('.')[1];
@@ -64,10 +60,8 @@ function readSubject(token: string): string | null {
 type UserState = 'exists' | 'missing' | 'unknown';
 
 /**
- * Estado do usuário no GoTrue.
- *
- * `unknown` existe de propósito: uma falha de rede contra o Auth não pode ser
- * lida como "a conta já foi apagada", que é a resposta de sucesso.
+ * `unknown` existe de propósito: falha de rede contra o Auth não pode ser lida
+ * como "a conta já foi apagada", que é a resposta de sucesso.
  */
 async function findUser(admin: AdminClient, userId: string): Promise<UserState> {
   const { data, error } = await admin.auth.admin.getUserById(userId);

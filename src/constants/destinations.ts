@@ -1,12 +1,7 @@
 import { CITY_SUGGESTIONS } from '@/constants/cities';
 import { COUNTRIES, normalizeSearch, searchCountries, type Country } from '@/constants/countries';
 
-/**
- * Um país na lista de busca, com a cidade que o trouxe até ali.
- *
- * A viagem continua sendo registrada por país — a cidade é só o caminho até
- * ele, e por isso aparece como legenda da linha, não como item próprio.
- */
+/** Um país na lista de busca, com a cidade que o trouxe até ali. */
 export type DestinationMatch = {
   country: Country;
   /** Cidade que casou com a busca; nulo quando o país casou pelo próprio nome. */
@@ -18,15 +13,8 @@ function toMatch(country: Country): DestinationMatch {
 }
 
 /**
- * Busca destinos por país ou por cidade.
- *
- * Quem está montando uma viagem pensa na cidade — "Budapeste", não "Hungria" —
- * então digitar a cidade precisa chegar ao país. Os países que casam pelo
- * próprio nome vêm primeiro, porque quando alguém digita "Hungria" é o país
- * que está procurando; os encontrados por cidade vêm depois, cada um com a
- * cidade que o trouxe.
- *
- * Um país entra uma vez só, mesmo que várias cidades dele casem com a busca.
+ * Busca destinos por país ou por cidade. Os que casam pelo nome do país vêm
+ * primeiro, e cada país entra uma vez só.
  */
 export function searchDestinations(query: string): DestinationMatch[] {
   const term = normalizeSearch(query);

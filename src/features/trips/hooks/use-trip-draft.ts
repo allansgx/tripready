@@ -41,13 +41,8 @@ function normalize(draft: TripDraft) {
 }
 
 /**
- * Estado de seleção de uma viagem, compartilhado por "Criar viagem" e
- * "Editar viagem".
- *
- * Concentra as regras que as duas telas precisam: remover um país leva junto
- * as cidades dele, e o nome acompanha os destinos até o usuário escrever o
- * seu. A tela de edição começa com `initial` preenchido; a de criação começa
- * vazia.
+ * Estado de seleção compartilhado por "Criar viagem" e "Editar viagem": remover
+ * um país leva as cidades dele, e o nome acompanha os destinos até ser escrito.
  */
 export function useTripDraft(initial?: TripDraft) {
   const [typedName, setTypedName] = useState(initial?.name ?? EMPTY.name);
@@ -61,13 +56,8 @@ export function useTripDraft(initial?: TripDraft) {
   /** Snapshot para comparar o que mudou; trocado a cada hidratação/salvamento. */
   const [baseline, setBaseline] = useState(() => normalize(initial ?? EMPTY));
 
-  /**
-   * Enquanto o usuário não escrever um nome, ele acompanha os destinos.
-   *
-   * A sugestão é derivada aqui, e não guardada em estado por um efeito: assim
-   * o nome exibido já sai correto na mesma renderização em que o país muda,
-   * sem o passo intermediário mostrando o nome antigo.
-   */
+  // Derivado, e não guardado em estado por um efeito: o nome já sai correto na
+  // mesma renderização em que o país muda.
   const name = nameEdited ? typedName : suggestTripName(countryCodes);
 
   const toggleCountry = useCallback((code: string) => {

@@ -21,31 +21,14 @@ import {
   typography,
 } from '@/theme/tokens';
 
-/**
- * Tintas escuras dos avisos do rodapé.
- *
- * Os fundos saem de `prioritySoftColors`, mas o texto precisa de uma versão
- * mais fechada da mesma cor para ler sobre o fundo diluído — o vermelho e o
- * âmbar dos tokens foram calibrados para pontos e ícones, não para texto.
- */
+// Tintas escuras dos avisos: as cores dos tokens foram calibradas para pontos e
+// ícones, e não leem bem como texto sobre o fundo diluído.
 const PILL_URGENT_INK = '#C6383C';
 const PILL_CALM_INK = '#946200';
 
 /**
- * Card da listagem.
- *
- * A leitura é sempre a mesma, de cima para baixo: qual é a viagem, em que ponto
- * ela está, para onde ela vai e o que falta preparar. O nome ocupa o título
- * sozinho — é como a pessoa chama a viagem, e nenhum destino toma esse lugar.
- *
- * Cada card tem um tom só, vindo de `buildTripMoment`: ele pinta a faixa do
- * momento e o anel do progresso. É o que deixa a lista legível de relance —
- * roxo é a viagem acontecendo, âmbar é a que parte agora, verde é a que ainda
- * dá tempo de preparar e cinza é a que já passou.
- *
- * Viagens concluídas mantêm o mesmo desenho, no tom cinza, mas sem fração e sem
- * pílula de obrigatórios: cobrar preparação de uma viagem que já aconteceu não
- * leva ninguém a lugar nenhum.
+ * Card da listagem. Cada um tem um tom só, vindo de `buildTripMoment`, que
+ * pinta a faixa e o anel. Viagem concluída não mostra fração nem obrigatórios.
  */
 export function TripCard({ summary, onPress }: { summary: TripSummary; onPress: () => void }) {
   const { trip, countryCodes, progress, status } = summary;

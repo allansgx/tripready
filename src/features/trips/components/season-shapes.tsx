@@ -1,16 +1,8 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /**
- * As silhuetas das partículas de estação, em vetor.
- *
- * São desenhos, não emojis nem imagens: escalam para qualquer tamanho sem
- * perder borda e aceitam a cor da estação como parâmetro. Cada forma cabe em
- * uma viewBox de 24×24 para os tamanhos serem intercambiáveis.
- *
- * `soft` é a versão distante: só a silhueta, sem o detalhe interno. É o que
- * substitui o desfoque de profundidade — em movimento, uma forma sem nervura e
- * mais apagada já é lida como estando longe, e sai muito mais barato que uma
- * camada de blur por partícula.
+ * As silhuetas das partículas, em vetor, cada uma numa viewBox de 24×24. `soft`
+ * é a versão distante — só a silhueta, no lugar de um blur por partícula.
  */
 
 export type SeasonShapeKind = 'flake' | 'leaf' | 'petal' | 'mote';

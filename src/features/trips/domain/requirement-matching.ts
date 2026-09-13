@@ -7,34 +7,8 @@ import type {
   VisaRequirementType,
 } from '@/types/models';
 
-/**
- * Quais regras do catálogo se aplicam a uma viagem.
- *
- * O módulo é propositalmente puro: recebe a viagem e o catálogo já carregados,
- * devolve os itens a gravar. Nada aqui conhece Supabase, React ou o app — é o
- * que permite testar a regra com `node --test` e o que mantém a decisão em um
- * lugar só, longe das telas.
- *
- * Por não ter import de execução (só de tipo, que some na compilação), o
- * arquivo também não arrasta configuração de bundler para dentro do teste.
- */
-
-// =============================================================================
-// Estação do ano
-//
-// Único ponto do app que converte data em estação. Fica aqui, e não em um
-// arquivo separado, para o módulo continuar sem dependências de execução.
-// =============================================================================
-
-/**
- * Destinos cujo território principal fica no hemisfério sul.
- *
- * É geografia, não regra de viagem: define apenas em que meses cai cada
- * estação no destino. Países equatoriais estão classificados pelo lado onde
- * está a maior parte do território — uma simplificação conhecida, já que em
- * clima tropical a estação diz pouco. Quando isso passar a importar, o passo a
- * evoluir é `seasonAt`, sem tocar no restante do módulo.
- */
+// Destinos cujo território principal fica no hemisfério sul. Países equatoriais
+// entram pelo lado onde está a maior parte do território.
 const SOUTHERN_HEMISPHERE = new Set(
   (
     'AO AQ AR AU BI BO BR BV BW CD CK CL FJ FK GS HM ID KM LS MG MU MW MZ NA NC NF NU NZ ' +
@@ -42,23 +16,8 @@ const SOUTHERN_HEMISPHERE = new Set(
   ).split(' '),
 );
 
-/**
- * Dia em que cada estação começa no hemisfério norte.
- *
- * São os equinócios e solstícios, e não o primeiro dia do mês: uma viagem que
- * sai em 21 de setembro parte no verão europeu, e só entra no outono no dia
- * seguinte. Dizer "outono" no dia 21 é errar a estação por um dia inteiro, e o
- * erro aparece na tela justamente nas viagens de virada de estação, que são as
- * que mais precisam de acerto na hora de fazer a mala.
- *
- * As datas são fixas de propósito. O instante astronômico oscila um dia entre
- * um ano e outro, e calcular isso de verdade exigiria efemérides — muito preço
- * por uma diferença que ninguém percebe ao arrumar a bagagem. O que valia a
- * pena corrigir era a diferença de três semanas do mapa por mês.
- *
- * No hemisfério sul o limite é o mesmo dia do calendário: é o mesmo evento
- * astronômico, só que entrando na estação oposta — daí `OPPOSITE_SEASON`.
- */
+// Equinócios e solstícios, com data fixa: o instante astronômico oscila um dia
+// entre anos, e essa diferença não muda o que levar na mala.
 const NORTHERN_SEASON_STARTS: readonly { month: number; day: number; season: Season }[] = [
   { month: 3, day: 20, season: 'spring' },
   { month: 6, day: 21, season: 'summer' },
@@ -73,7 +32,7 @@ const OPPOSITE_SEASON: Record<Season, Season> = {
   autumn: 'spring',
 };
 
-export function isSouthernHemisphere(countryCode: string): boolean {
+function isSouthernHemisphere(countryCode: string): boolean {
   return SOUTHERN_HEMISPHERE.has(countryCode.toUpperCase());
 }
 
@@ -87,8 +46,7 @@ export function seasonAt(countryCode: string, isoDate: string): Season | null {
   const day = Number(isoDate.slice(8, 10));
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
-  // Antes do equinócio de março o ano ainda está no inverno que começou em
-  // dezembro, então é ele o ponto de partida da varredura.
+  // Antes do equinócio de março o ano ainda está no inverno de dezembro.
   let northern: Season = 'winter';
   for (const start of NORTHERN_SEASON_STARTS) {
     if (month > start.month || (month === start.month && day >= start.day)) {
@@ -99,29 +57,11 @@ export function seasonAt(countryCode: string, isoDate: string): Season | null {
   return isSouthernHemisphere(countryCode) ? OPPOSITE_SEASON[northern] : northern;
 }
 
-/**
- * Anos de limites percorridos além do ano de partida.
- *
- * Uma viagem que passa de um ano para o outro já atravessa as quatro estações,
- * então varrer dois anos de limites encontra todas elas. O teto existe só para
- * a varredura não depender do tamanho do intervalo.
- */
+// Uma viagem que vira o ano já atravessa as quatro estações.
 const MAX_EXTRA_YEARS = 1;
 
-/**
- * Datas a consultar para cobrir a viagem.
- *
- * São o dia de partida, o dia de volta e cada virada de estação entre os dois.
- * Amostrar o primeiro dia de cada mês não serve mais: com os limites caindo no
- * meio do mês, uma viagem de 1 a 30 de setembro seria lida inteira como verão,
- * quando na verdade vira outono no dia 22.
- *
- * Como a estação só muda nesses limites, consultar a partida, a volta e as
- * viradas encontra toda estação atravessada — sem percorrer dia a dia e sem
- * depender da duração da viagem.
- *
- * Sem data de início não há o que percorrer, e a lista volta vazia.
- */
+// Partida, volta e cada virada de estação entre as duas: como a estação só muda
+// nesses limites, isso encontra toda estação atravessada.
 function datesInRange(startDate: string | null, endDate: string | null): string[] {
   if (!startDate || !ISO_DATE.test(startDate)) return [];
 
@@ -131,8 +71,7 @@ function datesInRange(startDate: string | null, endDate: string | null): string[
   const firstYear = Number(startDate.slice(0, 4));
   const lastYear = Math.min(Number(last.slice(0, 4)), firstYear + MAX_EXTRA_YEARS);
 
-  // Os limites saem em ordem cronológica — anos crescentes, meses crescentes —,
-  // que é a ordem que `tripSeasons` promete à tela.
+  // Ordem cronológica: é a ordem que `tripSeasons` promete à tela.
   for (let year = firstYear; year <= lastYear; year++) {
     for (const start of NORTHERN_SEASON_STARTS) {
       const boundary = `${year}-${`${start.month}`.padStart(2, '0')}-${`${start.day}`.padStart(2, '0')}`;
@@ -145,12 +84,7 @@ function datesInRange(startDate: string | null, endDate: string | null): string[
   return dates;
 }
 
-/**
- * Estações que a viagem atravessa em um destino.
- *
- * Sem data de início não há estação: o conjunto volta vazio e todo requisito
- * sazonal deixa de se aplicar, em vez de ser incluído por engano.
- */
+/** Estações que a viagem atravessa em um destino. */
 export function seasonsInRange(
   countryCode: string,
   startDate: string | null,
@@ -166,14 +100,7 @@ export function seasonsInRange(
   return seasons;
 }
 
-/**
- * Estações da viagem inteira, na ordem em que aparecem.
- *
- * Percorre o tempo por fora e os destinos por dentro, então a ordem é
- * cronológica: uma viagem que começa em novembro na Europa devolve outono antes
- * de inverno. Destinos em hemisférios opostos entram na mesma lista — quem sai
- * do inverno europeu para o verão brasileiro atravessa as duas.
- */
+/** Estações da viagem inteira, na ordem cronológica em que aparecem. */
 export function tripSeasons(
   countryCodes: readonly string[],
   startDate: string | null,
@@ -190,10 +117,6 @@ export function tripSeasons(
 
   return [...seasons];
 }
-
-// =============================================================================
-// Catálogo
-// =============================================================================
 
 export type CatalogGroupMember = {
   countryCode: string;
@@ -231,13 +154,7 @@ export type CatalogTemplate = {
   visaRequirementType: VisaRequirementType | null;
 };
 
-/**
- * Exigência de visto para um par (passaporte, destino).
- *
- * É um fato sobre o mundo, com fonte oficial e vigência — separado de como ele
- * aparece na checklist, que é assunto do template de escopo `visa`. As duas
- * coisas se encontram por `requirementType`.
- */
+/** Exigência de visto para um par (passaporte, destino), com fonte e vigência. */
 export type VisaRule = {
   passportCountryCode: string;
   destinationCountryCode: string;
@@ -298,18 +215,8 @@ function unique(codes: readonly string[]): string[] {
 }
 
 /**
- * A viagem acontece inteira dentro do país do passaporte principal?
- *
- * É o que separa "conferir a validade do passaporte" de "levar um documento com
- * foto": quem voa de São Paulo para Recife não cruza fronteira nenhuma, e um
- * item de fronteira na checklist cobra um preparo que não existe.
- *
- * Derivada, nunca armazenada, como o status da viagem: mudar os destinos ou
- * trocar o passaporte principal muda a resposta sozinho.
- *
- * Sem passaporte principal não há como afirmar que a viagem é doméstica, e a
- * resposta é `false` — o mesmo comportamento de antes desta regra existir. Uma
- * viagem ainda sem destino também não é doméstica: não há o que comparar.
+ * A viagem acontece inteira dentro do país do passaporte principal? Derivada,
+ * nunca armazenada — é o que separa item de fronteira de item doméstico.
  */
 export function isDomesticTrip(
   countryCodes: readonly string[],
@@ -332,7 +239,7 @@ function isWithinPeriod(date: string, from: string | null, until: string | null)
 }
 
 /** Países que fazem parte do grupo na data de referência. */
-export function groupCountriesAt(group: CatalogGroup, date: string): string[] {
+function groupCountriesAt(group: CatalogGroup, date: string): string[] {
   return group.members
     .filter((member) => isWithinPeriod(date, member.validFrom, member.validUntil))
     .map((member) => upper(member.countryCode));
@@ -348,12 +255,7 @@ type Target = {
   rule: VisaRule | null;
 };
 
-/**
- * O que a resolução já apurou da viagem, antes de percorrer os templates.
- *
- * Existe para `targetsFor` não crescer numa fila de parâmetros posicionais a
- * cada condição nova — é um agrupamento local, não uma abstração exportada.
- */
+/** O que a resolução já apurou da viagem, antes de percorrer os templates. */
 type Resolution = {
   tripCountries: readonly string[];
   groups: readonly CatalogGroup[];
@@ -366,14 +268,7 @@ type Resolution = {
   visaRuleByCountry: ReadonlyMap<string, VisaRule>;
 };
 
-/**
- * Regras que valem para este viajante nesta data, indexadas pelo destino.
- *
- * O filtro por passaporte fica aqui, e não só na consulta ao banco: o módulo é
- * puro e não pode supor que quem carregou o catálogo já filtrou. Sem passaporte
- * principal não há regra aplicável, e o mapa volta vazio — nenhum item de visto
- * é gerado, que é o comportamento seguro.
- */
+// Sem passaporte principal o mapa volta vazio e nenhum item de visto é gerado.
 function visaRulesByCountry(
   rules: readonly VisaRule[],
   passportCountryCode: string | null,
@@ -394,14 +289,8 @@ function visaRulesByCountry(
 function targetsFor(template: CatalogTemplate, resolution: Resolution): Target[] {
   const { tripCountries, groups, referenceDate } = resolution;
 
-  /**
-   * Uma regra internacional não alcança o próprio país do viajante.
-   *
-   * Vale para a viagem mista, que é internacional como um todo: quem sai do
-   * Brasil para a Argentina confere as exigências de entrada argentinas, e não
-   * as brasileiras — ele não passa por imigração ao voltar para casa. Regras
-   * sem marcação e regras domésticas não são afetadas.
-   */
+  // Uma regra internacional não alcança o próprio país do viajante: ele não
+  // passa por imigração ao voltar para casa.
   const reachesCountry = (code: string) =>
     template.tripKind !== 'international' || code !== resolution.passport;
 
@@ -428,8 +317,7 @@ function targetsFor(template: CatalogTemplate, resolution: Resolution): Target[]
       const linked = new Set(template.groupIds);
 
       // Um item só, mesmo que a viagem cruze vários grupos da mesma regra: é o
-      // que impede "Hungria + Áustria + Tchéquia" virar três avisos do
-      // Schengen. A ordem por código deixa a escolha estável entre execuções.
+      // que impede "Hungria + Áustria + Tchéquia" virar três avisos do Schengen.
       const match = [...groups]
         .filter((group) => linked.has(group.id))
         .sort((a, b) => a.code.localeCompare(b.code))
@@ -452,10 +340,8 @@ function targetsFor(template: CatalogTemplate, resolution: Resolution): Target[]
       ];
     }
 
-    // Um item por país cuja regra de visto seja deste tipo. Destino sem regra
-    // cadastrada não gera item nenhum: o silêncio nunca vira "não precisa de
-    // visto" — quem cobre esse caso é o requisito genérico de exigências de
-    // entrada, que vale para todo país da viagem.
+    // Destino sem regra cadastrada não gera item: o silêncio nunca vira "não
+    // precisa de visto" — quem cobre esse caso é o requisito genérico.
     case 'visa': {
       const type = template.visaRequirementType;
       if (!type) return [];
@@ -489,15 +375,7 @@ function renderTitle(
   return template.title.replace(MARKER_COUNTRY, countryName(countryCode));
 }
 
-/**
- * Requisitos aplicáveis a uma viagem.
- *
- * A ordem de avaliação é a mesma descrita no produto: descarta o que não vale
- * na data, o que não vale para o passaporte, o que não vale para a natureza da
- * viagem — doméstica ou internacional —, e então resolve o escopo. Cada
- * regra produz no máximo um item por país (ou um só, nos escopos de viagem
- * inteira e de grupo), então a saída já nasce sem duplicatas.
- */
+/** Requisitos aplicáveis a uma viagem, no máximo um item por regra e país. */
 export function resolveTripRequirements(
   trip: TripContext,
   catalog: RequirementCatalog,
@@ -522,8 +400,7 @@ export function resolveTripRequirements(
     if (!template.active) continue;
     if (!isWithinPeriod(referenceDate, template.validFrom, template.validUntil)) continue;
     if (template.passportCountryCode && upper(template.passportCountryCode) !== passport) continue;
-    // Uma regra sem `tripKind` vale para as duas naturezas: é o padrão do
-    // catálogo e o que mantém intacto tudo o que não foi marcado.
+    // Regra sem `tripKind` vale para as duas naturezas.
     if (template.tripKind === 'domestic' && !resolution.isDomestic) continue;
     if (template.tripKind === 'international' && resolution.isDomestic) continue;
 
@@ -536,9 +413,7 @@ export function resolveTripRequirements(
         group_id: target.group?.id ?? null,
         country_code: target.countryCode,
         title: renderTitle(template, target.countryCode, options.countryName),
-        // A observação oficial da regra é mais específica que o texto genérico
-        // do template — "permanência de até 90 dias para turismo" diz mais do
-        // que "solicite o visto". Sem observação, vale o texto do template.
+        // A observação oficial da regra é mais específica que o texto do template.
         description: target.rule?.notes ?? template.description,
         priority: template.priority,
         category: template.category,
@@ -550,10 +425,6 @@ export function resolveTripRequirements(
 
   return resolved;
 }
-
-// =============================================================================
-// Reconciliação com o que já está gravado
-// =============================================================================
 
 /** O mínimo que a comparação precisa saber de um item já gravado. */
 export type ExistingRequirement = {
@@ -578,12 +449,8 @@ function originKey(item: {
 }
 
 /**
- * O que precisa mudar na checklist quando a viagem é editada.
- *
- * Itens criados à mão pelo usuário (sem `template_id`) nunca entram na conta:
- * não são gerados pelo catálogo e não cabe ao catálogo removê-los. Entre os
- * gerados, só saem os que deixaram de valer **e** ainda não foram verificados —
- * apagar algo que a pessoa já marcou seria desfazer trabalho dela.
+ * O que muda na checklist quando a viagem é editada. Itens criados à mão (sem
+ * `template_id`) e itens já verificados nunca são removidos.
  */
 export function diffTripRequirements(
   current: readonly ExistingRequirement[],
@@ -600,10 +467,6 @@ export function diffTripRequirements(
       .map((item) => item.id),
   };
 }
-
-// =============================================================================
-// Organização para a tela
-// =============================================================================
 
 export type ChecklistSectionKind = 'trip' | 'group' | 'country';
 
@@ -627,13 +490,7 @@ export type ScopedRequirement = {
 
 const TRIP_SECTION_LABEL = 'Toda a viagem';
 
-/**
- * Ordem dos itens dentro de uma seção: o que impede a viagem primeiro.
- *
- * É a mesma hierarquia que decide o progresso — obrigatório define se a viagem
- * está pronta, recomendado soma, informativo não conta —, então a leitura da
- * lista bate com o que a barra de cima diz.
- */
+// Mesma hierarquia que decide o progresso da viagem.
 const PRIORITY_ORDER: Record<RequirementPriority, number> = {
   required: 0,
   recommended: 1,
@@ -643,11 +500,8 @@ const PRIORITY_ORDER: Record<RequirementPriority, number> = {
 /** O que basta para ordenar um requisito. */
 type OrderedRequirement = Pick<ScopedRequirement, 'priority' | 'created_at'>;
 
-/**
- * Empate dentro da prioridade fica com a ordem de criação, que é a ordem das
- * categorias em que a checklist foi montada — estável entre uma abertura e
- * outra, ao contrário da ordem em que o banco devolve as linhas.
- */
+// Empate fica com a ordem de criação, estável entre aberturas — ao contrário da
+// ordem em que o banco devolve as linhas.
 function byPriorityThenCreation(a: OrderedRequirement, b: OrderedRequirement): number {
   const priority = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
   if (priority !== 0) return priority;
@@ -658,14 +512,8 @@ function byPriorityThenCreation(a: OrderedRequirement, b: OrderedRequirement): n
 export type PendingRequirement = OrderedRequirement & { completed: boolean };
 
 /**
- * O item que a pessoa deve resolver primeiro.
- *
- * Segue a mesma hierarquia da lista — obrigatórios antes de recomendados, e
- * empate pela ordem de criação —, então o "próximo passo" da Home é sempre o
- * primeiro item pendente que ela encontra ao abrir a checklist. Informativos
- * ficam de fora: são conteúdo de consulta e não travam a viagem.
- *
- * `null` quando não há nada pendente que valha cobrar.
+ * O item que a pessoa deve resolver primeiro. Informativos ficam de fora: são
+ * conteúdo de consulta e não travam a viagem.
  */
 export function selectNextRequirement<T extends PendingRequirement>(
   requirements: readonly T[],
@@ -688,14 +536,8 @@ export type RequirementScopeDescription = {
 };
 
 /**
- * A origem de um item: viagem inteira, grupo de destinos ou país.
- *
- * Um item de grupo sem o nome do grupo carregado é tratado como item da viagem
- * inteira — melhor do que anunciar uma origem sem nome.
- *
- * Mora aqui, e não dentro do agrupamento, porque a tela de detalhe precisa da
- * mesma resposta para um item só. Duas leituras da mesma regra dariam dois
- * rótulos diferentes para o mesmo item.
+ * A origem de um item: viagem inteira, grupo de destinos ou país. Item de grupo
+ * sem o nome carregado vira item da viagem inteira.
  */
 export function describeRequirementScope<T extends ScopedRequirement>(
   requirement: T,
@@ -719,14 +561,7 @@ export function describeRequirementScope<T extends ScopedRequirement>(
   return { kind: 'trip', key: 'trip', label: TRIP_SECTION_LABEL, countryCode: null };
 }
 
-/**
- * Agrupa a checklist por origem: viagem inteira, grupo de destinos e país.
- *
- * Seções nascem dos itens, então nunca existe seção vazia. Um item de grupo
- * sem o nome do grupo carregado cai na seção da viagem inteira — melhor do que
- * abrir uma seção sem título. Dentro de cada seção os itens saem ordenados por
- * prioridade.
- */
+/** Agrupa a checklist por origem. Seções nascem dos itens, nunca vazias. */
 export function groupRequirementsByScope<T extends ScopedRequirement>(
   requirements: readonly T[],
   countryName: (code: string) => string,
@@ -789,9 +624,7 @@ export function groupRequirementsByScope<T extends ScopedRequirement>(
   return sections;
 }
 
-/**
- * Seção da checklist por categoria — o eixo que a tela usa para os accordions.
- */
+/** Seção da checklist por categoria — o eixo dos accordions da tela. */
 export type ChecklistCategorySection<T> = {
   category: RequirementCategory;
   items: T[];
@@ -808,16 +641,8 @@ export type CategorizedRequirement = OrderedRequirement & {
 };
 
 /**
- * Agrupa a checklist por categoria: Documentos, Saúde, Dinheiro...
- *
- * A ordem das categorias entra por parâmetro porque é decisão de apresentação
- * (`CHECKLIST_CATEGORIES`), e este módulo responde por regra de viagem. Uma
- * categoria sem item nenhum não vira seção.
- *
- * `done`/`total` seguem a mesma regra do progresso da viagem — informativos
- * ficam de fora da fração —, então a soma das seções fecha exatamente com o
- * número mostrado no topo da tela. Uma categoria só de informativos devolve
- * `0/0`, e cabe à tela mostrar a contagem de itens no lugar da fração.
+ * Agrupa a checklist por categoria, na ordem recebida. `done`/`total` seguem a
+ * regra do progresso da viagem, então a soma das seções fecha com o topo.
  */
 export function groupRequirementsByCategory<T extends CategorizedRequirement>(
   requirements: readonly T[],

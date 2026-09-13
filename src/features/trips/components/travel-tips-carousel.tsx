@@ -17,23 +17,13 @@ import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 const TIP_COUNT = 5;
 const AUTO_ADVANCE_MS = 6000;
 
-/**
- * As dicas da Home vazia: sem viagem para contar, a tela ainda tem o que dizer.
- *
- * Informa e só: nada aqui é tocável, e o único caminho adiante da tela continua
- * sendo o botão "Criar viagem", logo acima.
- */
+/** As dicas da Home vazia. Informa e só: nada aqui é tocável. */
 export function TravelTipsCarousel() {
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
 
-  /**
-   * As 5 dicas são sorteadas uma vez, na montagem, e não mudam mais.
-   *
-   * `useState` com inicializador preguiçoso, e não `useMemo`: o `useMemo` é uma
-   * dica de performance que o React pode descartar e recalcular, e recalcular
-   * aqui é a dica trocando debaixo do dedo de quem está lendo.
-   */
+  // `useState`, e não `useMemo`: o React pode recalcular um memo, e aqui isso
+  // seria a dica trocando debaixo do dedo de quem lê.
   const [tips] = useState(() => pickTravelTips(TIP_COUNT));
   const [index, setIndex] = useState(0);
   const [autoAdvances, setAutoAdvances] = useState(true);
@@ -43,13 +33,8 @@ export function TravelTipsCarousel() {
   const cardWidth = width - spacing.xl * 2;
   const step = cardWidth + spacing.md;
 
-  /**
-   * O avanço sozinho, enquanto ninguém tocou.
-   *
-   * `setTimeout` reagendado a cada dica, e não um `setInterval` que empurra a
-   * rolagem de dentro de um atualizador de estado. Desligado com "reduzir
-   * movimento": é exatamente o caso que a preferência existe para cobrir.
-   */
+  // `setTimeout` reagendado, e não um `setInterval` que empurra a rolagem de
+  // dentro de um atualizador de estado.
   useEffect(() => {
     if (reduceMotion || !autoAdvances || tips.length < 2) return;
 
@@ -108,11 +93,8 @@ export function TravelTipsCarousel() {
 }
 
 const styles = StyleSheet.create({
-  /**
-   * O bloco sai do `paddingHorizontal` da tela para a rolagem ir de borda a
-   * borda; o padding volta no conteúdo da lista, para o primeiro e o último
-   * card alinharem com o botão.
-   */
+  // Sai do padding da tela para a rolagem ir de borda a borda; o padding volta
+  // no conteúdo da lista.
   container: {
     alignSelf: 'stretch',
     marginHorizontal: -spacing.xl,

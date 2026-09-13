@@ -27,17 +27,7 @@ import {
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
-/**
- * Início: uma viagem só, a próxima, e o ambiente dela.
- *
- * A tela responde a duas perguntas — quanto falta para viajar e quão preparada
- * a viagem está — e oferece um único caminho adiante, o botão do próximo passo.
- * A lista completa continua sendo assunto da aba Viagens; aqui repetir viagens
- * seria repetir aquela tela.
- *
- * O clima da viagem não é enfeite atrás de um card: é o fundo da tela inteira, e
- * o conteúdo mora dentro dele.
- */
+/** Início: a próxima viagem e o ambiente dela. A lista fica na aba Viagens. */
 export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -46,23 +36,11 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [needsRetry, setNeedsRetry] = useState(false);
 
-  /**
-   * Onde o dedo está, para as partículas reagirem.
-   *
-   * Mora aqui, e não no campo, porque quem enxerga o toque é a tela inteira. É
-   * um `SharedValue` de propósito: escrever nele não re-renderiza nada, e quem
-   * lê é o worklet da simulação, na UI thread.
-   */
+  // `SharedValue` porque quem lê é o worklet da simulação, na UI thread.
   const pointer = useSharedValue<FieldPointer>({ x: 0, y: 0, active: false });
 
-  /**
-   * Onde a tela começa dentro da janela.
-   *
-   * O toque chega em coordenadas da janela e as partículas vivem em coordenadas
-   * da tela; sem descontar isto, o sopro acontece deslocado do dedo. É medido
-   * quando a tela assenta, e de novo a cada mudança de tamanho (giro do
-   * aparelho, tela dividida no Android).
-   */
+  // Onde a tela começa na janela: o toque chega em coordenadas da janela e as
+  // partículas vivem em coordenadas da tela.
   const screenRef = useRef<View>(null);
   const origin = useRef({ x: 0, y: 0 });
 
@@ -77,8 +55,7 @@ export default function HomeScreen() {
     setNeedsRetry(false);
     try {
       const rows = await tripsService.listWithRelations(user.id);
-      // `buildTripSummaries` já ordena por relevância: a primeira viagem ativa
-      // é a em andamento ou a que começa antes — exatamente a que a Home destaca.
+      // `buildTripSummaries` já ordena por relevância.
       const { active } = splitTripSections(buildTripSummaries(rows));
       setNextTrip(active[0] ?? null);
     } catch {
@@ -94,11 +71,7 @@ export default function HomeScreen() {
     }, [load]),
   );
 
-  /**
-   * As estações saem dos destinos, não do calendário de quem olha: dezembro é
-   * inverno em Viena e verão no Rio. É a mesma regra da tela de detalhe, e
-   * alimenta o fundo, as partículas, a etiqueta e a dica.
-   */
+  // As estações saem dos destinos: dezembro é inverno em Viena e verão no Rio.
   const seasons = useMemo(
     () =>
       nextTrip
@@ -107,21 +80,9 @@ export default function HomeScreen() {
     [nextTrip],
   );
 
-  /**
-   * O toque é lido, nunca capturado.
-   *
-   * `onTouch*` borbulha por toda a subárvore sem passar pela negociação de
-   * responder, então a tela sabe onde está o dedo sem disputar o toque com
-   * ninguém: a rolagem, o botão "Verificar" e os gestos de navegação seguem
-   * exatamente como seriam sem isto. É também por isso que a interação com as
-   * partículas não precisa ser anunciada — ela não custa nada a quem a ignora.
-   *
-   * `pageX/pageY` e não `locationX/locationY`: como o evento borbulha, a origem
-   * do `location` é a view tocada lá embaixo — um botão, um texto —, enquanto o
-   * campo de partículas mede a tela inteira. O `page` é o único sistema comum
-   * aos dois, e `origin` desconta onde a tela começa na janela: sem isso o
-   * sopro sai deslocado da barra de status para baixo no Android.
-   */
+  // O toque é lido, nunca capturado: `onTouch*` borbulha sem disputar o gesto
+  // com a rolagem nem com os botões. `pageX/pageY` porque o evento borbulha, e
+  // a origem do `location` seria a view tocada lá embaixo.
   function trackTouch(event: GestureResponderEvent) {
     const touch = event.nativeEvent.touches[0];
     if (!touch) return;
@@ -132,18 +93,12 @@ export default function HomeScreen() {
     };
   }
 
-  /**
-   * O sopro acaba junto com o toque. `onTouchCancel` importa tanto quanto o
-   * `onTouchEnd`: quando o sistema interrompe o toque — um gesto de voltar, uma
-   * chamada chegando —, é o único aviso que chega, e sem ele o dedo ficaria
-   * soprando um ponto da tela para sempre.
-   */
+  // `onTouchCancel` importa tanto quanto o `onTouchEnd`: quando o sistema
+  // interrompe o toque, é o único aviso que chega.
   function releaseTouch() {
     pointer.value = { x: 0, y: 0, active: false };
   }
 
-  // A viagem se distribui pela altura da tela; carregamento, falha e tela vazia
-  // são um bloco só, centralizado.
   const showsTrip = !isLoading && !needsRetry && nextTrip !== null;
 
   return (
@@ -155,9 +110,7 @@ export default function HomeScreen() {
       onTouchMove={trackTouch}
       onTouchEnd={releaseTouch}
       onTouchCancel={releaseTouch}>
-      {/* O ambiente fica atrás de tudo e não recebe toque nenhum: é paisagem.
-          A `key` carrega as estações: editar as datas para outra estação
-          remonta o campo, e as partículas nascem com a forma nova. */}
+      {/* A `key` carrega as estações: mudar as datas remonta o campo. */}
       <SeasonalBackdrop
         key={nextTrip ? `${nextTrip.trip.id}:${seasons.join('-')}` : 'empty'}
         seasons={seasons}
@@ -166,10 +119,6 @@ export default function HomeScreen() {
       />
 
       <SafeAreaView style={styles.safe} edges={['top']}>
-        {/* `flexGrow` faz o conteúdo ocupar a altura da rolagem mesmo sendo
-            menor que ela: em tela grande a composição se distribui e não rola,
-            em tela pequena (ou com a fonte do sistema ampliada) ela rola. Sem
-            repique — arrastar não deve mover nada quando tudo já cabe. */}
         <ScrollView
           contentContainerStyle={[styles.content, showsTrip ? null : styles.centered]}
           contentInsetAdjustmentBehavior="automatic"
@@ -223,19 +172,14 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  // O cinza das demais telas é o ponto de partida; quem pinta o bege é o
-  // ambiente sazonal, e só quando existe estação a mostrar.
+  // O bege quem pinta é o ambiente sazonal, e só quando há estação a mostrar.
   screen: { flex: 1, backgroundColor: colors.background },
   safe: { flex: 1 },
   content: {
     flexGrow: 1,
     paddingHorizontal: spacing.xl,
-    // Um respiro a mais que o padrão das outras abas: aqui o cabeçalho nasce
-    // direto sobre o ambiente, sem card, e encostado no topo ele fica apertado.
     paddingTop: spacing.xxl + spacing.md,
-    // Folga generosa embaixo, como nas demais abas: a barra de abas do iOS é
-    // translúcida e flutua sobre o conteúdo, então o último bloco precisa de
-    // espaço para não terminar atrás dela.
+    // A barra de abas do iOS é translúcida e flutua sobre o conteúdo.
     paddingBottom: spacing.xxl,
   },
   /** Sem viagem, carregando ou sem conexão: um bloco só, no meio da tela. */

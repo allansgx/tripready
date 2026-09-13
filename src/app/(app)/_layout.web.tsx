@@ -7,17 +7,9 @@ import { getAvatarUrl } from '@/features/auth/user-profile';
 import { colors, radius } from '@/theme/tokens';
 
 /**
- * Navegação inferior na web.
- *
- * O `NativeTabs` existe para desenhar a barra do próprio sistema, e na web não
- * há sistema: a implementação dele lá vira uma pílula fixa no topo, só com
- * rótulos e sem ícone nenhum. Como não dá para reposicionar aquilo por
- * propriedade, a web ganha esta variante — o Metro escolhe o arquivo `.web`
- * automaticamente, e o nativo continua com as abas do sistema.
- *
- * A intenção é paridade com o celular: barra embaixo, só ícones, roxo da marca
- * na aba ativa e a foto do usuário no lugar do ícone de Perfil. As rotas são as
- * mesmas — mudar uma aba aqui pede mudar no `_layout.tsx`.
+ * Navegação inferior na web: o `NativeTabs` vira uma pílula no topo, sem
+ * ícones, e não dá para reposicionar por propriedade. As rotas são as mesmas —
+ * mudar uma aba aqui pede mudar no `_layout.tsx`.
  */
 export default function AppWebLayout() {
   const { user } = useAuth();

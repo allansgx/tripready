@@ -14,9 +14,8 @@ import { colors, spacing, typography } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
-// O primeiro quadro do overlay repete o splash nativo, então quase não há o que
-// cruzar. O fade curto é só seguro contra diferença de arredondamento entre o
-// PNG e o SVG — o padrão de 400ms seria lento o bastante para virar uma pausa.
+// O primeiro quadro do overlay repete o splash nativo: o fade curto é só seguro
+// contra diferença de arredondamento entre o PNG e o SVG.
 SplashScreen.setOptions({ fade: true, duration: 150 });
 
 /** Rota âncora para onde o router volta quando um grupo é desprotegido. */
@@ -38,25 +37,15 @@ export default function RootLayout() {
 }
 
 /**
- * A abertura do app.
- *
- * Enquanto a sessão, os passaportes e a fonte não resolvem, quem está na tela é
- * o splash animado — e nada mais é montado, para nenhuma rota piscar antes de
- * se saber para onde o usuário vai. O overlay fica montado atravessando essa
- * virada: é ele que decide a hora de sair, e sair antes da hora reintroduziria
- * o indicador de carga que esta tela existe para eliminar.
+ * Enquanto sessão, passaportes e fonte não resolvem, só o splash é montado —
+ * nenhuma rota pisca antes de se saber para onde o usuário vai.
  */
 function RootNavigator() {
   const { session, isLoading: isLoadingSession } = useAuth();
   const { isLoading: isLoadingPassports } = usePassports();
 
-  /**
-   * A serifada do dia do embarque, carregada em tempo de execução porque o app
-   * roda no Expo Go, onde o plugin de build do `expo-font` não vale.
-   *
-   * Um erro aqui não segura o app: sem a fonte, o nome da viagem sai na fonte
-   * do sistema, que é uma tela menos bonita e não uma tela quebrada.
-   */
+  // Carregada em tempo de execução por causa do Expo Go. Um erro aqui não
+  // segura o app: o nome da viagem sai na fonte do sistema.
   const [fontsLoaded, fontError] = useFonts({
     Fraunces_700Bold: require('@/assets/fonts/Fraunces_700Bold.ttf'),
   });
@@ -76,12 +65,8 @@ function RootNavigator() {
 }
 
 /**
- * A espera que não é abertura.
- *
- * Acontece logo depois do login, enquanto os passaportes decidem entre
- * onboarding e área principal. O splash não volta aqui: ele é a chegada ao app,
- * e repeti-lo a cada troca de sessão transformaria um gesto de boas-vindas em
- * interrupção. Sem isto, a tela ficaria em branco nesse intervalo.
+ * A espera depois do login, enquanto os passaportes decidem entre onboarding e
+ * área principal. O splash não volta aqui: ele é a chegada ao app.
  */
 function Readying() {
   return (
@@ -92,25 +77,15 @@ function Readying() {
 }
 
 /**
- * Proteção de rotas em duas etapas.
- *
- * 1. Sem sessão, só existe o grupo `(auth)`.
- * 2. Com sessão mas sem nenhum passaporte, só existe o onboarding — é o que
- *    garante a pergunta sobre o passaporte antes da Home, sem depender de flag
- *    ou de armazenamento local: a própria ausência de passaporte é o estado.
- *
- * Como os grupos são montados condicionalmente, não há tela intermediária
- * piscando nem como burlar por deep link.
+ * Proteção de rotas: sem sessão só existe `(auth)`, e com sessão sem passaporte
+ * só existe o onboarding. Os grupos são montados condicionalmente, então não há
+ * tela piscando nem como burlar por deep link.
  */
 function AppContent() {
   const { session } = useAuth();
   const { hasPassport, hasLoadError: passportsFailed, refresh: refreshPassports } = usePassports();
 
-  /**
-   * A leitura dos passaportes falhou. Sem ela não dá para escolher entre
-   * onboarding e área principal, e chutar "não tem passaporte" mandaria para o
-   * cadastro alguém que já tem — daí uma tela própria, com a saída na mão.
-   */
+  // Chutar "não tem passaporte" mandaria para o cadastro alguém que já tem.
   if (session && passportsFailed) {
     return (
       <View style={styles.center}>
@@ -152,8 +127,7 @@ function AppContent() {
             contentStyle: { backgroundColor: colors.surface },
           }}
         />
-        {/* Sem gesto de fechar: a preparação da checklist é curta e termina
-            navegando sozinha para a viagem. */}
+        {/* Sem gesto: a preparação termina navegando sozinha para a viagem. */}
         <Stack.Screen
           name="trip-preparing"
           options={{
@@ -162,8 +136,7 @@ function AppContent() {
             contentStyle: { backgroundColor: colors.surface },
           }}
         />
-        {/* Também sem gesto: no meio da exclusão não há o que cancelar, e no
-            fim a saída é o botão que leva para a entrada. */}
+        {/* Também sem gesto: no meio da exclusão não há o que cancelar. */}
         <Stack.Screen
           name="account-deleting"
           options={{
@@ -182,12 +155,10 @@ function AppContent() {
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
 
-      {/* Fora dos grupos protegidos: o retorno do OAuth chega antes da sessão
-          existir e precisa continuar acessível depois que ela existe. */}
+      {/* Fora dos grupos protegidos: o retorno do OAuth chega antes da sessão. */}
       <Stack.Screen name="auth/callback" options={{ animation: 'fade' }} />
 
-      {/* Também fora: os documentos legais são alcançados da tela de login,
-          onde ainda não há sessão, e do Perfil, onde já há. */}
+      {/* Também fora: os documentos legais são alcançados com e sem sessão. */}
       <Stack.Screen name="legal/privacidade" />
       <Stack.Screen name="legal/termos" />
     </Stack>

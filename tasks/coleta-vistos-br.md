@@ -50,14 +50,14 @@ anote o caso na coluna de observação e decida depois.
 Para **passaporte brasileiro comum** (não diplomático, não oficial), em viagem
 de **turismo**:
 
-| Tipo | Quando usar |
-| --- | --- |
-| `visa_free` | Entra sem visto, apenas com o passaporte |
-| `visa_required` | Precisa de visto emitido antes da viagem |
-| `evisa` | Visto solicitado e emitido online, antes da viagem |
-| `eta` | Autorização eletrônica de viagem, aprovada antes do embarque |
-| `visa_on_arrival` | Visto emitido no posto de fronteira, na chegada |
-| `conditional` | A página não permite classificar sem ambiguidade |
+| Tipo              | Quando usar                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| `visa_free`       | Entra sem visto, apenas com o passaporte                     |
+| `visa_required`   | Precisa de visto emitido antes da viagem                     |
+| `evisa`           | Visto solicitado e emitido online, antes da viagem           |
+| `eta`             | Autorização eletrônica de viagem, aprovada antes do embarque |
+| `visa_on_arrival` | Visto emitido no posto de fronteira, na chegada              |
+| `conditional`     | A página não permite classificar sem ambiguidade             |
 
 Regras de preenchimento:
 
@@ -105,13 +105,13 @@ Legenda de confiança:
 `AT` `BE` `CH` `CZ` `DE` `DK` `ES` `FI` `FR` `GR` `HR` `HU` `IS` `IT` `NL` `NO`
 `PL` `PT` `RO` `SE`
 
-| Campo | Valor proposto |
-| --- | --- |
-| Tipo | `visa_free` |
+| Campo         | Valor proposto                                                      |
+| ------------- | ------------------------------------------------------------------- |
+| Tipo          | `visa_free`                                                         |
 | `source_name` | Comissão Europeia — Política de vistos (Regulamento (UE) 2018/1806) |
-| `source_url` | https://home-affairs.ec.europa.eu/policies/schengen/visa-policy_en |
-| `notes` | Entrada sem visto para estadas de até 90 dias a cada 180. |
-| Confiança | **Média** |
+| `source_url`  | https://home-affairs.ec.europa.eu/policies/schengen/visa-policy_en  |
+| `notes`       | Entrada sem visto para estadas de até 90 dias a cada 180.           |
+| Confiança     | **Média**                                                           |
 
 O Brasil consta do Anexo II do Regulamento (UE) 2018/1806, que lista as
 nacionalidades isentas de visto para estadas curtas. A competência é da União,
@@ -136,34 +136,34 @@ cadastrar, confirme o Brasil na lista do próprio regulamento.**
 
 ### 4.3 Demais destinos — 26
 
-| Destino | Código | Tipo proposto | Confiança | `notes` proposto |
-| --- | --- | --- | --- | --- |
-| Reino Unido | `GB` | `eta` | Alta | Autorização eletrônica (ETA) aprovada antes do embarque, para visitas de até 6 meses. |
-| Irlanda | `IE` | `visa_free` | Média | Nacionalidade não sujeita a visto de entrada. |
-| Estados Unidos | `US` | `visa_required` | Alta | O Brasil não participa do Visa Waiver Program: é preciso visto de visitante (B-2). |
-| Canadá | `CA` | `conditional` | Alta | eTA apenas para quem já teve visto canadense nos últimos 10 anos ou tem visto americano válido, e viaja de avião. Nos demais casos, visto de visitante. |
-| México | `MX` | `eta` | Média | Autorização eletrônica (SAE) para chegada por via aérea com passaporte eletrônico. Por terra ou mar, é preciso visto. |
-| Japão | `JP` | `visa_free` | Alta | Isenção válida para passaporte eletrônico no padrão ICAO, em estadas de até 90 dias. |
-| China | `CN` | `visa_free` | Alta | Entrada sem visto por até 30 dias. Política vigente até 31/12/2026. |
-| Coreia do Sul | `KR` | `eta` | Alta | Autorização eletrônica (K-ETA) aprovada antes do embarque, para até 90 dias. |
-| Israel | `IL` | `eta` | Alta | Autorização eletrônica (ETA-IL) solicitada até 72 horas antes da chegada. |
-| Nova Zelândia | `NZ` | `eta` | Alta | Autorização eletrônica (NZeTA) obtida antes da viagem. |
-| Austrália | `AU` | `visa_required` | Média | O eVisitor é restrito a passaportes europeus: é preciso visto de visitante, solicitado online. |
-| Índia | `IN` | `evisa` | Alta | Visto eletrônico solicitado com pelo menos 4 dias de antecedência. |
-| Indonésia | `ID` | `visa_on_arrival` | Alta | Visto na chegada, que pode ser pago online antes da viagem (e-VOA), para até 30 dias. |
-| Vietnã | `VN` | `evisa` | Alta | Visto eletrônico de até 90 dias, apresentado impresso na chegada. |
-| Tailândia | `TH` | `visa_free` | Alta | Entrada sem visto para turismo por até 60 dias. |
-| Turquia | `TR` | `visa_free` | Média | Entrada sem visto para estadas de até 90 dias a cada 180. |
-| Egito | `EG` | `evisa` | **Baixa** | Visto eletrônico solicitado antes da viagem. |
-| Emirados Árabes Unidos | `AE` | `visa_free` | Alta | Entrada sem visto por até 90 dias a cada 12 meses; o carimbo é dado na chegada. |
-| Singapura | `SG` | `visa_free` | Alta | Entrada sem visto por até 30 dias. É preciso enviar o SG Arrival Card antes da chegada. |
-| África do Sul | `ZA` | `visa_free` | Alta | Entrada sem visto por até 90 dias. |
-| Argentina | `AR` | `visa_free` | Alta | Entrada sem visto para turismo. |
-| Chile | `CL` | `visa_free` | Alta | Entrada sem visto para turismo; por ser membro do MERCOSUL, o documento de identidade é aceito no lugar do passaporte. |
-| Colômbia | `CO` | `visa_free` | Alta | Entrada sem visto para turismo por até 90 dias, prorrogáveis conforme a regulamentação. |
-| Peru | `PE` | `visa_free` | Alta | Entrada sem visto para turismo; o documento de identidade é aceito no lugar do passaporte. |
-| Uruguai | `UY` | `visa_free` | Alta | Entrada sem visto para turismo; o documento de identidade é aceito no lugar do passaporte. |
-| Marrocos | `MA` | — | **Pendente** | não confirmado — ver abaixo |
+| Destino                | Código | Tipo proposto     | Confiança    | `notes` proposto                                                                                                                                        |
+| ---------------------- | ------ | ----------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reino Unido            | `GB`   | `eta`             | Alta         | Autorização eletrônica (ETA) aprovada antes do embarque, para visitas de até 6 meses.                                                                   |
+| Irlanda                | `IE`   | `visa_free`       | Média        | Nacionalidade não sujeita a visto de entrada.                                                                                                           |
+| Estados Unidos         | `US`   | `visa_required`   | Alta         | O Brasil não participa do Visa Waiver Program: é preciso visto de visitante (B-2).                                                                      |
+| Canadá                 | `CA`   | `conditional`     | Alta         | eTA apenas para quem já teve visto canadense nos últimos 10 anos ou tem visto americano válido, e viaja de avião. Nos demais casos, visto de visitante. |
+| México                 | `MX`   | `eta`             | Média        | Autorização eletrônica (SAE) para chegada por via aérea com passaporte eletrônico. Por terra ou mar, é preciso visto.                                   |
+| Japão                  | `JP`   | `visa_free`       | Alta         | Isenção válida para passaporte eletrônico no padrão ICAO, em estadas de até 90 dias.                                                                    |
+| China                  | `CN`   | `visa_free`       | Alta         | Entrada sem visto por até 30 dias. Política vigente até 31/12/2026.                                                                                     |
+| Coreia do Sul          | `KR`   | `eta`             | Alta         | Autorização eletrônica (K-ETA) aprovada antes do embarque, para até 90 dias.                                                                            |
+| Israel                 | `IL`   | `eta`             | Alta         | Autorização eletrônica (ETA-IL) solicitada até 72 horas antes da chegada.                                                                               |
+| Nova Zelândia          | `NZ`   | `eta`             | Alta         | Autorização eletrônica (NZeTA) obtida antes da viagem.                                                                                                  |
+| Austrália              | `AU`   | `visa_required`   | Média        | O eVisitor é restrito a passaportes europeus: é preciso visto de visitante, solicitado online.                                                          |
+| Índia                  | `IN`   | `evisa`           | Alta         | Visto eletrônico solicitado com pelo menos 4 dias de antecedência.                                                                                      |
+| Indonésia              | `ID`   | `visa_on_arrival` | Alta         | Visto na chegada, que pode ser pago online antes da viagem (e-VOA), para até 30 dias.                                                                   |
+| Vietnã                 | `VN`   | `evisa`           | Alta         | Visto eletrônico de até 90 dias, apresentado impresso na chegada.                                                                                       |
+| Tailândia              | `TH`   | `visa_free`       | Alta         | Entrada sem visto para turismo por até 60 dias.                                                                                                         |
+| Turquia                | `TR`   | `visa_free`       | Média        | Entrada sem visto para estadas de até 90 dias a cada 180.                                                                                               |
+| Egito                  | `EG`   | `evisa`           | **Baixa**    | Visto eletrônico solicitado antes da viagem.                                                                                                            |
+| Emirados Árabes Unidos | `AE`   | `visa_free`       | Alta         | Entrada sem visto por até 90 dias a cada 12 meses; o carimbo é dado na chegada.                                                                         |
+| Singapura              | `SG`   | `visa_free`       | Alta         | Entrada sem visto por até 30 dias. É preciso enviar o SG Arrival Card antes da chegada.                                                                 |
+| África do Sul          | `ZA`   | `visa_free`       | Alta         | Entrada sem visto por até 90 dias.                                                                                                                      |
+| Argentina              | `AR`   | `visa_free`       | Alta         | Entrada sem visto para turismo.                                                                                                                         |
+| Chile                  | `CL`   | `visa_free`       | Alta         | Entrada sem visto para turismo; por ser membro do MERCOSUL, o documento de identidade é aceito no lugar do passaporte.                                  |
+| Colômbia               | `CO`   | `visa_free`       | Alta         | Entrada sem visto para turismo por até 90 dias, prorrogáveis conforme a regulamentação.                                                                 |
+| Peru                   | `PE`   | `visa_free`       | Alta         | Entrada sem visto para turismo; o documento de identidade é aceito no lugar do passaporte.                                                              |
+| Uruguai                | `UY`   | `visa_free`       | Alta         | Entrada sem visto para turismo; o documento de identidade é aceito no lugar do passaporte.                                                              |
+| Marrocos               | `MA`   | —                 | **Pendente** | não confirmado — ver abaixo                                                                                                                             |
 
 Os cinco sul-americanos foram confirmados um a um na autoridade migratória do
 próprio destino, e não pelo fato de pertencerem ao MERCOSUL — deduzir do bloco
@@ -181,33 +181,33 @@ passaporte, e isso entrou em `notes` porque é informação útil ao viajante.
 
 ### 4.4 Fontes por destino
 
-| Código | `source_name` | `source_url` |
-| --- | --- | --- |
-| `GB` | GOV.UK — Electronic travel authorisation | https://www.gov.uk/guidance/check-when-you-can-get-an-electronic-travel-authorisation-eta |
-| `IE` | Irish Immigration Service — Visa and non-visa required nationalities | https://www.irishimmigration.ie/visa-non-visa-required-nationalities/ |
-| `US` | U.S. Department of State — Visitor Visa | https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html |
-| `CA` | IRCC — eTA: citizens from some visa-required countries | https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta/eligibility/eta-x.html |
-| `MX` | Instituto Nacional de Migración — Autorización electrónica | https://www.inm.gob.mx/sae/publico/en/solicitud.html |
-| `JP` | MOFA — Visa Waiver Measure for nationals of Brazil | https://www.mofa.go.jp/press/release/press4e_003290.html |
-| `CN` | Embaixada da China — Política de isenção de visto | https://br.china-embassy.gov.cn/por/lqfw/lqfw2/ |
-| `KR` | Korea Immigration Service — K-ETA | https://www.k-eta.go.kr/ |
-| `IL` | Israel PIBA — ETA-IL | https://israel-entry.piba.gov.il/learn-about |
-| `NZ` | Immigration New Zealand — Visa waiver countries | https://www.immigration.govt.nz/visit/what-you-need-to-visit-new-zealand/visa-waiver-countries-and-territories/ |
-| `AU` | Department of Home Affairs — Visitor visa (subclass 600) | https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600 |
-| `IN` | Government of India — e-Visa | https://indianvisaonline.gov.in/evisa/tvoa.html |
-| `ID` | Direktorat Jenderal Imigrasi — e-VOA | https://evisa.imigrasi.go.id/front/info/evoa |
-| `VN` | Vietnam National Electronic Visa system | https://evisa.gov.vn/ |
-| `TH` | MFA Thailand — Tourist visa exemption (60 dias) | https://image.mfa.go.th/mfa/0/YLjhuT4Hho/Consular_Service/Tourist_Visa_Exempt_60_days.pdf |
-| `TR` | Türkiye MFA — Visa information for foreigners | https://www.mfa.gov.tr/visa-information-for-foreigners.en.mfa |
-| `EG` | Egypt e-Visa Portal | https://visa2egypt.gov.eg/eVisa/FAQ |
-| `AE` | UAE MOFA — Embaixada em Brasília, vistos | https://www.mofa.gov.ae/en/missions/brasilia/services/visas |
-| `SG` | Embaixada de Singapura em Brasília — Visa-free entry for Brazilians | https://brasilia.mfa.gov.sg/important-information/visa-free-entry-for-brazilians/ |
-| `ZA` | DIRCO — Passport holders exempt from South African visas | https://dirco.gov.za/uk/visa-countries-waivers/ |
-| `AR` | Dirección Nacional de Migraciones — Régimen de visas | https://www.migraciones.gob.ar/accesible/indexdnm.php?visas= |
-| `CL` | Servicio Nacional de Migraciones — Documentos de viaje | https://serviciomigraciones.cl/guia/documentos-viaje/ |
-| `CO` | Cancillería de Colombia — Necesito una visa | https://www.cancilleria.gov.co/tramites_servicios/visa/requisitos |
-| `PE` | Superintendencia Nacional de Migraciones — Viajar con DNI | https://www.gob.pe/158-viajar-con-dni |
-| `UY` | Ministerio del Interior — Régimen de visas de admisión | https://www.gub.uy/ministerio-interior/comunicacion/publicaciones/regimen-visas-admision |
+| Código | `source_name`                                                        | `source_url`                                                                                                    |
+| ------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `GB`   | GOV.UK — Electronic travel authorisation                             | https://www.gov.uk/guidance/check-when-you-can-get-an-electronic-travel-authorisation-eta                       |
+| `IE`   | Irish Immigration Service — Visa and non-visa required nationalities | https://www.irishimmigration.ie/visa-non-visa-required-nationalities/                                           |
+| `US`   | U.S. Department of State — Visitor Visa                              | https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html                                  |
+| `CA`   | IRCC — eTA: citizens from some visa-required countries               | https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta/eligibility/eta-x.html      |
+| `MX`   | Instituto Nacional de Migración — Autorización electrónica           | https://www.inm.gob.mx/sae/publico/en/solicitud.html                                                            |
+| `JP`   | MOFA — Visa Waiver Measure for nationals of Brazil                   | https://www.mofa.go.jp/press/release/press4e_003290.html                                                        |
+| `CN`   | Embaixada da China — Política de isenção de visto                    | https://br.china-embassy.gov.cn/por/lqfw/lqfw2/                                                                 |
+| `KR`   | Korea Immigration Service — K-ETA                                    | https://www.k-eta.go.kr/                                                                                        |
+| `IL`   | Israel PIBA — ETA-IL                                                 | https://israel-entry.piba.gov.il/learn-about                                                                    |
+| `NZ`   | Immigration New Zealand — Visa waiver countries                      | https://www.immigration.govt.nz/visit/what-you-need-to-visit-new-zealand/visa-waiver-countries-and-territories/ |
+| `AU`   | Department of Home Affairs — Visitor visa (subclass 600)             | https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600                                   |
+| `IN`   | Government of India — e-Visa                                         | https://indianvisaonline.gov.in/evisa/tvoa.html                                                                 |
+| `ID`   | Direktorat Jenderal Imigrasi — e-VOA                                 | https://evisa.imigrasi.go.id/front/info/evoa                                                                    |
+| `VN`   | Vietnam National Electronic Visa system                              | https://evisa.gov.vn/                                                                                           |
+| `TH`   | MFA Thailand — Tourist visa exemption (60 dias)                      | https://image.mfa.go.th/mfa/0/YLjhuT4Hho/Consular_Service/Tourist_Visa_Exempt_60_days.pdf                       |
+| `TR`   | Türkiye MFA — Visa information for foreigners                        | https://www.mfa.gov.tr/visa-information-for-foreigners.en.mfa                                                   |
+| `EG`   | Egypt e-Visa Portal                                                  | https://visa2egypt.gov.eg/eVisa/FAQ                                                                             |
+| `AE`   | UAE MOFA — Embaixada em Brasília, vistos                             | https://www.mofa.gov.ae/en/missions/brasilia/services/visas                                                     |
+| `SG`   | Embaixada de Singapura em Brasília — Visa-free entry for Brazilians  | https://brasilia.mfa.gov.sg/important-information/visa-free-entry-for-brazilians/                               |
+| `ZA`   | DIRCO — Passport holders exempt from South African visas             | https://dirco.gov.za/uk/visa-countries-waivers/                                                                 |
+| `AR`   | Dirección Nacional de Migraciones — Régimen de visas                 | https://www.migraciones.gob.ar/accesible/indexdnm.php?visas=                                                    |
+| `CL`   | Servicio Nacional de Migraciones — Documentos de viaje               | https://serviciomigraciones.cl/guia/documentos-viaje/                                                           |
+| `CO`   | Cancillería de Colombia — Necesito una visa                          | https://www.cancilleria.gov.co/tramites_servicios/visa/requisitos                                               |
+| `PE`   | Superintendencia Nacional de Migraciones — Viajar con DNI            | https://www.gob.pe/158-viajar-con-dni                                                                           |
+| `UY`   | Ministerio del Interior — Régimen de visas de admisión               | https://www.gub.uy/ministerio-interior/comunicacion/publicaciones/regimen-visas-admision                        |
 
 > A fonte da Tailândia é um PDF: confirme se continua sendo a versão vigente
 > antes de usá-la, já que a seção 6 desaconselha PDF sem data.

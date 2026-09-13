@@ -25,12 +25,7 @@ type PassportsContextValue = {
   passports: Passport[];
   /** `true` enquanto a primeira carga da sessão não terminou. */
   isLoading: boolean;
-  /**
-   * A carga falhou e não se sabe o que o usuário tem.
-   *
-   * Diferente de "não tem passaporte": o layout raiz precisa distinguir os dois
-   * para não mandar ao onboarding quem só perdeu a conexão.
-   */
+  /** Diferente de "não tem passaporte": não manda ao onboarding quem perdeu a conexão. */
   hasLoadError: boolean;
   /** Usado pelo layout raiz para decidir entre onboarding e área principal. */
   hasPassport: boolean;
@@ -49,28 +44,15 @@ const PassportsContext = createContext<PassportsContextValue | null>(null);
 const NO_PASSPORTS: Passport[] = [];
 
 /**
- * Fonte única dos passaportes do usuário logado.
- *
- * Concentra as regras que o banco sozinho não expressa: o primeiro passaporte
- * nasce principal, existe no máximo um principal (garantido também pelo índice
- * único parcial em `passports`) e o principal não pode ser removido enquanto
- * houver outros passaportes.
+ * Fonte única dos passaportes: o primeiro nasce principal, existe no máximo um
+ * principal e ele não pode ser removido enquanto houver outros.
  */
 export function PassportsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
-  /**
-   * A leitura guarda de qual usuário ela é.
-   *
-   * Com o dono junto, "sem usuário", "carregando" e "os passaportes de outra
-   * conta" saem todos de uma comparação na renderização — não é preciso um
-   * efeito zerando estado no logout, que faria uma renderização a mais
-   * mostrando a lista da sessão anterior.
-   *
-   * A falha é um estado próprio, e não uma lista vazia: quem não conseguiu ler
-   * não descobriu que o usuário está sem passaporte.
-   */
+  // A leitura guarda de qual usuário ela é: sem isso, o logout precisaria de um
+  // efeito zerando estado, e uma renderização mostraria a lista anterior.
   const [state, setState] = useState<
     { userId: string; rows: Passport[] } | { userId: string; failed: true } | null
   >(null);
@@ -133,15 +115,8 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
       },
 
       /**
-       * Promove um passaporte a principal e recalcula as checklists.
-       *
-       * As regras de visto dependem do passaporte, então a troca muda o que
-       * vale para as viagens que ainda não aconteceram.
-       *
-       * O recálculo é o melhor esforço: se ele falhar, o passaporte continua
-       * trocado — que é o que a pessoa pediu — e as checklists se acertam na
-       * próxima edição da viagem, que já recalcula tudo. Levantar erro aqui
-       * diria "não foi possível concluir" sobre uma troca que aconteceu.
+       * Promove um passaporte e recalcula as checklists. O recálculo é melhor
+       * esforço: falhando, a troca continua valendo e a próxima edição acerta.
        */
       async setPrimary(passportId) {
         if (!userId) return;
@@ -156,12 +131,7 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
         }
       },
 
-      /**
-       * O passaporte principal nunca é removido: se for o único, é preciso
-       * adicionar outro e promovê-lo; se houver outros, é preciso promover um
-       * deles antes. Assim o usuário nunca fica sem passaporte principal nem
-       * sem passaporte nenhum.
-       */
+      /** O principal nunca é removido: é preciso promover outro antes. */
       async removePassport(passportId) {
         const target = passports.find((passport) => passport.id === passportId);
 

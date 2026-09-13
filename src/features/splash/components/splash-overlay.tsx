@@ -29,12 +29,7 @@ import {
 /** O recuo antes de subir. */
 const CROUCH = 9;
 
-/**
- * A subida acelera. Uma curva de desaceleração joga quase todo o deslocamento
- * nos primeiros quadros: o avião salta e some, e o resto da janela passa com a
- * tela já vazia — justamente enquanto as camadas de nuvem estão entrando para
- * dizer que ele está subindo. Acelerando, ele fica em quadro até quase o fim.
- */
+/** A subida acelera: desacelerando, o avião sairia de quadro nos primeiros quadros. */
 const RISE = Easing.in(Easing.quad);
 /** A saída: começa devagar e acelera, como algo que se abre para a frente. */
 const OPEN = Easing.bezier(0.45, 0, 0.9, 1);
@@ -43,19 +38,8 @@ const OPEN = Easing.bezier(0.45, 0, 0.9, 1);
 type Motion = 'pending' | 'full' | 'reduced';
 
 /**
- * A abertura do app: um avião que decola, e a Home.
- *
- * O primeiro quadro — céu chapado e o avião de 76pt no centro — é o próprio
- * splash nativo redesenhado em SVG, e o nativo só é escondido depois que ele
- * pinta. Daí a troca não piscar.
- *
- * Enquanto ele sobe, o alto do céu escurece no roxo da marca: é isso que faz a
- * subida parecer deslocamento e não um avião subindo parado no mesmo lugar.
- *
- * Quando o avião sai pelo topo, a cena está inteira e nada mais se move: é ali
- * que a espera pela sessão e pelos passaportes acontece, sem parecer espera.
- * Assim que o app tem o que mostrar, o céu se abre para a frente e se apaga
- * sobre a Home, que já está montada atrás — a saída é a entrada dela.
+ * A abertura do app. O primeiro quadro é o splash nativo redesenhado em SVG, e
+ * o nativo só é escondido depois que ele pinta — daí a troca não piscar.
  */
 export function SplashOverlay({
   isAppReady,
@@ -65,9 +49,8 @@ export function SplashOverlay({
   /** Avisa o layout raiz que a abertura acabou e não volta mais. */
   onFinish: () => void;
 }) {
-  // Um retrato das medidas, tirado uma vez: o app é retrato travado e a tela
-  // vive pouco mais de um segundo — reagir a mudança de dimensão só reiniciaria
-  // a animação no meio.
+  // Medidas tiradas uma vez: reagir a mudança de dimensão reiniciaria a
+  // animação no meio, e a tela vive pouco mais de um segundo.
   const [screen] = useState(() => Dimensions.get('window'));
 
   const [motion, setMotion] = useState<Motion>('pending');
@@ -149,8 +132,7 @@ export function SplashOverlay({
       active = false;
       timers.forEach(clearTimeout);
     };
-    // Todos os valores compartilhados são referências estáveis, assim como as
-    // medidas — a lista existe para o lint, não para reexecutar.
+    // Referências estáveis: a lista existe para o lint, não para reexecutar.
   }, [altitude, climb, planeScale, planeX, planeY]);
 
   useEffect(() => {
@@ -159,8 +141,7 @@ export function SplashOverlay({
     // A Home é clara; o céu, a essa altura, está roxo em cima.
     setStatusBarStyle('dark', true);
 
-    // A Home não entra por baixo de uma cortina que some: é o céu que se abre
-    // para a frente e sai de quadro, deixando ela no lugar.
+    // O céu se abre para a frente e sai de quadro, deixando a Home no lugar.
     overlay.value = withTiming(0, { duration: SPLASH_EXIT_MS, easing: OPEN });
     overlayScale.value = withTiming(1.14, { duration: SPLASH_EXIT_MS, easing: OPEN });
 
@@ -168,10 +149,8 @@ export function SplashOverlay({
     return () => clearTimeout(id);
   }, [holdReached, isAppReady, onFinish, overlay, overlayScale]);
 
-  /**
-   * O splash nativo sai aqui, e não quando o app fica pronto: este é o instante
-   * em que existe um quadro idêntico a ele desenhado por cima.
-   */
+  // Aqui, e não quando o app fica pronto: é o instante em que existe um quadro
+  // idêntico ao splash nativo desenhado por cima.
   const nativeHidden = useRef(false);
   const handleLayout = useCallback(() => {
     if (nativeHidden.current) return;

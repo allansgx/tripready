@@ -22,13 +22,8 @@ const CONFETTI_COLORS = [
   '#34C759',
 ] as const;
 
-/**
- * Sorteia o confete.
- *
- * `leftFraction` guarda a posição como fração da largura, e não em pixels: o
- * sorteio deixa de depender da tela e pode acontecer uma única vez, fora da
- * renderização. A conversão para pixel fica no `style`.
- */
+// `leftFraction` em vez de pixels: o sorteio não depende da tela e acontece uma
+// vez só, fora da renderização.
 function createPieces() {
   return Array.from({ length: CONFETTI_COUNT }, (_, index) => ({
     key: index,
@@ -47,13 +42,8 @@ export type Celebration = {
 };
 
 /**
- * Comemoração exibida quando a viagem fica pronta.
- *
- * Usa `Modal` nativo em vez de uma rota: é um momento sobre a checklist, e o
- * usuário continua exatamente onde estava ao fechar. O fechamento é sempre uma
- * ação dele — "Continuar", toque no fundo ou o voltar do Android —, nunca por
- * tempo. Respeita "reduzir movimento": nesse caso o conteúdo aparece direto,
- * sem confete nem molas.
+ * Comemoração de viagem pronta, em `Modal` nativo e não em rota. O fechamento é
+ * sempre ação do usuário, nunca por tempo.
  */
 export function CelebrationOverlay({
   celebration,

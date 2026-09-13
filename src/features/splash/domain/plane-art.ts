@@ -1,14 +1,7 @@
 /**
- * O avião da marca, em coordenadas puras.
- *
- * Este arquivo é lido de dois lugares: pelo componente do splash, que desenha o
- * avião em SVG, e por `scripts/build-brand-assets.mjs`, que rasteriza os mesmos
- * traços nos PNGs do ícone e do splash nativo. É essa origem única que faz o
- * primeiro quadro da animação coincidir com o splash nativo — se o desenho
- * morasse em dois lugares, a troca de um pelo outro piscaria.
- *
- * Por isso ele não importa nada: o gerador roda no Node, onde `react-native`
- * não existe.
+ * O avião da marca, em coordenadas puras. Lido pelo splash e por
+ * `scripts/build-brand-assets.mjs`, que gera os PNGs a partir dos mesmos
+ * traços — por isso o arquivo não importa nada: o gerador roda no Node.
  */
 
 /** Lado do `viewBox` quadrado em que o avião foi desenhado. */
@@ -25,11 +18,7 @@ export type PlanePart = {
   role: PlanePartRole;
 };
 
-/**
- * Avião visto de cima, nariz para o topo, simétrico em x = 50.
- *
- * A ordem importa: as pontas são pintadas por cima das asas.
- */
+/** Nariz para o topo, simétrico em x = 50. As pontas são pintadas por cima das asas. */
 export const PLANE_PARTS: readonly PlanePart[] = [
   {
     role: 'body',
@@ -65,13 +54,7 @@ export const PLANE_PARTS: readonly PlanePart[] = [
   },
 ];
 
-/**
- * As cores da abertura.
- *
- * Ficam aqui, e não em `theme/tokens.ts`, porque aquele arquivo importa
- * `react-native` e este precisa continuar legível pelo Node. O roxo é o mesmo
- * `colors.primary`; mudou lá, muda aqui.
- */
+/** Aqui, e não em `theme/tokens.ts`, porque aquele arquivo importa `react-native`. */
 export const SPLASH_COLORS = {
   /** Céu do primeiro quadro. É também o fundo do splash nativo no `app.json`. */
   sky: '#CEE2F8',
@@ -89,8 +72,5 @@ export const SPLASH_COLORS = {
   },
 } as const;
 
-/**
- * Largura do avião no splash nativo, em pontos. O `imageWidth` do `app.json` e
- * o `<Svg>` do primeiro quadro leem daqui — são o mesmo número, por definição.
- */
+/** Largura do avião no splash nativo: o mesmo número do `imageWidth` do `app.json`. */
 export const PLANE_MARK_SIZE = 92;

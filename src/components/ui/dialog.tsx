@@ -13,17 +13,9 @@ import {
 import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 /**
- * Alertas e menus de ação do app.
- *
- * No iOS e no Android é o `Alert` do próprio sistema, que é o certo: o app não
- * tem por que redesenhar um componente que a plataforma já entrega.
- *
- * Na web não existe esse componente — o `Alert` do react-native-web é um
- * `static alert() {}`, um no-op. Chamá-lo lá não avisa nada e não abre menu
- * nenhum: o toque simplesmente não faz nada, sem erro no console. Por isso a
- * web tem o `DialogHost` abaixo, montado uma vez na raiz.
- *
- * Use `showDialog` no lugar de `Alert.alert` em qualquer lugar do app.
+ * Alertas e menus de ação: no nativo é o `Alert` do sistema; na web o
+ * `Alert` do react-native-web é um no-op, daí o `DialogHost` abaixo. Use
+ * `showDialog` no lugar de `Alert.alert` em todo o app.
  */
 
 type DialogRequest = {

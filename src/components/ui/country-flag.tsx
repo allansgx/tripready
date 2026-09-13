@@ -4,12 +4,8 @@ import { getFlagEmoji } from '@/constants/countries';
 import { colors, typography } from '@/theme/tokens';
 
 /**
- * Bandeira do país derivada do código ISO.
- *
- * No iOS e na web o emoji vira a bandeira de verdade. O Android não traz essas
- * imagens na fonte do sistema, então lá mostramos o código em duas letras —
- * que é como a referência do Figma apresenta e como o próprio Android
- * costuma degradar esses emojis.
+ * Bandeira derivada do código ISO. O Android não traz essas imagens na fonte do
+ * sistema, então lá mostramos o código em duas letras.
  */
 export function CountryFlag({ code, size = 26 }: { code: string; size?: number }) {
   const normalized = code.trim().toUpperCase();

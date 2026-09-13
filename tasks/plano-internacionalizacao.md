@@ -1,7 +1,6 @@
 # Avaliação — Internacionalização (inglês além do pt-BR)
 
-Este documento nasceu de uma pergunta durante a auditoria de países/cidades
-([plano-cobertura-paises-cidades.md](tasks/plano-cobertura-paises-cidades.md)):
+Este documento nasceu de uma pergunta durante a auditoria de países/cidades:
 o app hoje só fala pt-BR — o quanto custaria ter inglês também? É uma
 avaliação de escopo e dificuldade, não um plano de implementação pronto para
 executar; nenhuma decisão de seguir foi tomada.
@@ -53,8 +52,7 @@ colada como array. Gerar a versão em inglês é rodar o mesmo script com
 
 Cidades são outra história: [cities.ts](src/constants/cities.ts) foi curado à
 mão, cidade por cidade, com exônimos em português (`Moscou`, `Cairo`,
-`Nova York`). Uma segunda lista em inglês precisaria da mesma curadoria da
-[camada 1 do plano de cidades](tasks/plano-cobertura-paises-cidades.md#4-camadas-propostas-para-os-204-países-sem-sugestão),
+`Nova York`). Uma segunda lista em inglês precisaria da mesma curadoria manual,
 só que em inglês — menor problema dos três, mas não é automático.
 
 ---
@@ -66,9 +64,8 @@ português no catálogo. O problema não é traduzir — é que
 `trip_requirements` **copia** o texto do template no momento em que a viagem é
 criada, em vez de guardar uma referência a ele
 ([requirement-matching.ts](src/features/trips/domain/requirement-matching.ts)).
-Isso já está registrado como um problema à parte, independente de idioma, em
-[plano-melhoria-checklist.md §1.2](tasks/plano-melhoria-checklist.md#12-mudar-a-copy-não-alcança-as-viagens-que-já-existem):
-mudar o texto de um template não alcança viagens já criadas.
+Isso é um problema à parte, independente de idioma: mudar o texto de um template
+não alcança viagens já criadas.
 
 Ter dois idiomas em cima disso significa responder, antes de qualquer
 tradução:

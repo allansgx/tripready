@@ -8,11 +8,7 @@ import {
   PASSWORD_RULES,
 } from '../password.ts';
 
-/**
- * A validação da tela precisa concordar com a do Supabase Auth: aceitar o que
- * ele aceita e recusar o que ele recusa. Os casos de símbolo são os que mais
- * importam, porque são onde as duas podem divergir sem ninguém perceber.
- */
+/** A validação da tela precisa concordar com a do Supabase Auth. */
 
 test('senha vazia não cumpre nada', () => {
   assert.deepEqual(checkPassword(''), {

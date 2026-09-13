@@ -1,9 +1,3 @@
-/**
- * Tokens visuais do TripReady, extraídos da referência do Figma Make
- * (tela de Perfil). Toda tela nova deve consumir estes valores em vez de
- * hardcodar cores/espaçamentos.
- */
-
 import { Platform } from 'react-native';
 
 export const colors = {
@@ -45,16 +39,7 @@ export const prioritySoftColors = {
   informational: '#EBEFFD',
 } as const;
 
-/**
- * Cores por momento da viagem, usadas no card da lista.
- *
- * Cada card tem um tom só, e ele diz em que ponto a viagem está: `accent` pinta
- * o anel de progresso e a bolinha da faixa, `soft` é o fundo da faixa e `text` é
- * a frase — escurecida o bastante para ler sobre o fundo diluído.
- *
- * A véspera e o dia do embarque reaproveitam o âmbar dos recomendados, que já é
- * o tom de atenção do app; o verde das futuras é o único valor novo aqui.
- */
+/** Cores por momento da viagem: `accent` no anel, `soft` na faixa, `text` na frase. */
 export const tripMomentColors = {
   ongoing: { accent: colors.primary, soft: colors.primarySoft, text: colors.primary },
   imminent: {
@@ -74,10 +59,7 @@ export const seasonColors = {
   autumn: '#B4652F',
 } as const;
 
-/**
- * Fundos das estações: a mesma cor bem diluída, para o card do progresso
- * lembrar a estação da viagem sem competir com o conteúdo.
- */
+/** Fundos das estações: a mesma cor bem diluída. */
 export const seasonSoftColors = {
   winter: '#EDF4FD',
   spring: '#FCEEF4',
@@ -85,10 +67,7 @@ export const seasonSoftColors = {
   autumn: '#F9F0E9',
 } as const;
 
-/**
- * Bordas das estações: entre o fundo diluído e a cor de destaque, para o card
- * ganhar contorno sem virar um bloco colorido.
- */
+/** Bordas das estações: entre o fundo diluído e a cor de destaque. */
 export const seasonBorderColors = {
   winter: '#C9DDF5',
   spring: '#F2CFDF',
@@ -96,14 +75,7 @@ export const seasonBorderColors = {
   autumn: '#EBD5C4',
 } as const;
 
-/**
- * O fundo da Home.
- *
- * `base` é um cinza levemente quente — a Home é a única tela que não usa o
- * `colors.background` neutro, porque é a única que precisa parecer um ambiente
- * e não uma folha. Sobre ela é pintado o halo da estação, em cor cheia e
- * opacidade baixíssima: é atmosfera, não bloco de cor.
- */
+/** O fundo da Home: `base` quente, com o halo da estação por cima. */
 export const seasonBackdropColors = {
   base: '#F8F6F2',
   winter: '#5A9BE6',
@@ -139,15 +111,8 @@ export const fontFamily = Platform.select({
   default: { sans: 'normal', rounded: 'normal' },
 })!;
 
-/**
- * Fonte de exibição, empacotada em `assets/fonts` e registrada no layout raiz.
- *
- * Só o dia do embarque usa. É o único momento em que o nome da viagem vira o
- * protagonista da tela, e a serifada dá a ele um tom de acontecimento que a
- * fonte do sistema não tem. O nome é o da família registrada pelo `expo-font`,
- * igual nas três plataformas.
- */
-export const displayFont = 'Fraunces_700Bold';
+/** Fonte de exibição, registrada pelo `expo-font` no layout raiz. */
+const displayFont = 'Fraunces_700Bold';
 
 export const typography = {
   /** Título de tela: "Perfil" na referência. */
@@ -158,16 +123,7 @@ export const typography = {
   bodyStrong: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const },
   /** Texto de apoio (e-mail, descrições). */
   caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' as const },
-  /**
-   * Contagem regressiva da Home: o número é o maior elemento do app, com a
-   * fonte arredondada do sistema para os dígitos terem cara de viagem, e não
-   * de painel de números.
-   *
-   * A entrelinha é um pouco maior que o corpo de propósito. Em fonte desse
-   * tamanho, uma `lineHeight` justa corta a parte de cima e de baixo dos
-   * dígitos no Android; a folga é a mínima que evita isso, porque cada ponto
-   * gasto aqui afasta o número do rótulo logo abaixo.
-   */
+  /** Contagem da Home. A entrelinha folgada evita o Android cortar os dígitos. */
   countdown: {
     fontSize: 104,
     lineHeight: 112,
@@ -182,13 +138,7 @@ export const typography = {
     fontWeight: '700' as const,
     fontFamily: fontFamily.rounded,
   },
-  /**
-   * O nome da viagem no dia do embarque, ocupando o lugar da contagem.
-   *
-   * Sem `fontWeight`: a família registrada já é a Bold e, no Android, pedir
-   * peso a uma família de arquivo único faz o sistema engrossar a fonte por
-   * conta própria em vez de desenhar o arquivo como ele é.
-   */
+  /** Sem `fontWeight`: a família já é a Bold, e o Android engrossaria de novo. */
   departureName: {
     fontSize: 40,
     lineHeight: 48,

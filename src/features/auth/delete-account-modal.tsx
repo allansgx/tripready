@@ -25,14 +25,8 @@ type DeleteAccountModalProps = {
 };
 
 /**
- * Confirmação da exclusão permanente da conta.
- *
- * Sai por cima do Perfil, e não por uma rota: a decisão pertence à tela onde
- * ela começou, e cancelar devolve a pessoa exatamente de onde ela veio.
- *
- * Aqui nada é excluído. O modal só decide, e a exclusão em si acontece na tela
- * de processamento, que tem espaço para mostrar o que está saindo e o que deu
- * certo no fim.
+ * Confirmação da exclusão da conta, por cima do Perfil e não por rota. Aqui
+ * nada é excluído: o modal só decide, e a exclusão acontece na tela seguinte.
  */
 export function DeleteAccountModal({ visible, onClose, onConfirm }: DeleteAccountModalProps) {
   const insets = useSafeAreaInsets();

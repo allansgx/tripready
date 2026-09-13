@@ -34,24 +34,11 @@ import {
 } from '@/theme/tokens';
 import type { RequirementOffer } from '@/types/models';
 
-/**
- * Aviso de transparência das indicações pagas.
- *
- * Fica no app, e não no banco: é uma declaração do TripReady sobre como ele se
- * sustenta, e não um atributo de cada oferta. Só aparece quando alguma das
- * ofertas exibidas é de fato afiliada.
- */
+/** Só aparece quando alguma das ofertas exibidas é de fato afiliada. */
 const AFFILIATE_DISCLOSURE =
   'Algumas indicações podem gerar comissão para o TripReady, sem custo adicional para você.';
 
-/**
- * Rodapé do bloco de fonte oficial.
- *
- * Só aparece em item que tem fonte a citar. Nos demais — montar a mala,
- * organizar os meios de pagamento — não existe canal oficial nenhum a
- * confirmar, e o aviso vira ruído repetido em toda tela: quando um alerta
- * aparece sempre, ele para de significar alguma coisa.
- */
+/** Rodapé do bloco de fonte oficial; só em item que tem fonte a citar. */
 const OFFICIAL_REMINDER = 'Confirme sempre nos canais oficiais antes de viajar.';
 
 export default function RequirementDetailScreen() {
@@ -69,12 +56,7 @@ export default function RequirementDetailScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  /**
-   * Volta para a viagem, mesmo quando a tela foi aberta direto por deep link.
-   *
-   * Mesmo cuidado do detalhe da viagem: `router.canGoBack()` enxerga a árvore
-   * inteira e poderia levar para outra aba.
-   */
+  // `router.canGoBack()` enxerga a árvore inteira e poderia levar para outra aba.
   function goBack() {
     const state = navigation.getState();
     if ((state?.index ?? 0) > 0) {
@@ -95,8 +77,7 @@ export default function RequirementDetailScreen() {
         if (!active) return;
         setRequirement(item);
 
-        // Sem regra de origem não há oferta a mostrar: itens criados à mão pelo
-        // usuário não vêm do catálogo.
+        // Item criado à mão não vem do catálogo, então não tem oferta.
         if (item?.template_id) {
           void loadOffers(item);
         }
@@ -107,10 +88,7 @@ export default function RequirementDetailScreen() {
       }
     }
 
-    /**
-     * As sugestões são um extra: falhar aqui não pode derrubar a tela, porque
-     * a descrição e a fonte oficial já bastam para o item ser útil.
-     */
+    // As sugestões são um extra: falhar aqui não pode derrubar a tela.
     async function loadOffers(item: TripRequirementWithGroup) {
       if (!item.template_id) return;
 
@@ -134,20 +112,8 @@ export default function RequirementDetailScreen() {
     };
   }, [requirementId, primary?.country_code]);
 
-  /**
-   * Marca ou desmarca o item.
-   *
-   * Marcar encerra a visita: o item saiu da lista de pendências e o próximo
-   * passo está na checklist, não aqui. Por isso a tela volta sozinha em vez de
-   * deixar a pessoa olhando um item que ela acabou de resolver.
-   *
-   * Desmarcar não volta. Quem desmarca está reabrindo o item para reler o que
-   * precisa fazer, e tirá-lo da tela nesse momento seria o oposto do que ele
-   * pediu.
-   *
-   * A volta só acontece depois da escrita dar certo. Se a conexão falhar, a
-   * pessoa continua aqui, com o aviso e o botão para tentar de novo.
-   */
+  // Marcar encerra a visita e volta; desmarcar fica, porque quem desmarca está
+  // reabrindo o item para reler. A volta só acontece se a escrita der certo.
   async function toggleCompleted() {
     if (!requirement) return;
 
@@ -307,8 +273,8 @@ function Header({ onBack }: { onBack: () => void }) {
 
 /** Uma sugestão de onde resolver o requisito. */
 function OfferRow({ offer }: { offer: RequirementOffer }) {
-  // O ícone aceita duas formas: um nome do Ionicons ou um emoji. Testar contra
-  // o mapa de glifos evita renderizar um quadrado vazio quando vier emoji.
+  // O ícone vem como nome do Ionicons ou emoji; sem testar, o emoji viraria um
+  // quadrado vazio.
   const glyph = offer.icon && offer.icon in Ionicons.glyphMap ? (offer.icon as IoniconName) : null;
 
   return (
@@ -342,15 +308,8 @@ function OfferRow({ offer }: { offer: RequirementOffer }) {
 }
 
 /**
- * A descrição do item, quebrada em tópicos.
- *
- * O texto do catálogo chega com a primeira linha dizendo o que fazer e as
- * seguintes listando o que conferir, uma por linha. Um parágrafo único de três
- * ou quatro frases é difícil de varrer no celular, e é justamente na tela de
- * detalhe que a pessoa está procurando o próximo passo.
- *
- * A observação oficial de uma regra de visto chega em uma linha só e continua
- * saindo como parágrafo, sem marcador — não é lista.
+ * A descrição do catálogo chega com a primeira linha dizendo o que fazer e as
+ * seguintes listando o que conferir, uma por linha.
  */
 function RequirementDescription({ text }: { text: string }) {
   const lines = text
@@ -375,18 +334,12 @@ function RequirementDescription({ text }: { text: string }) {
   );
 }
 
-/**
- * Abre um link no navegador do sistema.
- *
- * Falha em silêncio de propósito: não conseguir abrir o navegador não muda o
- * que o item diz, e interromper a leitura com um aviso seria pior do que
- * simplesmente não abrir.
- */
+/** Falha em silêncio: a tela continua legível e correta sem o link. */
 async function openLink(url: string) {
   try {
     await WebBrowser.openBrowserAsync(url);
   } catch {
-    // Sem ação: a tela continua legível e correta sem o link.
+    // Sem ação.
   }
 }
 
@@ -453,8 +406,7 @@ const styles = StyleSheet.create({
   description: { gap: spacing.md },
   descriptionLead: { ...typography.body, color: colors.text },
   topic: { flexDirection: 'row', gap: spacing.sm },
-  // O marcador fora do bloco de texto é o que dá a indentação pendurada: a
-  // segunda linha de um tópico longo alinha com a primeira, e não com o ponto.
+  // Marcador fora do bloco de texto: é o que dá a indentação pendurada.
   topicBullet: { ...typography.body, color: colors.primary },
   topicText: { ...typography.body, color: colors.text, flex: 1 },
   offers: { gap: spacing.sm },
@@ -503,8 +455,7 @@ const styles = StyleSheet.create({
   footer: {
     padding: spacing.lg,
     paddingTop: spacing.sm,
-    // Uma folga a mais embaixo: colado no limite da área segura o botão fica
-    // sob a borda da tab bar flutuante do iOS.
+    // Colado no limite da área segura o botão fica sob a tab bar do iOS.
     paddingBottom: spacing.xl,
     backgroundColor: colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,

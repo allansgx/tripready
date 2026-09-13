@@ -3,10 +3,8 @@ import { unwrap, unwrapRequired } from '@/services/errors';
 import type { TripCity, TripCountry } from '@/types/models';
 
 /**
- * Países e cidades de uma viagem.
- *
- * `trip_cities` tem chave estrangeira composta para `trip_countries`
- * (trip_id, country_code): uma cidade só existe se o país já estiver na viagem.
+ * Países e cidades de uma viagem. `trip_cities` tem chave estrangeira composta
+ * para `trip_countries`: uma cidade só existe se o país já estiver na viagem.
  */
 export const tripDestinationsService = {
   async listCountries(tripId: string): Promise<TripCountry[]> {
@@ -73,11 +71,7 @@ export const tripDestinationsService = {
     );
   },
 
-  /**
-   * Remove países pelo código. A cascata do banco leva junto as cidades e os
-   * requisitos daquele país — as duas tabelas apontam para
-   * `trip_countries (trip_id, country_code)`.
-   */
+  /** Remove países pelo código; a cascata leva cidades e requisitos junto. */
   async removeCountriesByCode(tripId: string, countryCodes: readonly string[]): Promise<void> {
     if (countryCodes.length === 0) return;
 

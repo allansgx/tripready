@@ -11,15 +11,8 @@ const FILTERS: readonly { value: TripFilter; label: string }[] = [
 ];
 
 /**
- * Os filtros rápidos da lista de viagens.
- *
- * Os quatro aparecem sempre, mesmo quando um deles está vazio: a barra é um
- * mapa do que existe no app, e esconder opções conforme as viagens faria ela
- * mudar de tamanho a cada embarque. Quem cai em um filtro vazio encontra lá o
- * caminho de volta.
- *
- * A fila rola na horizontal porque "Em andamento" e "Concluídas" juntos passam
- * da largura de um telefone pequeno.
+ * Os filtros da lista. Os quatro aparecem sempre, mesmo vazios: esconder
+ * opções faria a barra mudar de tamanho a cada embarque.
  */
 export function TripFilterBar({
   value,

@@ -10,12 +10,8 @@ import type { Database } from '@/types/database';
 const isWeb = Platform.OS === 'web';
 
 /**
- * Cliente único do Supabase.
- *
- * - `storage`: AsyncStorage no nativo (a sessão sobrevive ao fechar o app);
- *   no web o supabase-js usa localStorage automaticamente.
- * - `flowType: 'pkce'`: o fluxo OAuth não expõe tokens na URL de redirect.
- * - `detectSessionInUrl`: só faz sentido no web, onde o redirect volta na URL.
+ * Cliente único do Supabase. `pkce` para o OAuth não expor tokens na URL, e
+ * AsyncStorage no nativo para a sessão sobreviver ao fechar o app.
  */
 export const supabase = createClient<Database>(env.supabaseUrl, env.supabasePublishableKey, {
   auth: {

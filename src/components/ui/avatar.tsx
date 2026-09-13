@@ -21,9 +21,7 @@ type AvatarProps = {
 
 /**
  * Foto de perfil com fallback em camadas: foto do provedor → inicial do nome →
- * ícone genérico. A mesma regra vale para qualquer conta sem foto (Apple nunca
- * devolve uma, e uma URL do Google pode falhar), não só para quem entrou por
- * e-mail.
+ * ícone genérico.
  */
 export function Avatar({ url, initial, size = 56, badge }: AvatarProps) {
   const [imageFailed, setImageFailed] = useState(false);

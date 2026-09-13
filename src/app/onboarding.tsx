@@ -10,15 +10,8 @@ import { usePassports } from '@/features/passports/passports-context';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /**
- * Etapa única de onboarding: qual passaporte o usuário usa para viajar.
- *
- * O layout raiz só monta esta rota quando o usuário está autenticado e ainda
- * não tem nenhum passaporte — por isso ela aparece uma única vez, e nunca para
- * quem já cadastrou um. A nacionalidade é sempre escolhida aqui: nada é
- * inferido do perfil do Google ou da Apple.
- *
- * O país escolhido vira o passaporte principal (é o primeiro do usuário), e
- * assim que ele existe o layout raiz libera a área principal automaticamente.
+ * Etapa única de onboarding: qual passaporte o usuário usa para viajar. A
+ * nacionalidade é sempre escolhida aqui, nunca inferida do provedor de login.
  */
 export default function OnboardingScreen() {
   const { addPassport } = usePassports();

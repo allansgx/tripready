@@ -1,10 +1,8 @@
 import Constants from 'expo-constants';
 
 /**
- * A versão de `app.json` (a que vai para as lojas), com o valor nativo como
- * reserva. `null` quando nenhum dos dois está disponível — sem fallback fixo
- * no código, que continuaria dizendo a mesma versão depois de um release e
- * mentiria com confiança.
+ * A versão de `app.json`, com o valor nativo como reserva. `null` sem nenhum
+ * dos dois: um fallback fixo mentiria com confiança depois de um release.
  */
 export const appVersion: string | null =
   Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? null;

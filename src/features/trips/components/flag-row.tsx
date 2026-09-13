@@ -5,12 +5,7 @@ import { colors, typography } from '@/theme/tokens';
 
 const MAX_VISIBLE = 5;
 
-/**
- * Bandeiras dos países da viagem, no máximo cinco, com "+N" para o restante.
- *
- * O Android não desenha emojis de bandeira, então lá o fallback é o código de
- * duas letras — mesmo critério do `CountryFlag` usado em passaportes.
- */
+/** Bandeiras dos países, no máximo cinco, com "+N" para o restante. */
 export function FlagRow({ codes, size = 22 }: { codes: readonly string[]; size?: number }) {
   const visible = codes.slice(0, MAX_VISIBLE);
   const remaining = codes.length - visible.length;

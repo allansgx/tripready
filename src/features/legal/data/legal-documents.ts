@@ -1,9 +1,6 @@
 /**
- * Identidade do responsável pelo serviço.
- *
- * Os valores entre chaves duplas ainda não foram definidos. Este é o único lugar
- * do app onde eles existem: trocar aqui atualiza todos os documentos de uma vez.
- * Nenhum pode ir para a loja com o marcador.
+ * Identidade do responsável. Os valores entre chaves duplas ainda não foram
+ * definidos, e nenhum pode ir para a loja com o marcador.
  */
 export const LEGAL_IDENTITY = {
   companyName: '{{RAZAO_SOCIAL}}',

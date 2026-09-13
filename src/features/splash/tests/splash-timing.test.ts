@@ -10,12 +10,7 @@ import {
   splashSchedule,
 } from '../domain/splash-timing.ts';
 
-/**
- * A abertura é um pedágio cobrado em toda vez que o app abre, e por isso tem
- * orçamento curto. Já houve uma versão com tela de marca que passava de quatro
- * segundos; o teste existe para esse peso não voltar sem que alguém decida que
- * ele deve voltar.
- */
+/** A abertura é cobrada toda vez que o app abre: o orçamento é curto de propósito. */
 
 test('a abertura inteira cabe em 1,5s', () => {
   const total = splashSchedule(false).holdAt + SPLASH_EXIT_MS;

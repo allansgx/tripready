@@ -20,11 +20,8 @@ import {
 import { computeTripProgress } from '../domain/trip-progress.ts';
 
 /**
- * Testes da regra de aplicabilidade dos requisitos.
- *
- * Rodam com `pnpm test`, sem bundler e sem banco: o módulo testado é puro, e o
- * catálogo abaixo é fabricado aqui justamente para os casos não dependerem dos
- * dados reais do Supabase — mudar um seed não deve quebrar a regra.
+ * Testes da regra de aplicabilidade. O catálogo abaixo é fabricado aqui para os
+ * casos não dependerem dos dados reais: mudar um seed não quebra a regra.
  */
 
 const TODAY = '2026-09-06';
@@ -97,11 +94,7 @@ function trip(overrides: Partial<TripContext> = {}): TripContext {
   };
 }
 
-/**
- * Completa o catálogo com o que o caso não declara, para cada teste citar
- * apenas a parte que exercita — um caso de estação não precisa dizer que a
- * viagem não tem regra de visto.
- */
+/** Completa o catálogo para cada teste citar só a parte que exercita. */
 function resolve(
   catalog: {
     groups?: readonly CatalogGroup[];
@@ -524,10 +517,8 @@ test('a checklist se ajusta quando a viagem deixa de ser doméstica', () => {
 });
 
 test('viagem doméstica recebe obrigatório e pode ser declarada pronta', () => {
-  // O beco sem saída que o obrigatório doméstico fecha: enquanto todo item
-  // `required` do catálogo pressupunha fronteira, uma viagem dentro do próprio
-  // país terminava sem nenhum — e sem obrigatório a viagem nunca é declarada
-  // pronta, por mais que a pessoa verifique tudo o que existe na checklist.
+  // Sem obrigatório a viagem nunca é declarada pronta, por mais que a pessoa
+  // verifique tudo o que existe na checklist.
   const catalog = {
     templates: [
       template({ id: 'passport', title: 'Passaporte válido', tripKind: 'international' }),
@@ -571,14 +562,6 @@ test('item já verificado sobrevive à mudança de natureza da viagem', () => {
   // "Passaporte válido" não vale mais, mas a pessoa já o verificou: fica.
   assert.deepEqual(diff.toRemoveIds, []);
 });
-
-// =============================================================================
-// Regras de visto
-//
-// O catálogo destes casos tem sempre os dois lados: o template de escopo `visa`
-// diz como o item aparece, e a regra diz o que vale para aquele par
-// (passaporte, destino). Nenhum caso depende dos dados reais do Supabase.
-// =============================================================================
 
 /** Templates de apresentação, um por resultado de visto. */
 const visaTemplates = [
@@ -714,9 +697,8 @@ test('sem passaporte principal nenhuma regra de visto se aplica', () => {
 });
 
 /**
- * O teste que sustenta a promessa da arquitetura: o mesmo destino, o mesmo
- * catálogo de templates e o mesmo motor produzem itens diferentes só porque o
- * passaporte é outro. Acrescentar um país de passaporte é acrescentar regras.
+ * Mesmo destino e mesmo catálogo produzem itens diferentes só porque o
+ * passaporte é outro: acrescentar um país de passaporte é acrescentar regras.
  */
 test('o mesmo destino gera itens diferentes conforme o passaporte', () => {
   const catalog = {

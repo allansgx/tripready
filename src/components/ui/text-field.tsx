@@ -17,11 +17,8 @@ type TextFieldProps = TextInputProps & {
 };
 
 /**
- * Campo de formulário no mesmo padrão visual dos cartões da referência.
- *
- * `secureTextEntry` ganha o olho de mostrar/ocultar de qualquer campo de senha
- * do app — a alternância é interna, então quem passa `secureTextEntry` não
- * precisa gerenciar visibilidade por conta própria.
+ * Campo de formulário. `secureTextEntry` já traz o olho de mostrar/ocultar, com
+ * a alternância interna.
  */
 export function TextField({
   label,

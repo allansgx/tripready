@@ -8,13 +8,8 @@ export type TripStatus = 'ongoing' | 'upcoming' | 'completed';
 
 type DateRange = Pick<Trip, 'start_date' | 'end_date'>;
 
-/**
- * Data de hoje no fuso do usuário, em `YYYY-MM-DD`.
- *
- * Montada a partir das partes locais do `Date` de propósito: `toISOString()`
- * converte para UTC e, em fuso negativo, devolveria o dia anterior à noite —
- * uma viagem que começa hoje apareceria como próxima.
- */
+// Partes locais do `Date`, e não `toISOString()`: em fuso negativo o UTC
+// devolveria o dia anterior à noite.
 export function todayISO(): string {
   const now = new Date();
   const month = `${now.getMonth() + 1}`.padStart(2, '0');
@@ -22,14 +17,7 @@ export function todayISO(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-/**
- * - `completed`: a data de término já passou.
- * - `ongoing`: já começou e ainda não terminou.
- * - `upcoming`: todo o resto, inclusive viagens sem datas definidas.
- *
- * Datas em `YYYY-MM-DD` comparam corretamente como texto, então não há
- * conversão para `Date` — o que evita qualquer deslocamento de fuso.
- */
+/** `upcoming` cobre também as viagens sem datas definidas. */
 export function getTripStatus(trip: DateRange, today: string = todayISO()): TripStatus {
   const { start_date: start, end_date: end } = trip;
 
@@ -54,13 +42,7 @@ function daysBetween(from: string, to: string): number | null {
   return Math.round((end - start) / 86_400_000);
 }
 
-/**
- * Duração da viagem em dias, contando o primeiro e o último: quem vai de 12 a
- * 14 viaja três dias, não dois.
- *
- * `null` sem as duas datas ou com o intervalo invertido — nesse caso não há
- * duração a afirmar.
- */
+/** Duração em dias, contando o primeiro e o último: de 12 a 14 são três dias. */
 export function countTripDays(start: string | null, end: string | null): number | null {
   if (!start || !end) return null;
 
@@ -69,29 +51,13 @@ export function countTripDays(start: string | null, end: string | null): number 
   return span + 1;
 }
 
-/**
- * Dias que faltam para a viagem começar.
- *
- * `0` no dia da partida e `null` quando não há data de início ou ela é
- * ilegível. Números negativos são possíveis para viagens que já começaram —
- * quem decide o que fazer com isso é quem chama.
- */
+/** Dias até a partida: `0` no dia, negativo em viagem já começada. */
 export function daysUntilStart(trip: DateRange, today: string = todayISO()): number | null {
   if (!trip.start_date) return null;
   return daysBetween(today, trip.start_date);
 }
 
-/**
- * O momento da viagem como o card da lista conta: uma frase curta e um tom.
- *
- * É a mesma pergunta da contagem da Home — em que ponto esta viagem está? —,
- * mas respondida em uma linha, porque na lista cada viagem tem poucas palavras
- * para se apresentar. O `tone` existe para a tela escolher a cor sem
- * reinterpretar o texto: a faixa e o anel do card pintam com ele.
- *
- * `imminent` é o que separa "daqui a duas semanas" de "é agora": véspera e dia
- * do embarque, os dois dias em que um obrigatório pendente vira urgência.
- */
+/** O momento da viagem no card da lista: uma frase curta e um tom para a cor. */
 export type TripMomentTone = 'ongoing' | 'imminent' | 'upcoming' | 'completed';
 
 export type TripMoment = {
@@ -112,8 +78,7 @@ export function buildTripMoment(trip: DateRange, today: string = todayISO()): Tr
 
   const days = daysUntilStart(trip, today);
 
-  // O dia da partida vem antes do estado: para `getTripStatus` a viagem já
-  // começou, mas quem embarca hoje precisa ler isso, e não "em andamento".
+  // Antes do estado: para `getTripStatus` a viagem já começou.
   if (days === 0) return { tone: 'imminent', label: 'Embarque hoje' };
 
   if (getTripStatus(trip, today) === 'ongoing') {
@@ -130,14 +95,9 @@ export function buildTripMoment(trip: DateRange, today: string = todayISO()): Tr
   return { tone: 'upcoming', label: `Começa em ${months} ${months === 1 ? 'mês' : 'meses'}` };
 }
 
-/**
- * Onde a pessoa está dentro da viagem: dia 3 de 7, faltando 4 para voltar.
- *
- * `null` quando a viagem não está em andamento ou não tem as duas datas — sem
- * término não existe "de 7", e um dia solto não situa ninguém.
- */
+/** Onde a pessoa está dentro da viagem: dia 3 de 7, faltando 4 para voltar. */
 export type TripDayCount = {
-  /** 1 no dia da partida: quem embarcou hoje está no primeiro dia, não no zero. */
+  /** 1 no dia da partida. */
   day: number;
   total: number;
   /** Dias até o término, 0 no último dia. */
@@ -160,12 +120,7 @@ export function buildTripDayCount(
   return { day: elapsed + 1, total: span + 1, remaining: left };
 }
 
-/**
- * A legenda do retorno, em minúsculas porque é apoio e não manchete.
- *
- * Sem contagem regressiva no último dia: quem está no fim da viagem não precisa
- * ler "volta em 0 dias".
- */
+/** Legenda do retorno, em minúsculas porque é apoio e não manchete. */
 export function formatReturnCountdown(dayCount: TripDayCount): string {
   if (dayCount.remaining === 0) return 'último dia';
   if (dayCount.remaining === 1) return 'volta amanhã';
@@ -173,25 +128,14 @@ export function formatReturnCountdown(dayCount: TripDayCount): string {
 }
 
 /**
- * A contagem regressiva da Home, sem limite de janela: a próxima viagem é uma
- * só, e a pergunta "quanto falta?" vale mesmo faltando meses.
- *
- * O `kind` existe para a tela decidir a forma sem reinterpretar textos: `days`
- * e `ongoing` têm número grande a exibir, os demais trazem uma frase pronta.
- * Nunca existe "0 dias" — o dia da partida tem tela própria, e a viagem já
- * acontecendo conta a partir do dia 1.
- *
- * Vale para viagens ativas (em andamento ou futuras), que são as únicas que a
- * Home destaca; uma viagem concluída não tem contagem a fazer.
+ * A contagem da Home. O `kind` decide a forma sem reinterpretar textos: `days`
+ * e `ongoing` têm número grande, os demais trazem uma frase pronta.
  */
 export type TripCountdownKind = 'days' | 'tomorrow' | 'today' | 'ongoing' | 'undated';
 
 export type TripCountdown = {
   kind: TripCountdownKind;
-  /**
-   * O número protagonista da Home: dias que faltam em `days`, dia atual da
-   * viagem em `ongoing`. Os demais tipos não têm número a mostrar.
-   */
+  /** Dias que faltam em `days`, dia atual da viagem em `ongoing`. */
   days: number | null;
   /** Frase grande quando não há número a mostrar. */
   message: string | null;
@@ -202,14 +146,12 @@ export type TripCountdown = {
 export function buildTripCountdown(trip: DateRange, today: string = todayISO()): TripCountdown {
   const days = daysUntilStart(trip, today);
 
-  // O dia da partida vem antes do estado: para `getTripStatus` a viagem já
-  // começou, mas quem embarca hoje quer ler "É hoje!", não "boa viagem".
+  // Antes do estado: para `getTripStatus` a viagem já começou.
   if (days === 0) {
     return { kind: 'today', days: null, message: 'Chegou a hora!', label: 'Boa viagem!' };
   }
 
-  // Com a viagem acontecendo a contagem inverte: o número deixa de ser o que
-  // falta para começar e passa a ser onde a pessoa está dentro dela.
+  // Com a viagem acontecendo a contagem inverte: o número passa a ser o dia.
   if (getTripStatus(trip, today) === 'ongoing') {
     const dayCount = buildTripDayCount(trip, today);
     if (dayCount) {

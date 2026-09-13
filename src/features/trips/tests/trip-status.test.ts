@@ -11,12 +11,7 @@ import {
   getTripStatus,
 } from '../domain/trip-status.ts';
 
-/**
- * Testes da contagem regressiva da Home.
- *
- * O módulo é puro e recebe a data de hoje por parâmetro, então cada estado é
- * verificável sem relógio, sem fuso e sem banco.
- */
+/** A data de hoje entra por parâmetro, então cada estado é verificável sem relógio. */
 
 const TODAY = '2026-10-11';
 
@@ -101,12 +96,7 @@ test('viagem sem data convida a escolher as datas', () => {
   assert.ok(countdown.label);
 });
 
-/**
- * O momento da viagem, que é o que o card da lista conta em uma linha só.
- *
- * O tom importa tanto quanto a frase: é ele que decide a cor da faixa, do anel
- * e da pílula de obrigatórios do card.
- */
+/** O tom importa tanto quanto a frase: é ele que decide a cor do card. */
 
 test('viagem concluída e viagem em andamento se apresentam pelo estado', () => {
   assert.deepEqual(buildTripMoment(trip('2026-09-01', '2026-09-10'), TODAY), {

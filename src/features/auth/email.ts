@@ -2,9 +2,8 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * Erros de digitação em provedores conhecidos, que passam em qualquer regra de
- * formato. A lista é fechada de propósito: comparar por semelhança recusaria
- * domínios legítimos parecidos, como `mail.com`.
+ * Erros de digitação em provedores conhecidos. A lista é fechada: comparar por
+ * semelhança recusaria domínios legítimos parecidos, como `mail.com`.
  */
 const DOMAIN_TYPOS: Record<string, string> = {
   'gmai.com': 'gmail.com',

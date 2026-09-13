@@ -10,12 +10,7 @@ import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { usePassports } from '@/features/passports/passports-context';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
-/**
- * Modal "Adicionar passaporte".
- *
- * Fica na raiz das rotas (e não dentro do grupo de abas) para ser apresentado
- * como sheet nativo por cima da navegação, conforme a referência.
- */
+/** Fica na raiz das rotas para ser apresentado como sheet nativo sobre as abas. */
 export default function PassportPickerScreen() {
   const { addPassport, usedCountryCodes } = usePassports();
   const router = useRouter();

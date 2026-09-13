@@ -18,14 +18,8 @@ import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /**
- * A lista de viagens.
- *
- * Uma lista só, na ordem de relevância que `buildTripSummaries` decide — em
- * andamento, próximas por data de início, concluídas por término mais recente —
- * e filtros rápidos no topo para quem quer recortar. Os cabeçalhos de seção
- * saíram junto com a chegada dos filtros: separar "próximas" de "histórico"
- * dentro de uma lista que já pode ser filtrada por isso é dizer a mesma coisa
- * duas vezes.
+ * A lista de viagens: uma só, na ordem de `buildTripSummaries`, com filtros
+ * rápidos no topo no lugar de cabeçalhos de seção.
  */
 export default function TripsScreen() {
   const { user } = useAuth();
@@ -113,11 +107,7 @@ export default function TripsScreen() {
   );
 }
 
-/**
- * O vazio de um filtro, que nunca é um beco sem saída: cada um diz o que vai
- * aparecer ali e oferece o caminho de volta — outro filtro ou a criação da
- * viagem que está faltando.
- */
+/** O vazio de um filtro: cada um diz o que aparece ali e oferece uma saída. */
 function FilterEmptyState({
   filter,
   onSelect,
@@ -127,8 +117,7 @@ function FilterEmptyState({
   onSelect: (filter: TripFilter) => void;
   onCreate: () => void;
 }) {
-  // "Todas" vazio significa nenhuma viagem cadastrada, e quem responde por esse
-  // caso é o vazio geral da tela.
+  // "Todas" vazio é o vazio geral da tela, que tem resposta própria.
   if (filter === 'all') return null;
 
   const options: Record<

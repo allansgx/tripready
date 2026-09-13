@@ -27,21 +27,13 @@ type CountryPickerListProps = {
   selectedCodes?: readonly string[];
   /** Código em gravação, para mostrar o indicador na linha certa. */
   busyCode?: string | null;
-  /**
-   * Também encontra o país pelo nome de uma cidade dele. Ligado no roteiro da
-   * viagem, onde se pensa em cidade; desligado na escolha de passaporte, que é
-   * sobre nacionalidade e não sobre destino.
-   */
+  /** Também encontra o país pelo nome de uma cidade; ligado só no roteiro. */
   searchByCity?: boolean;
   /** Conteúdo fixo acima da busca (título do modal, pergunta do onboarding). */
   header?: React.ReactNode;
 };
 
-/**
- * Busca de países com bandeira, compartilhada pelo modal de adicionar
- * passaporte e pelo onboarding — a lista de países vive só em
- * `@/constants/countries`.
- */
+/** Busca de países com bandeira, compartilhada pelas telas que escolhem país. */
 export function CountryPickerList({
   onSelect,
   disabledCodes = [],
@@ -65,20 +57,8 @@ export function CountryPickerList({
   const disabled = useMemo(() => new Set(disabledCodes), [disabledCodes]);
   const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
 
-  /**
-   * Escolher um destino devolve a lista ao estado inicial — mas só quando
-   * houve busca.
-   *
-   * Quem monta um roteiro escolhe vários países seguidos, e a busca anterior
-   * só atrapalha o próximo: em vez de apagar "Budapeste" letra por letra, o
-   * campo se limpa sozinho e continua com o foco, pronto para o próximo
-   * destino. O país escolhido segue marcado, agora na lista completa.
-   *
-   * Sem nada digitado é o contrário: marcar um país é navegar na lista
-   * inteira, e devolver o foco abriria o teclado, encolhendo a lista e
-   * empurrando justamente a linha de baixo — que costuma ser o próximo país
-   * do roteiro.
-   */
+  // Só limpa e devolve o foco quando houve busca: sem nada digitado, abrir o
+  // teclado encolheria a lista e empurraria a linha de baixo.
   function handleSelect(country: Country) {
     onSelect(country);
     if (!query) return;

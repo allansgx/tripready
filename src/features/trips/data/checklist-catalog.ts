@@ -4,13 +4,8 @@ import type { ComponentProps } from 'react';
 import type { RequirementCategory } from '@/types/models';
 
 /**
- * Rótulos e ordem da checklist.
- *
- * Os requisitos em si não moram mais aqui: vieram para as tabelas
- * `requirement_templates` e `destination_groups` do Supabase, e chegam ao app
- * por `requirementCatalogService` + `resolveTripRequirements`. O que sobra
- * neste arquivo é apresentação — como cada categoria se chama e em que ordem
- * aparece —, que é decisão de interface e não regra de viagem.
+ * Só a apresentação da checklist: rótulos, ícones e ordem. Os requisitos moram
+ * nas tabelas do catálogo e chegam por `resolveTripRequirements`.
  */
 
 /** Ordem em que as categorias aparecem na checklist e na tela de preparação. */

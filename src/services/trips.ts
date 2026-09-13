@@ -13,10 +13,7 @@ export type TripWithDestinations = Trip & {
   trip_cities: TripCity[];
 };
 
-/**
- * Requisito reduzido ao que as telas de visão geral precisam: o progresso sai
- * da prioridade e do estado, e o "próximo passo" precisa do título e da ordem.
- */
+/** Requisito reduzido ao que as telas de visão geral precisam. */
 export type TripRequirementBrief = {
   id: string;
   title: string;
@@ -31,12 +28,7 @@ export type TripWithRelations = Trip & {
   trip_requirements: TripRequirementBrief[];
 };
 
-/**
- * Requisito com o grupo que o originou.
- *
- * O nome do grupo vem embutido para a checklist poder abrir uma seção por
- * grupo de destinos sem uma segunda consulta.
- */
+/** Requisito com o nome do grupo embutido, para evitar uma segunda consulta. */
 export type TripRequirementWithGroup = TripRequirement & {
   destination_groups: { id: string; code: string; name: string } | null;
 };
@@ -82,10 +74,7 @@ export const tripsService = {
     );
   },
 
-  /**
-   * Viagens com países e requisitos em uma única consulta — evita uma chamada
-   * por viagem só para calcular o progresso do card.
-   */
+  /** Viagens com países e requisitos em uma consulta só. */
   async listWithRelations(userId: string, options: ListOptions = {}): Promise<TripWithRelations[]> {
     let query = supabase
       .from('trips')
@@ -105,15 +94,8 @@ export const tripsService = {
   },
 
   /**
-   * Viagens que ainda podem ter a checklist recalculada.
-   *
-   * Viagens concluídas ficam de fora: elas são o registro do que a pessoa de
-   * fato preparou, e reescrevê-las com as regras de outro passaporte apagaria
-   * esse registro.
-   *
-   * O filtro é o mesmo critério de `getTripStatus` — concluída é a viagem cuja
-   * data de término já passou —, então alcança as em andamento, as futuras e as
-   * sem data, que o app trata como futuras.
+   * Viagens que ainda podem ter a checklist recalculada. Concluídas ficam de
+   * fora: são o registro do que a pessoa de fato preparou.
    */
   async listForRebuild(userId: string, today: string): Promise<TripForRebuild[]> {
     const rows = unwrapRequired(

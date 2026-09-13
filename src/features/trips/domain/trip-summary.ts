@@ -34,15 +34,9 @@ export function toTripSummary(row: TripWithRelations, today: string = todayISO()
 }
 
 /**
- * Ordena por relevância para o momento:
- *
- * 1. Em andamento — as que terminam antes primeiro.
- * 2. Próximas — pela data de início mais próxima; sem data vão ao fim do grupo.
- * 3. Concluídas — término mais recente primeiro.
- *
- * A ordenação é feita aqui, e não no SQL, porque depende da data de hoje no
- * fuso do usuário e muda de sentido conforme o status. Quando entrar paginação,
- * vira consulta por período no serviço.
+ * Ordena por relevância: em andamento (término mais próximo), próximas (início
+ * mais próximo) e concluídas (término mais recente). Fica aqui, e não no SQL,
+ * porque depende da data de hoje no fuso do usuário.
  */
 export function buildTripSummaries(rows: readonly TripWithRelations[]): TripSummary[] {
   const today = todayISO();
@@ -76,19 +70,10 @@ export function buildTripSummaries(rows: readonly TripWithRelations[]): TripSumm
     });
 }
 
-/**
- * Os filtros rápidos da lista de viagens.
- *
- * São os próprios estados da viagem mais o "Todas", e não um recorte paralelo:
- * o que a lista filtra é exatamente o status derivado das datas. Viagem sem
- * datas é `upcoming`, então aparece em "Futuras".
- */
+/** Os filtros da lista são os próprios estados da viagem, mais "Todas". */
 export type TripFilter = 'all' | TripStatus;
 
-/**
- * Aplica o filtro preservando a ordem de `buildTripSummaries` — a ordenação
- * continua sendo decidida em um lugar só.
- */
+/** Aplica o filtro preservando a ordem de `buildTripSummaries`. */
 export function filterTripSummaries(
   summaries: readonly TripSummary[],
   filter: TripFilter,

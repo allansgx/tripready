@@ -59,13 +59,7 @@ type VisaRuleRow = {
   valid_until: string | null;
 };
 
-/**
- * Só os grupos que têm algum país da viagem.
- *
- * O filtro por país fica no banco para o app não baixar a composição de blocos
- * inteiros a cada checklist. O período de validade de cada participação vem
- * junto e é avaliado depois, contra a data da viagem.
- */
+/** Só os grupos que têm algum país da viagem; a vigência é avaliada no motor. */
 async function loadGroups(countryCodes: readonly string[]): Promise<CatalogGroup[]> {
   if (countryCodes.length === 0) return [];
 
@@ -136,15 +130,8 @@ async function loadTemplates(): Promise<CatalogTemplate[]> {
 }
 
 /**
- * Regras de visto do viajante para os destinos da viagem.
- *
- * Sem passaporte principal não há o que consultar, e a lista volta vazia — o
- * mesmo resultado de um destino sem regra cadastrada.
- *
- * O filtro por passaporte e por destino fica na consulta para o app não baixar
- * a tabela inteira a cada checklist. A vigência de cada regra vem junto e é
- * avaliada no motor, contra a data da viagem: é lá que a decisão mora, e é lá
- * que ela pode ser testada sem banco.
+ * Regras de visto do viajante para os destinos da viagem. Sem passaporte
+ * principal a lista volta vazia; a vigência é avaliada no motor.
  */
 async function loadVisaRules(
   countryCodes: readonly string[],
@@ -176,14 +163,8 @@ async function loadVisaRules(
 }
 
 /**
- * Catálogo de requisitos.
- *
- * O serviço só carrega e traduz linhas; quem decide o que se aplica é
- * `resolveTripRequirements`, que não conhece banco nenhum. É essa separação que
- * permite testar a regra sem Supabase.
- *
- * As tabelas do catálogo são dados de referência: todo usuário autenticado lê
- * as mesmas linhas e ninguém escreve por aqui.
+ * Catálogo de requisitos: o serviço só carrega e traduz linhas. Quem decide o
+ * que se aplica é `resolveTripRequirements`, que não conhece banco nenhum.
  */
 export const requirementCatalogService = {
   async loadForTrip(

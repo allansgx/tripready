@@ -7,13 +7,9 @@ import { colors, seasonBackdropColors } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 
 /**
- * O ambiente da Home: a base quente, o halo da estação e as partículas caindo,
- * tudo atrás do conteúdo e sem receber toque nenhum.
- *
- * O halo é um gradiente radial estático — pintado uma vez, sem custo por
- * quadro. As opacidades são propositalmente baixas: o que dá a estação é a
- * partícula, e o fundo só a acompanha. Uma viagem sem datas não tem estação a
- * afirmar e fica só com a base.
+ * O ambiente da Home: base quente, halo da estação e partículas, tudo atrás do
+ * conteúdo e sem receber toque. O halo é um gradiente estático, sem custo por
+ * quadro.
  */
 
 /** Opacidade no centro do halo da estação principal. */
@@ -41,10 +37,7 @@ export function SeasonalBackdrop({
   const [first, second] = seasons;
 
   return (
-    // Sem estação não há ambiente a montar: a Home volta a ser uma tela comum,
-    // no mesmo cinza das demais. O bege é a base do clima, e afirmar clima em
-    // uma tela sem viagem — ou em uma viagem ainda sem datas — seria inventar
-    // um outono que não existe.
+    // Sem estação a Home volta a ser uma tela comum, no cinza das demais.
     <View style={[styles.backdrop, first ? styles.seasonal : styles.plain]} pointerEvents="none">
       {first ? (
         <Svg style={StyleSheet.absoluteFill}>

@@ -1,7 +1,7 @@
 # Coleta — Fase 3 do plano de melhoria da checklist
 
-Instrumento de trabalho da **Fase 3** do
-[plano de melhoria do checklist](plano-melhoria-checklist.md), na mesma forma da
+Instrumento de trabalho da **Fase 3** do plano de melhoria do checklist (já
+concluído e removido), na mesma forma da
 [coleta de vistos](coleta-vistos-br.md): aqui se pesquisa, se registra a fonte e
 se marca a confiança. **Este arquivo não é migration.** Nenhuma linha vai para o
 banco antes de uma pessoa abrir a página oficial e confirmar.

@@ -1,15 +1,6 @@
 /**
- * Sugestões de cidades por país.
- *
- * É só um atalho para a etapa (opcional) de cidades: cobre destinos comuns e,
- * para qualquer país fora da lista, a tela permite digitar o nome da cidade.
- * O banco guarda apenas `trip_cities.city_name` como texto, então nada aqui
- * limita o que o usuário pode registrar.
- *
- * Cobertura pensada em camadas por relevância turística, não pela lista
- * completa de países — ver tasks/plano-cobertura-paises-cidades.md. A ordem
- * de cada lista vai da cidade mais visitada para a menos visitada, não
- * alfabética.
+ * Sugestões de cidades por país — um atalho, não um limite: a tela aceita
+ * qualquer cidade digitada. Cada lista vai da mais visitada para a menos.
  */
 export const CITY_SUGGESTIONS: Record<string, readonly string[]> = {
   AE: ['Dubai', 'Abu Dhabi', 'Sharjah'],

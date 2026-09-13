@@ -23,10 +23,8 @@ type AccordionSectionProps = {
 /**
  * Seção recolhível da checklist: cabeçalho sempre visível, conteúdo por baixo.
  *
- * A altura do conteúdo não é medida nem animada à mão — `LayoutAnimation`
- * anima a mudança de layout que a própria montagem do corpo provoca, o que
- * dispensa Reanimated e não deixa a seção depender de um cálculo de altura que
- * erraria com textos de tamanhos diferentes.
+ * A altura não é medida à mão: `LayoutAnimation` anima a mudança de layout que
+ * a própria montagem do corpo provoca.
  */
 export function AccordionSection({
   title,

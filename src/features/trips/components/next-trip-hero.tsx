@@ -25,41 +25,19 @@ import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 
-/**
- * Traços desenhados sobre o fundo quente da Home.
- *
- * O cinza dos tokens foi calibrado para o branco dos cards; aqui o fundo é bege
- * e um pouco vivo, então divisor, etiqueta e contorno do próximo passo são
- * tintas translúcidas — elas escurecem o que estiver atrás em vez de tapar,
- * o que é o que mantém a leitura de "conteúdo no ambiente".
- *
- * `INK_RULE` é a mesma tinta mais carregada, para as linhas que existem
- * sozinhas: no contorno de uma etiqueta o olho completa o retângulo, mas um
- * traço solto de um fio translúcido some no fundo — principalmente em tela de
- * densidade alta, onde a espessura de fio cai para menos de meio ponto.
- */
+// Tintas translúcidas: o cinza dos tokens foi calibrado para o branco dos
+// cards, e aqui o fundo é o ambiente sazonal.
 const INK_LINE = 'rgba(22,22,26,0.07)';
 const INK_RULE = 'rgba(22,22,26,0.14)';
 const INK_CHIP = 'rgba(22,22,26,0.05)';
 const PRIMARY_WASH = 'rgba(108,78,227,0.08)';
 const PRIMARY_EDGE = 'rgba(108,78,227,0.14)';
 
-/**
- * O roxo da barra no dia do embarque.
- *
- * Dessaturado de propósito: com a viagem começando hoje, o progresso deixa de
- * ser a notícia da tela e não deve puxar o olho antes do nome da viagem nem
- * cobrar o que ficou para trás. Quem chama para a ação continua sendo o botão.
- */
+// Roxo dessaturado: no dia do embarque o progresso não deve puxar o olho antes
+// do nome da viagem.
 const PRIMARY_CALM = '#A396D6';
 
-/**
- * O intervalo entre os blocos da composição, tirado do protótipo.
- *
- * Não sai da escala de `spacing` porque não existe lá: 24 aperta a tela e 32
- * afasta demais. O ritmo da Home é este, e ele vale para todos os intervalos
- * grandes — cabeçalho, contagem, divisor, progresso, próximo passo e dica.
- */
+// Fora da escala de `spacing`: 24 aperta a tela e 32 afasta demais.
 const BLOCK_GAP = 28;
 
 const ENTRANCE_DURATION_MS = 420;
@@ -67,21 +45,12 @@ const ENTRANCE_DURATION_MS = 420;
 const ENTRANCE_OFFSET = 16;
 const COUNT_UP_DURATION_MS = 1200;
 
-/**
- * Quantas bandeiras cabem no cabeçalho do dia do embarque antes de a fila virar
- * uma lista. O que passar disso é contado em uma etiqueta ao lado.
- */
+// Bandeiras no cabeçalho do embarque antes de a fila virar lista; o resto vira
+// contagem ao lado.
 const DEPARTURE_FLAGS = 4;
 
-/**
- * Entrada da tela: aparece subindo, uma vez só, quando a viagem chega.
- *
- * Com "reduzir movimento" ligado o conteúdo já nasce no lugar — nada aqui
- * depende do fim da animação para ficar legível.
- */
 function useEntrance(reduceMotion: boolean) {
-  // Inicializador de `useState`: o valor nasce uma vez e sobrevive a qualquer
-  // re-renderização, então voltar para a aba não reinicia a animação.
+  // Inicializador de `useState`: voltar para a aba não reinicia a animação.
   const [entrance] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -101,21 +70,11 @@ function useEntrance(reduceMotion: boolean) {
   return entrance;
 }
 
-/**
- * A contagem subindo de 0 até o número de dias.
- *
- * Roda em `requestAnimationFrame` porque o que muda é o texto, e não um estilo:
- * `Animated` não sabe animar o conteúdo de um `Text`. A curva é um ease-out
- * cúbico — arranca rápido e vai freando ao se aproximar do número final, que é
- * onde o olho para. Como o valor exibido é arredondado, os quadros que caem no
- * mesmo inteiro não re-renderizam nada.
- *
- * Devolve o número final direto quando não há o que animar (sem contagem ou com
- * "reduzir movimento" ligado).
- */
+// Em `requestAnimationFrame` porque o que muda é o texto: `Animated` não anima
+// o conteúdo de um `Text`.
 function useCountUp(target: number | null, animated: boolean): number | null {
-  // O alvo viaja junto do valor: enquanto os quadros do número novo não chegam,
-  // a contagem recomeça do zero em vez de exibir o resto da contagem anterior.
+  // O alvo viaja junto do valor: a contagem recomeça do zero em vez de exibir o
+  // resto da contagem anterior.
   const [count, setCount] = useState<{ target: number; value: number } | null>(null);
 
   useEffect(() => {
@@ -141,32 +100,9 @@ function useCountUp(target: number | null, animated: boolean): number | null {
 }
 
 /**
- * A próxima viagem ocupando a Home inteira: quanto falta para viajar, quão
- * preparada a viagem está, qual é o próximo passo e o que esperar da estação —
- * nessa ordem, direto sobre o ambiente sazonal.
- *
- * Não há card envolvendo o conteúdo. O único bloco com aparência de card é o do
- * próximo passo, porque é o único acionável: contagem e progresso informam, e
- * informação não deve parecer botão. Quem abre a checklist é o "Verificar".
- *
- * Tudo o que a tela mostra é derivado: a contagem vem das datas, o progresso e
- * o próximo passo vêm da checklist já resumida em `TripSummary`, e a estação
- * vem dos destinos. Nada aqui é calculado de novo nem guardado no banco.
- *
- * A viagem em andamento inverte a contagem: o número deixa de ser o que falta
- * para começar e passa a ser o dia em que a pessoa está, em roxo, porque ela
- * está dentro da viagem e não à espera dela. A preparação sai junto — não há
- * mais o que preparar —, e o lugar dela passa a dizer quando se volta e o que
- * da checklist ainda serve de consulta.
- *
- * O dia do embarque é a outra variação da composição, e não uma segunda tela: o
- * número some — contar zero dia não diz nada — e o nome da viagem ocupa o lugar
- * dele em serifada, com a data emoldurada por traços. O cabeçalho encolhe junto:
- * sobram as bandeiras dos destinos, porque o nome já está grande logo abaixo. O
- * resto muda só de palavra:
- * "Antes de embarcar" no lugar de "Preparação", itens pendentes no lugar da
- * porcentagem, "Verifique agora" no lugar de "Próximo passo". O dia pede
- * urgência, não alarme, e nada aqui comemora por conta própria.
+ * A próxima viagem ocupando a Home: contagem, preparação, próximo passo e a
+ * dica da estação. Embarque e viagem em andamento são variações da mesma
+ * composição, não telas separadas.
  */
 export function NextTripHero({
   summary,
@@ -193,21 +129,14 @@ export function NextTripHero({
   const seasonTrail = formatSeasonTrail(seasons);
   const seasonTip = formatSeasonTip(seasons);
 
-  // Uma viagem que já começou não é mais "a próxima", e a que parte hoje não é
-  // mais uma expectativa: uma palavra só muda o enquadramento da tela inteira.
   const eyebrow = isDeparture
     ? 'Embarque hoje'
     : countdown.kind === 'ongoing'
       ? 'Sua viagem'
       : 'Sua próxima viagem';
 
-  /**
-   * A frase que o leitor de tela ouve no lugar do número.
-   *
-   * Na viagem em andamento ela diz "Dia 3 de 7": o número sozinho, lido em voz
-   * alta, não carrega a inversão que a tela faz — quem ouve "3" precisa saber
-   * que são três dias vividos, e não três dias de espera.
-   */
+  // O leitor de tela ouve "Dia 3 de 7": o número sozinho não carrega a inversão
+  // que a tela faz na viagem em andamento.
   const headline =
     isOngoing && dayCount
       ? `Dia ${dayCount.day} de ${dayCount.total}`
@@ -215,30 +144,14 @@ export function NextTripHero({
         ? [countdown.message, countdown.label].filter(Boolean).join('. ')
         : `${countdown.days} ${countdown.days === 1 ? 'dia' : 'dias'} para viajar`;
 
-  /**
-   * O destino acima do nome, como no protótipo. Some quando o nome da viagem já
-   * é o próprio destino — que é o caso mais comum, porque é o nome sugerido na
-   * criação, e repetir "Estados Unidos" duas vezes seguidas não informa nada.
-   */
+  // Some quando o nome da viagem já é o próprio destino, que é o nome sugerido
+  // na criação.
   const destination = countryCodes.length > 0 ? suggestTripName(countryCodes) : null;
   const showsDestination = destination !== null && destination !== trip.name;
 
-  /**
-   * As bandeiras do cabeçalho no dia do embarque, no lugar do destino escrito e
-   * do nome da viagem.
-   *
-   * O nome é o protagonista logo abaixo, então aqui basta dizer para onde se
-   * vai — e bandeira diz isso sem gastar linha. Acima de quatro destinos a fila
-   * viraria uma lista, e o que sobra passa a ser contado ao lado.
-   */
   const departureFlags = countryCodes.slice(0, DEPARTURE_FLAGS);
   const hiddenFlags = countryCodes.length - departureFlags.length;
 
-  /**
-   * A seção abaixo do divisor muda de assunto conforme o momento da viagem, mas
-   * não de forma: título à esquerda, um dado curto à direita e uma linha de
-   * apoio embaixo. É a mesma leitura, com o que importa em cada dia.
-   */
   const sectionTitle = isOngoing ? 'Na viagem' : isDeparture ? 'Antes de embarcar' : 'Preparação';
   const sectionNote = isOngoing
     ? dayCount && formatReturnCountdown(dayCount)
@@ -308,8 +221,6 @@ export function NextTripHero({
           )}
         </View>
 
-        {/* A estação não é um filtro nem um seletor: é a legenda do que está
-            caindo atrás. Por isso etiqueta, e não botão. */}
         {seasonTrail ? (
           <View style={styles.seasonChip}>
             <Text style={styles.seasonChipText} numberOfLines={1}>
@@ -319,8 +230,6 @@ export function NextTripHero({
         ) : null}
       </View>
 
-      {/* Agrupado para o leitor de tela: "3 dias para viajar. 10–17 set 2026" é
-          uma frase, e não três pedaços soltos. */}
       {isDeparture ? (
         <View
           style={styles.departure}
@@ -332,8 +241,6 @@ export function NextTripHero({
             {trip.name}
           </Text>
 
-          {/* As linhas não separam nada: elas isolam a data para ela ser lida
-              como marco, e não como legenda do nome. */}
           <View style={styles.dateRule}>
             <View style={styles.rule} />
             <Text style={styles.departureDates}>{dates}</Text>
@@ -373,8 +280,7 @@ export function NextTripHero({
           ) : null}
         </View>
 
-        {/* A barra sai com a preparação: medir o quanto se preparou é cobrança
-            de quem já está viajando. */}
+        {/* Medir preparação é cobrança para quem já está viajando. */}
         {isOngoing ? null : (
           <ProgressBar
             percent={progress.percent}
@@ -425,23 +331,8 @@ export function NextTripHero({
 }
 
 const styles = StyleSheet.create({
-  /**
-   * `flexGrow` sem `flex`: em tela alta a composição cresce e a folga sobra ao
-   * redor; em tela baixa não há folga, o bloco fica do tamanho do conteúdo e a
-   * rolagem da tela assume. É o que evita ter de escolher entre espremer o
-   * conteúdo e inventar rolagem onde ela não é necessária.
-   *
-   * Os blocos ficam empilhados a partir do topo, todos no tamanho natural, e a
-   * sobra de altura fica embaixo. Nenhum deles é elástico de propósito: como o
-   * `flexShrink` padrão do React Native é 0, um bloco elástico no meio da pilha
-   * não encolhe quando falta espaço — ele transborda, e aí o `ScrollView` corta
-   * o que passou em vez de rolar, porque a altura do conteúdo continua sendo a
-   * da tela. Altura natural é o que garante que faltar espaço vire rolagem.
-   *
-   * O intervalo entre blocos é o do protótipo, que separa contagem, divisor,
-   * progresso e próximo passo por 28 pontos. É o respiro que faz a tela parecer
-   * composta em vez de empilhada, e é maior do que qualquer `spacing` isolado.
-   */
+  // `flexGrow` sem `flex`: blocos em altura natural, para faltar espaço virar
+  // rolagem em vez de transbordo cortado pelo `ScrollView`.
   content: {
     flexGrow: 1,
     gap: BLOCK_GAP,
@@ -467,8 +358,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  // No dia do embarque as bandeiras são a única linha sob a etiqueta: ficam no
-  // tamanho cheio do `FlagRow` e o que não coube vira contagem ao lado.
   flags: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,10 +398,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
   },
-  // O número é o centro visual da tela: é ele que responde "quanto falta?"
-  // antes de qualquer leitura.
-  // A contagem é o bloco mais isolado da tela no protótipo: um respiro a mais
-  // acima do número, e o rótulo e a data soltos abaixo dele, sem se colar.
   countdown: {
     alignItems: 'center',
     gap: spacing.sm,
@@ -522,8 +407,6 @@ const styles = StyleSheet.create({
     ...typography.countdown,
     color: colors.text,
   },
-  // Com a viagem acontecendo o número troca o preto pelo roxo da marca: não é
-  // mais uma espera a ser cumprida, é a viagem em curso.
   daysOngoing: {
     color: colors.primary,
   },
@@ -544,19 +427,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  /**
-   * O bloco do dia do embarque, no lugar exato onde a contagem ficava.
-   *
-   * O intervalo é menor que o dos demais blocos da tela: nome, data e avião são
-   * uma composição só, e não três informações empilhadas.
-   */
   departure: {
     alignItems: 'center',
     gap: spacing.lg,
     paddingTop: spacing.sm,
   },
-  // A mesma etiqueta do rótulo da contagem, no mesmo lugar da tela: o que muda
-  // no dia é a frase, não a forma do bloco.
   departureLabel: {
     ...typography.sectionLabel,
     fontSize: 11,
@@ -574,8 +449,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  // Traços curtos, do tamanho de um travessão: eles emolduram a data, e não
-  // atravessam a tela como o divisor logo abaixo faria.
   rule: {
     width: 28,
     height: 1,
@@ -606,8 +479,6 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.primary,
   },
-  // O dado curto à direita do título — itens pendentes no embarque, retorno na
-  // viagem. Sempre em tom neutro: informa, não cobra.
   sideNote: {
     ...typography.caption,
     color: colors.textSecondary,
@@ -616,7 +487,7 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
   },
-  // O único bloco com cara de card na tela, porque é o único acionável.
+  // O único bloco com cara de card, porque é o único acionável.
   nextStep: {
     gap: spacing.md,
     padding: spacing.lg,

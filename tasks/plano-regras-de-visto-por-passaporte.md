@@ -4,7 +4,9 @@ Feature: determinar se o viajante precisa de visto para cada país da viagem, a
 partir do passaporte principal cadastrado, e transformar essa resposta em item
 de checklist.
 
-Status: **plano**. Nada implementado nesta etapa.
+Status: **implementado**. O motor, as tabelas `visa_rules` e os templates de
+escopo `visa` estão no app; a coleta de regras continua em
+[coleta-vistos-br.md](coleta-vistos-br.md).
 
 ---
 
@@ -16,17 +18,17 @@ o tamanho da feature.
 
 ### 1.1 O que já existe
 
-| Item verificado | Situação real |
-| --- | --- |
-| `passports` | Existe. `supabase/migrations/20260905120000_init_schema.sql` |
-| Passaporte principal | Existe e é confiável |
-| `trips` / `trip_countries` / `trip_cities` | Existem, com FK composta |
-| `trip_requirements` | Existe, já com `template_id` e `group_id` |
-| Requisitos hardcoded no frontend | **Já migrados para o banco** |
-| `requirement_templates` | **Já existe** |
-| `destination_groups` / `destination_group_members` | **Já existem, com seed** |
-| Geração da checklist | Motor puro e testado, em `requirement-matching.ts` |
-| RLS | Configurado em todas as tabelas, incluindo o catálogo |
+| Item verificado                                    | Situação real                                                |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| `passports`                                        | Existe. `supabase/migrations/20260905120000_init_schema.sql` |
+| Passaporte principal                               | Existe e é confiável                                         |
+| `trips` / `trip_countries` / `trip_cities`         | Existem, com FK composta                                     |
+| `trip_requirements`                                | Existe, já com `template_id` e `group_id`                    |
+| Requisitos hardcoded no frontend                   | **Já migrados para o banco**                                 |
+| `requirement_templates`                            | **Já existe**                                                |
+| `destination_groups` / `destination_group_members` | **Já existem, com seed**                                     |
+| Geração da checklist                               | Motor puro e testado, em `requirement-matching.ts`           |
+| RLS                                                | Configurado em todas as tabelas, incluindo o catálogo        |
 
 Ou seja: **o item 5 do enunciado ("requisitos hardcoded no frontend") não é mais
 verdade**, e os itens 6 e 7 ("se já existe `requirement_templates` /
@@ -73,7 +75,7 @@ enunciado ("dificuldade de identificar o passaporte principal") não se confirma
   `trip_requirements`.
 - `trip_requirements.country_code` é **nulo para itens de viagem inteira** e,
   quando preenchido, tem FK composta `(trip_id, country_code) →
-  trip_countries`. Ou seja, um requisito de país só existe se o país estiver na
+trip_countries`. Ou seja, um requisito de país só existe se o país estiver na
   viagem, e some por cascata quando o país sai.
 - `trip_requirements` já carrega `template_id` (regra de origem) e `group_id`
   (grupo que tornou a regra aplicável), ambos nulos em itens criados à mão.
@@ -144,10 +146,10 @@ commitar antes de começar.
 
 Separar duas coisas que hoje o enunciado trata como uma:
 
-| Camada | Responde | Onde mora |
-| --- | --- | --- |
-| **Fato** | "Brasileiro precisa de visto para a China?" | `visa_rules` (nova) |
-| **Apresentação** | "Como isso vira um item de checklist?" | `requirement_templates` (existe) |
+| Camada           | Responde                                    | Onde mora                        |
+| ---------------- | ------------------------------------------- | -------------------------------- |
+| **Fato**         | "Brasileiro precisa de visto para a China?" | `visa_rules` (nova)              |
+| **Apresentação** | "Como isso vira um item de checklist?"      | `requirement_templates` (existe) |
 
 O fato é dado de referência com fonte oficial, validade e observação. A
 apresentação é texto, prioridade e categoria — decisão de produto, escrita uma
@@ -189,8 +191,8 @@ regra.
 Adicionar o valor `'visa'` ao enum `requirement_scope`, e a coluna
 `requirement_templates.visa_requirement_type`.
 
-Um template de escopo `visa` significa: *"para cada país da viagem cuja regra de
-visto, com o passaporte principal do viajante, seja deste tipo, gere um item"*.
+Um template de escopo `visa` significa: _"para cada país da viagem cuja regra de
+visto, com o passaporte principal do viajante, seja deste tipo, gere um item"_.
 
 No motor, isso é um novo `case` em `targetsFor()` — a única alteração de lógica
 da feature inteira:
@@ -221,11 +223,11 @@ Tudo o mais vem de graça, porque já está construído:
 usuário ver o link oficial na checklist, esses dados precisam chegar em
 `trip_requirements`. Duas opções:
 
-| | Snapshot em `trip_requirements` | Join em tempo de leitura |
-| --- | --- | --- |
-| Como | 2 colunas novas, preenchidas na geração | tela consulta `visa_rules` ao abrir |
-| Coerente com | "`trip_requirements` é o snapshot da checklist" — já é a filosofia do schema | dados sempre atuais |
-| Custo | 2 colunas nullable | join extra, e o item precisaria carregar o par (passaporte, país) |
+|              | Snapshot em `trip_requirements`                                              | Join em tempo de leitura                                          |
+| ------------ | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Como         | 2 colunas novas, preenchidas na geração                                      | tela consulta `visa_rules` ao abrir                               |
+| Coerente com | "`trip_requirements` é o snapshot da checklist" — já é a filosofia do schema | dados sempre atuais                                               |
+| Custo        | 2 colunas nullable                                                           | join extra, e o item precisaria carregar o par (passaporte, país) |
 
 **Decidido: snapshot.** É a filosofia já adotada (o título do item também é
 snapshot — `{country}` já vem resolvido). E a atualização de regras tem um plano
@@ -238,14 +240,14 @@ proibição de inventar dados. Isso promove a exibição do link de opcional a
 
 ### 2.5 O que muda em código
 
-| Arquivo | Mudança |
-| --- | --- |
+| Arquivo                   | Mudança                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `requirement-matching.ts` | tipo `VisaRule`, campo `visaRules` no catálogo, `case 'visa'` em `targetsFor()`, `source_name`/`source_url` em `ResolvedRequirement` |
-| `requirement-catalog.ts` | carregar `visa_rules` filtrado por passaporte + países |
-| `trip-persistence.ts` | passar `passportCountryCode` ao serviço (hoje ele não recebe) |
-| `types/database.ts` | tipos de `visa_rules`, novo enum, novas colunas |
-| `types/models.ts` | aliases `VisaRule`, `VisaRequirementType` |
-| Telas | nenhuma mudança obrigatória; link da fonte é opcional |
+| `requirement-catalog.ts`  | carregar `visa_rules` filtrado por passaporte + países                                                                               |
+| `trip-persistence.ts`     | passar `passportCountryCode` ao serviço (hoje ele não recebe)                                                                        |
+| `types/database.ts`       | tipos de `visa_rules`, novo enum, novas colunas                                                                                      |
+| `types/models.ts`         | aliases `VisaRule`, `VisaRequirementType`                                                                                            |
+| Telas                     | nenhuma mudança obrigatória; link da fonte é opcional                                                                                |
 
 Nenhum arquivo novo de lógica. Nenhuma abstração nova.
 
@@ -274,19 +276,19 @@ categorias. **Nem todos geram item no MVP** (seção 7).
 
 ### 3.2 Nova tabela `visa_rules`
 
-| Campo | Tipo | Nulo | Finalidade |
-| --- | --- | --- | --- |
-| `id` | `uuid` PK | não | chave |
-| `passport_country_code` | `text` | não | ISO-3166-1 alpha-2 do passaporte. `check ~ '^[A-Z]{2}$'` |
-| `destination_country_code` | `text` | não | ISO-3166-1 alpha-2 do destino. Mesmo check |
-| `requirement_type` | `visa_requirement_type` | não | o fato |
-| `source_name` | `text` | **não** | nome do órgão oficial |
-| `source_url` | `text` | **não** | URL da fonte oficial |
-| `verified_at` | `date` | **não** | quando um humano conferiu a fonte |
-| `notes` | `text` | sim | condição/observação. Obrigatório quando `conditional` |
-| `valid_from` | `date` | sim | início de vigência, quando a fonte informa |
-| `valid_until` | `date` | sim | fim de vigência, quando aplicável |
-| `created_at` / `updated_at` | `timestamptz` | não | auditoria; `updated_at` por trigger |
+| Campo                       | Tipo                    | Nulo    | Finalidade                                               |
+| --------------------------- | ----------------------- | ------- | -------------------------------------------------------- |
+| `id`                        | `uuid` PK               | não     | chave                                                    |
+| `passport_country_code`     | `text`                  | não     | ISO-3166-1 alpha-2 do passaporte. `check ~ '^[A-Z]{2}$'` |
+| `destination_country_code`  | `text`                  | não     | ISO-3166-1 alpha-2 do destino. Mesmo check               |
+| `requirement_type`          | `visa_requirement_type` | não     | o fato                                                   |
+| `source_name`               | `text`                  | **não** | nome do órgão oficial                                    |
+| `source_url`                | `text`                  | **não** | URL da fonte oficial                                     |
+| `verified_at`               | `date`                  | **não** | quando um humano conferiu a fonte                        |
+| `notes`                     | `text`                  | sim     | condição/observação. Obrigatório quando `conditional`    |
+| `valid_from`                | `date`                  | sim     | início de vigência, quando a fonte informa               |
+| `valid_until`               | `date`                  | sim     | fim de vigência, quando aplicável                        |
+| `created_at` / `updated_at` | `timestamptz`           | não     | auditoria; `updated_at` por trigger                      |
 
 ```sql
 create table public.visa_rules (
@@ -512,8 +514,8 @@ Checklist de revisão do seed, antes do merge:
 - [ ] todo `conditional` tem `notes` que descreve a condição;
 - [ ] nenhum `valid_from` estimado;
 - [ ] casos de dúvida ficaram **fora** do seed, não entraram como `visa_free`;
-- [ ] o seed é idempotente (`on conflict (passport_country_code,
-      destination_country_code) do update`), para reexecução ser segura.
+- [ ] o seed é idempotente, com `on conflict ... do update` sobre o par
+      (passaporte, destino), para reexecução ser segura.
 
 ### 5.5 O que este plano deliberadamente não faz
 
@@ -570,14 +572,14 @@ implementar agora.
 
 Um template por tipo que gera item. Todos em `category = 'documents'`.
 
-| Tipo | Gera item no MVP? | `code` | Título | Prioridade |
-| --- | --- | --- | --- | --- |
-| `visa_required` | **sim** | `visa-required` | `Solicitar o visto de entrada — {country}` | `required` |
-| `evisa` | **sim** | `visa-evisa` | `Solicitar o visto eletrônico (e-Visa) — {country}` | `required` |
-| `eta` | **sim** | `visa-eta` | `Solicitar a autorização eletrônica de viagem — {country}` | `required` |
-| `visa_on_arrival` | **sim** | `visa-on-arrival` | `Preparar o visto na chegada — {country}` | `recommended` |
-| `visa_free` | **sim** | `visa-free` | `Entrada sem visto — {country}` | `informational` |
-| `conditional` | **não** no MVP | `visa-conditional` | `Confirmar as condições de entrada — {country}` | `required` |
+| Tipo              | Gera item no MVP? | `code`             | Título                                                     | Prioridade      |
+| ----------------- | ----------------- | ------------------ | ---------------------------------------------------------- | --------------- |
+| `visa_required`   | **sim**           | `visa-required`    | `Solicitar o visto de entrada — {country}`                 | `required`      |
+| `evisa`           | **sim**           | `visa-evisa`       | `Solicitar o visto eletrônico (e-Visa) — {country}`        | `required`      |
+| `eta`             | **sim**           | `visa-eta`         | `Solicitar a autorização eletrônica de viagem — {country}` | `required`      |
+| `visa_on_arrival` | **sim**           | `visa-on-arrival`  | `Preparar o visto na chegada — {country}`                  | `recommended`   |
+| `visa_free`       | **sim**           | `visa-free`        | `Entrada sem visto — {country}`                            | `informational` |
+| `conditional`     | **não** no MVP    | `visa-conditional` | `Confirmar as condições de entrada — {country}`            | `required`      |
 
 As prioridades de `visa_on_arrival` e `visa_free` foram confirmadas (decisões 1
 e 2); o porquê fica registrado abaixo.
@@ -592,7 +594,7 @@ chega ao usuário sem virar coluna nova.
 `required` é o que decide se a viagem está pronta (`computeTripProgress`). Um
 visto emitido no balcão do aeroporto não pode ser concluído antes de viajar;
 marcá-lo `required` deixaria toda viagem para esses destinos permanentemente
-"não pronta". O que o viajante *pode* fazer antes é preparar foto, taxa e
+"não pronta". O que o viajante _pode_ fazer antes é preparar foto, taxa e
 comprovantes — e isso é `recommended`. A descrição do item deve deixar claro que
 o visto é emitido na chegada, para o usuário não procurar onde solicitar antes.
 
@@ -611,7 +613,7 @@ Ativar depois é inserir **uma linha** de template — sem código.
 ### 7.3 A sobreposição com `country-entry-requirements`
 
 O template `country-entry-requirements` já gera, hoje, um item `required` por
-país: *"Conferir as exigências de entrada — {country}"*. Com a feature, um país
+país: _"Conferir as exigências de entrada — {country}"_. Com a feature, um país
 como o Japão passaria a ter **dois** itens na mesma seção:
 
 ```
@@ -622,14 +624,14 @@ Japão
 
 Três caminhos:
 
-| Opção | Efeito | Avaliação |
-| --- | --- | --- |
-| **A. Manter os dois** | O genérico cobre vacina, comprovante de fundos, passagem de saída — coisas que a regra de visto não cobre | **Decidido.** Sem código novo, e o genérico é a rede de segurança da seção 4.4 |
-| B. Suprimir o genérico quando há regra | Checklist mais limpa | Exige lógica nova no motor e perde a cobertura de não-visto |
-| C. Rebaixar o genérico a `recommended` | Reduz peso no progresso | Enfraquece um item que hoje é a única garantia de conferência |
+| Opção                                  | Efeito                                                                                                    | Avaliação                                                                      |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **A. Manter os dois**                  | O genérico cobre vacina, comprovante de fundos, passagem de saída — coisas que a regra de visto não cobre | **Decidido.** Sem código novo, e o genérico é a rede de segurança da seção 4.4 |
+| B. Suprimir o genérico quando há regra | Checklist mais limpa                                                                                      | Exige lógica nova no motor e perde a cobertura de não-visto                    |
+| C. Rebaixar o genérico a `recommended` | Reduz peso no progresso                                                                                   | Enfraquece um item que hoje é a única garantia de conferência                  |
 
 **Decidido: A** (decisão 3), com um ajuste barato de texto — reescrever a
-descrição do genérico para deixar claro que ele trata do *restante* das
+descrição do genérico para deixar claro que ele trata do _restante_ das
 exigências (vacinas, comprovantes, passagem de retorno). É um `update` de uma
 linha no seed.
 
@@ -672,7 +674,7 @@ por migration, executada pelo dono das tabelas, que não passa pelas policies.
 
 **As regras de visto não são dado pessoal.** "Brasileiros precisam de visto para
 a China" é informação pública de governo. Não há nada a proteger no conteúdo —
-o que se protege é a *integridade*: o cliente não pode alterar a regra.
+o que se protege é a _integridade_: o cliente não pode alterar a regra.
 
 ```sql
 alter table public.visa_rules enable row level security;
@@ -730,7 +732,7 @@ O único bloqueador é de processo, não de código:
   Nenhuma parte da implementação depende dela — schema, motor e templates podem
   ser construídos e testados com dados de teste. Mas a feature não vai a produção
   com dados não conferidos, e nenhum agente deve gerar essa lista.
-  *Classificação: bloqueador de release, não de implementação.*
+  _Classificação: bloqueador de release, não de implementação._
 
 ### Importante
 
@@ -757,7 +759,7 @@ O único bloqueador é de processo, não de código:
   de regeneração; regenerar é preferível a editar.
 
 - **`primary` pode ser `null` em teoria.** O motor já trata (`passportCountryCode:
-  null` → nenhuma regra de visto). Na prática o onboarding garante que existe.
+null` → nenhuma regra de visto). Na prática o onboarding garante que existe.
 
 - **Cobertura parcial de dados** (46 de ~195 países). Mitigado por desenho: sem
   regra, o item genérico cobre o país. Ampliar é inserir linhas.
@@ -783,7 +785,7 @@ O único bloqueador é de processo, não de código:
 
 ## 10. Plano de implementação em etapas
 
-Cada etapa termina com `pnpm check` verde e é commitável isoladamente.
+Cada etapa termina com `npm check` verde e é commitável isoladamente.
 
 ### Etapa 0 — Preparação
 
@@ -793,6 +795,7 @@ Commitar as alterações pendentes em `requirement-matching.ts`,
 ### Etapa 1 — Schema
 
 Migration `..._visa_rules.sql`:
+
 - tipo `visa_requirement_type`;
 - tabela `visa_rules` com constraints e índice;
 - trigger `set_updated_at`;
@@ -806,11 +809,12 @@ de SELECT. Nada para `anon`.
 Migration `..._requirement_templates_visa_column.sql`: coluna
 `visa_requirement_type` e o check que amarra escopo e tipo.
 
-*Entregável:* schema pronto, nenhum dado, app inalterado.
+_Entregável:_ schema pronto, nenhum dado, app inalterado.
 
 ### Etapa 2 — Motor
 
 Em `requirement-matching.ts`:
+
 - tipo `VisaRequirementType` e `VisaRule`;
 - `visaRules` em `RequirementCatalog`;
 - índice interno por `destination_country_code` para a busca;
@@ -819,6 +823,7 @@ Em `requirement-matching.ts`:
 - descrição = `notes` da regra, com fallback para a do template.
 
 Testes em `requirement-matching.test.ts` (o padrão de fixtures já existe):
+
 - passaporte BR + destino com `visa_required` gera o item;
 - passaporte BR + destino sem regra **não** gera item de visto;
 - passaporte nulo não gera item de visto;
@@ -828,7 +833,7 @@ Testes em `requirement-matching.test.ts` (o padrão de fixtures já existe):
 - `diffTripRequirements` remove o item de visto quando o país sai da viagem;
 - o item de visto cai na seção do país em `groupRequirementsByScope`.
 
-*Entregável:* regra implementada e testada sem tocar em banco nem em tela.
+_Entregável:_ regra implementada e testada sem tocar em banco nem em tela.
 
 ### Etapa 3 — Carga e persistência
 
@@ -840,7 +845,7 @@ Testes em `requirement-matching.test.ts` (o padrão de fixtures já existe):
 - `trip-requirements.ts`: `createMany` já usa `TripRequirementInsert`, que ganha
   os campos por regeneração de tipo — conferir.
 
-*Entregável:* app funcionando igual (não há regra semeada ainda), agora carregando
+_Entregável:_ app funcionando igual (não há regra semeada ainda), agora carregando
 a tabela nova.
 
 ### Etapa 4 — Templates de apresentação
@@ -849,31 +854,32 @@ Migration de seed com os cinco templates de escopo `visa` da seção 7.1
 (`conditional` fica fora). Ajuste do texto de `country-entry-requirements`
 conforme a seção 7.3.
 
-*Entregável:* apresentação pronta. Ainda sem itens gerados, porque não há regra.
+_Entregável:_ apresentação pronta. Ainda sem itens gerados, porque não há regra.
 
 ### Etapa 5 — Dados BR
 
 **Precede a coleta humana descrita na seção 5.** Migration de seed com as regras
 conferidas, idempotente, revisada contra a checklist da seção 5.4.
 
-*Entregável:* a feature funcionando de ponta a ponta.
+_Entregável:_ a feature funcionando de ponta a ponta.
 
 ### Etapa 6 — Fonte oficial na tela — **MVP** (decisão 3)
 
 Mostrar `source_name` / `source_url` no item de visto, em
-[src/app/(app)/trips/[id].tsx](src/app/(app)/trips/[id].tsx). O item já renderiza
+[src/app/(app)/trips/[id].tsx](<src/app/(app)/trips/[id].tsx>). O item já renderiza
 `description` por volta da linha 490; o link entra logo abaixo, visível só
 quando `source_url` existe — ou seja, nos itens de visto, sem alterar a
 aparência de nenhum outro.
 
 Pontos a resolver:
+
 - abrir o link fora do app (`expo-web-browser` já é dependência do projeto, e é
   o que a tela de auth usa);
 - o rótulo do link é `source_name`, não a URL crua;
 - o toque no link **não pode** marcar o item como concluído — hoje a linha
   inteira é a área de toque de `toggle()`.
 
-*Entregável:* toda afirmação sobre visto na checklist é rastreável até o órgão
+_Entregável:_ toda afirmação sobre visto na checklist é rastreável até o órgão
 oficial que a emitiu.
 
 ### Etapa 7 — Recálculo ao trocar o passaporte principal (decisão 4)
@@ -898,6 +904,7 @@ pessoa de fato preparou, e reescrevê-la com as regras de outro passaporte
 apagaria esse registro.
 
 Dois cuidados:
+
 - `diffTripRequirements` já preserva os itens **verificados**, então mesmo numa
   viagem futura nada que a pessoa marcou é descartado;
 - a reconciliação é em lote e pode ser lenta com muitas viagens. Como acontece
@@ -905,7 +912,7 @@ Dois cuidados:
   `passports-section.tsx` basta — não é caso para fila nem para trabalho em
   segundo plano.
 
-*Entregável:* a checklist deixa de mentir depois de uma troca de passaporte.
+_Entregável:_ a checklist deixa de mentir depois de uma troca de passaporte.
 
 ### Fora de escopo
 
@@ -919,13 +926,13 @@ catálogo; importação automatizada de fontes.
 
 Todas confirmadas. Nenhuma pergunta em aberto.
 
-| # | Decisão | Resultado | Onde no plano |
-| --- | --- | --- | --- |
-| 1 | `visa_free` gera item informativo | **Sim** — `informational`, não afeta o progresso | 7.1, 7.2 |
-| 2 | Prioridade de `visa_on_arrival` | **`recommended`** — não bloqueia o "pronta para viajar" | 7.1, 7.2 |
-| 3 | Manter `country-entry-requirements` ao lado do item de visto | **Sim**, e **a fonte oficial aparece na tela** | 7.3, 2.4, Etapa 6 |
-| 4 | Recalcular ao trocar o passaporte principal | **Sim**, na promoção — **exceto viagens concluídas** | 9, Etapa 7 |
-| 5 | Escopo de dados do MVP | **Sim** — os 46 destinos com cidade sugerida | 5.1 |
+| #   | Decisão                                                      | Resultado                                               | Onde no plano     |
+| --- | ------------------------------------------------------------ | ------------------------------------------------------- | ----------------- |
+| 1   | `visa_free` gera item informativo                            | **Sim** — `informational`, não afeta o progresso        | 7.1, 7.2          |
+| 2   | Prioridade de `visa_on_arrival`                              | **`recommended`** — não bloqueia o "pronta para viajar" | 7.1, 7.2          |
+| 3   | Manter `country-entry-requirements` ao lado do item de visto | **Sim**, e **a fonte oficial aparece na tela**          | 7.3, 2.4, Etapa 6 |
+| 4   | Recalcular ao trocar o passaporte principal                  | **Sim**, na promoção — **exceto viagens concluídas**    | 9, Etapa 7        |
+| 5   | Escopo de dados do MVP                                       | **Sim** — os 46 destinos com cidade sugerida            | 5.1               |
 
 A decisão 3 foi a que mais mexeu no plano: exibir a fonte deixou de ser etapa
 opcional e virou parte do MVP (Etapa 6). A decisão 4 acrescentou uma restrição

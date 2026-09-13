@@ -3,12 +3,7 @@ import test from 'node:test';
 
 import { pickTravelTips, travelTips } from '../data/travel-tips.ts';
 
-/**
- * O carrossel da Home vazia mostra 5 das 15 dicas, sorteadas.
- *
- * O que não pode quebrar sem ninguém ver: a mesma dica aparecendo duas vezes no
- * carrossel, ou uma dica que não existe no catálogo.
- */
+/** O carrossel mostra 5 das 15 dicas: nenhuma repetida, nenhuma fora do catálogo. */
 
 /** Gerador determinístico: os testes precisam de sorteio, não de surpresa. */
 function seededRandom(seed: number): () => number {

@@ -2,13 +2,7 @@ import { supabase } from '@/lib/supabase/client';
 import { unwrapRequired } from '@/services/errors';
 import type { RequirementOffer } from '@/types/models';
 
-/**
- * Onde resolver um requisito da checklist.
- *
- * As linhas são dados de referência: todo usuário autenticado lê as mesmas, e
- * ninguém escreve pelo app. Um requisito sem oferta cadastrada devolve lista
- * vazia — a tela simplesmente não mostra o bloco.
- */
+/** Onde resolver um requisito da checklist. Sem oferta, a tela não mostra o bloco. */
 
 export type OfferContext = {
   /** Países da viagem; uma oferta restrita a outro destino não entra. */
@@ -27,12 +21,8 @@ function isWithinPeriod(date: string, from: string | null, until: string | null)
 }
 
 /**
- * A oferta vale para esta viagem?
- *
- * Restrição nula é ausência de restrição — é o caso comum, de uma indicação que
- * serve a qualquer destino. Uma oferta restrita a um passaporte não aparece
- * para quem não tem passaporte principal conhecido: melhor não indicar do que
- * indicar o que a pessoa não pode contratar.
+ * Restrição nula é ausência de restrição. Oferta restrita a um passaporte não
+ * aparece sem passaporte principal: melhor não indicar do que indicar errado.
  */
 function applies(offer: RequirementOffer, context: OfferContext): boolean {
   if (!isWithinPeriod(context.today, offer.valid_from, offer.valid_until)) return false;
@@ -55,13 +45,7 @@ function applies(offer: RequirementOffer, context: OfferContext): boolean {
 }
 
 export const requirementOffersService = {
-  /**
-   * Ofertas de um requisito, já na ordem de exibição.
-   *
-   * O filtro por template e por `active` fica no banco; vigência e restrições
-   * de destino/passaporte são avaliadas aqui, porque dependem da viagem de quem
-   * está olhando e são poucas linhas por requisito.
-   */
+  /** Ofertas de um requisito, já na ordem de exibição. */
   async listForTemplate(
     requirementTemplateId: string,
     context: OfferContext,

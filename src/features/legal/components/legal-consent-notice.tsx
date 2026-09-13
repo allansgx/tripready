@@ -3,12 +3,7 @@ import { Platform, StyleSheet, Text } from 'react-native';
 
 import { colors, spacing, typography } from '@/theme/tokens';
 
-/**
- * Aviso de aceite dos documentos legais, com os dois links.
- *
- * `lead` completa a frase com a ação da tela — "Ao continuar" na entrada,
- * "Ao criar sua conta" no cadastro.
- */
+/** Aviso de aceite com os dois links; `lead` completa a frase com a ação da tela. */
 export function LegalConsentNotice({ lead }: { lead: string }) {
   const router = useRouter();
 

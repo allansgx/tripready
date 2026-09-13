@@ -1,14 +1,6 @@
 /**
- * Fonte única de países do app.
- *
- * Guarda apenas o código ISO 3166-1 alpha-2 e o nome em pt-BR — que é
- * exatamente o que o banco armazena em `passports.country_code` e
- * `trip_countries.country_code`. Bandeira e nome nunca são persistidos: saem
- * sempre do código, por estas funções. Nenhuma tela deve manter a sua própria
- * lista de países.
- *
- * Nomes gerados a partir do ICU (`Intl.DisplayNames` em pt-BR) e ordenados
- * alfabeticamente respeitando acentuação.
+ * Fonte única de países do app. Só o código ISO 3166-1 alpha-2 e o nome em
+ * pt-BR são guardados; bandeira e nome nunca são persistidos, saem do código.
  */
 
 export type Country = {
@@ -285,10 +277,8 @@ export function getCountryName(code: string): string {
 }
 
 /**
- * Bandeira derivada do código: cada letra vira o "regional indicator symbol"
- * correspondente e o par forma o emoji da bandeira. O iOS desenha a bandeira;
- * o Android, que não traz essas imagens na fonte do sistema, mostra as duas
- * letras — que é justamente como a referência do Figma apresenta.
+ * Bandeira derivada do código, por "regional indicator symbol". O iOS desenha a
+ * bandeira; o Android mostra as duas letras, que é o esperado.
  */
 export function getFlagEmoji(code: string): string {
   const normalized = code.trim().toUpperCase();
@@ -303,11 +293,8 @@ export function getFlagEmoji(code: string): string {
 }
 
 /**
- * Tira acentos e caixa para a busca casar "Italia" com "Itália".
- *
- * Exportada para a busca de destinos aplicar exatamente a mesma regra aos
- * nomes de cidade — duas normalizações diferentes fariam "Sao Paulo" achar o
- * país e não a cidade.
+ * Tira acentos e caixa para a busca casar "Italia" com "Itália". Exportada para
+ * a busca de cidades aplicar exatamente a mesma regra.
  */
 export function normalizeSearch(value: string): string {
   return value

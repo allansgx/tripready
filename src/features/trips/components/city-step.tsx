@@ -11,20 +11,10 @@ import { colors, radius, spacing, typography } from '@/theme/tokens';
 export type SelectedCity = { countryCode: string; cityName: string };
 
 /**
- * Seleção de cidades por país escolhido.
- *
- * As sugestões cobrem destinos comuns; para qualquer outro lugar, o campo de
- * texto adiciona a cidade digitada — `trip_cities.city_name` é texto livre.
- *
- * Com mais de um país, os blocos viram sanfona: um roteiro de quatro países
- * abria quatro listas de chips com quatro campos de texto, e a tela deixava de
- * caber. Um país só continua aberto, porque esconder a única coisa da tela não
- * ajuda ninguém.
- *
- * Sem handlers, a mesma lista vira leitura: só as cidades escolhidas, como
- * etiquetas. É a forma que a conferência final usa, onde o bloco é informação
- * e quem edita é o "Alterar" do cabeçalho — um chip que responde ao toque no
- * meio de uma revisão é justamente o que se remove sem querer.
+ * Seleção de cidades por país escolhido. As sugestões cobrem destinos comuns e
+ * o campo de texto aceita qualquer outro — `city_name` é texto livre. Com mais
+ * de um país os blocos viram sanfona, senão a tela deixa de caber. Sem
+ * handlers, a mesma lista vira leitura — é a forma da conferência final.
  */
 export function CityStep({
   countryCodes,

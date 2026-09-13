@@ -11,12 +11,7 @@ type StepRowProps = {
   done: boolean;
 };
 
-/**
- * Linha de uma etapa concluída, usada nas telas de processamento.
- *
- * O estado pendente já mostra o rótulo, só que apagado: nada de conteúdo que
- * apareça apenas no fim da animação. A marcação é o que se move.
- */
+/** Etapa das telas de processamento: o rótulo já aparece apagado quando pendente. */
 export function StepRow({ label, icon, done }: StepRowProps) {
   const [progress] = useState(() => new Animated.Value(0));
 

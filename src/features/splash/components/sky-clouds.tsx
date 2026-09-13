@@ -21,19 +21,6 @@ import {
 } from '@/features/splash/domain/cloud-decks';
 import { SPLASH_COLORS } from '@/features/splash/domain/plane-art';
 
-/**
- * Os bancos de nuvem da abertura.
- *
- * Nenhum deles está no primeiro quadro: o splash nativo é uma cor chapada e um
- * avião, e qualquer nuvem já desenhada ali apareceria do nada na troca. O
- * primeiro sobe para o lugar enquanto o avião ainda espera.
- *
- * Os de cima entram depois, **descendo**, conforme o avião sobe. É a mesma
- * ideia do céu que muda de cor: quem ganha altitude vê as camadas ficarem para
- * trás, e ver camada ficando para trás é o que diz que se está subindo.
- * Sozinho, um avião transladando para cima sobe parado.
- */
-
 const VIEWBOX = { width: 400, height: 150 };
 
 export function CloudDecks({
@@ -91,21 +78,12 @@ function Deck({
     transform: [{ translateY: (1 - progress.value) * deck.from }],
   }));
 
-  /**
-   * O tamanho da nuvem vem da escala da camada; a largura, não.
-   *
-   * Amarrar as duas coisas ao mesmo número é o que fazia a camada distante ser
-   * um banco mais estreito que a tela, com a lateral aparecendo como um corte
-   * reto no meio do céu. Camada distante tem nuvem menor e continua cobrindo a
-   * tela inteira — a crista é gerada na largura que for preciso.
-   */
+  // O tamanho da nuvem vem da escala da camada; a largura, não: camada distante
+  // tem nuvem menor e continua cobrindo a tela inteira.
   const puff = BASE_PUFF * ((BASE_DECK_HEIGHT * screenHeight) / VIEWBOX.height) * deck.scale;
   const isBase = deck.id === BASE_DECK_ID;
 
-  /**
-   * O banco de base é o desenho fixo, que não mudou: ele é mais largo que a
-   * tela e o que se vê dele é o miolo. Só as camadas de cima são geradas.
-   */
+  // O banco de base é o desenho fixo; só as camadas de cima são geradas.
   const designScale = ((BASE_DECK_HEIGHT * screenHeight) / VIEWBOX.height) * deck.scale;
   const boxWidth = isBase ? VIEWBOX.width * designScale : screenWidth + DECK_SIDE_MARGIN * 2;
   const boxLeft = isBase ? (screenWidth - boxWidth) / 2 + deck.x : -DECK_SIDE_MARGIN;
@@ -119,9 +97,7 @@ function Deck({
       ) : (
         <CloudRidge width={boxWidth} puff={puff} seed={deck.x} />
       )}
-      {/* A continuação do banco, que desce até sair da tela. Encosta na borda
-          de baixo do desenho e leva a mesma opacidade do grupo da frente, para
-          a emenda entre as duas não existir. */}
+      {/* A continuação do banco, que desce até sair da tela. */}
       <View style={styles.fill} />
     </Animated.View>
   );
@@ -133,17 +109,7 @@ function jitter(index: number, seed: number) {
   return value - Math.floor(value);
 }
 
-/**
- * Uma crista de nuvens da largura que for pedida.
- *
- * São círculos encostados em fila, de raios sorteados, em duas fileiras: a de
- * trás menor e mais alta, dando espessura ao banco, e a da frente. Eles se
- * sobrepõem sempre — separados, deixariam de ser uma nuvem e virariam bolhas.
- *
- * As fileiras vão além das duas pontas de propósito, e a parte de baixo dos
- * círculos sai pela borda inferior, onde a faixa cheia continua. Assim a crista
- * não tem começo, meio nem fim visíveis: só o contorno de cima.
- */
+/** Uma crista de nuvens da largura que for pedida, em duas fileiras. */
 function CloudRidge({ width, puff, seed }: { width: number; puff: number; seed: number }) {
   const height = puff * 2.6;
   const rows = [
@@ -154,23 +120,15 @@ function CloudRidge({ width, puff, seed }: { width: number; puff: number; seed: 
   return (
     <Svg width={width} height={height}>
       {rows.map((row) => {
-        // Passo curto: mesmo o menor par de círculos vizinhos precisa se
-        // sobrepor, senão abre um vão e a crista vira uma fila de bolhas.
+        // Passo curto: sem sobreposição a crista vira uma fila de bolhas.
         const step = row.size * 0.85;
         const count = Math.ceil(width / step) + 2;
 
         return (
           <G key={row.opacity} opacity={row.opacity} fill={SPLASH_COLORS.cloud}>
             {Array.from({ length: count }, (_, index) => {
-              /**
-               * Duas frequências, e é a lenta que faz a nuvem.
-               *
-               * Só com sorteio por círculo a crista sai uniforme: bolhas de
-               * tamanho parecido em fila, que lê como barra ondulada. A onda
-               * lenta junta os círculos em massas com vales entre elas, que é a
-               * forma de uma nuvem; o sorteio por círculo só tira a regularidade
-               * de dentro de cada massa.
-               */
+              // A onda lenta junta os círculos em massas com vales entre elas;
+              // o sorteio por círculo só tira a regularidade de dentro delas.
               const wave = 0.5 + 0.5 * Math.sin(index * 0.85 + seed * 0.7);
               const size = row.size * (0.52 + 0.62 * wave + 0.3 * jitter(index, seed + row.phase));
 
@@ -191,13 +149,9 @@ function CloudRidge({ width, puff, seed }: { width: number; puff: number; seed: 
   );
 }
 
-/**
- * Um banco: três nuvens em profundidades diferentes.
- *
- * Cada nuvem é um grupo com opacidade própria — assim os círculos se somam em
- * uma silhueta só, em vez de mostrarem as emendas onde se cruzam.
- */
-export function SkyClouds({ width, height }: { width: number; height: number }) {
+// Cada nuvem é um grupo com opacidade própria: assim os círculos se somam em
+// uma silhueta só, sem mostrar as emendas.
+function SkyClouds({ width, height }: { width: number; height: number }) {
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}>
       {/* Fundo: menores e mais diluídas, para dar profundidade ao banco. */}

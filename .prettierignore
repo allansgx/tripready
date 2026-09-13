@@ -8,8 +8,7 @@ web-build/
 .claude/
 supabase/.temp/
 
-# Arquivos escritos por outras ferramentas: reformatar aqui só criaria ruído
-# no próximo comando que as regerar.
+# Arquivos escritos por outras ferramentas
 expo-env.d.ts
 package-lock.json
 assets/expo.icon/

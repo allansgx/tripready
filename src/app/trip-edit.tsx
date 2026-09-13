@@ -36,13 +36,8 @@ import { colors, radius, spacing, typography } from '@/theme/tokens';
 const NAME_MAX_LENGTH = 60;
 
 /**
- * "Editar viagem" — tela única com as mesmas seções do fluxo de criação.
- *
- * Reaproveita os componentes de lá (`CountryPickerList`, `CityStep`,
- * `DateRangePicker`, `TextField`) e o mesmo estado de seleção (`useTripDraft`),
- * apenas inicializado com os dados existentes. A seleção de países entra em
- * tela cheia por um modo interno, e não por outra rota, para a edição continuar
- * sendo uma tela só.
+ * "Editar viagem": tela única com as mesmas seções e o mesmo `useTripDraft` do
+ * fluxo de criação, inicializado com os dados existentes.
  */
 export default function EditTripScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();

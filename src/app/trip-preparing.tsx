@@ -22,14 +22,8 @@ const FINAL_DELAY = 900;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Transição entre criar a viagem e abrir a checklist.
- *
- * Não é um loading decorativo: cada categoria marcada corresponde à gravação
- * real daquele grupo de requisitos no Supabase. A checklist é montada aqui, e
- * não na tela anterior, justamente para o progresso mostrado ser verdadeiro.
- *
- * Os itens vêm do catálogo do banco, resolvidos contra os países, as datas e o
- * passaporte principal — a tela apenas grava o resultado.
+ * Transição entre criar a viagem e abrir a checklist. Cada categoria marcada
+ * corresponde à gravação real daquele grupo de requisitos.
  */
 export default function TripPreparingScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();

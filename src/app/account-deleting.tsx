@@ -10,12 +10,8 @@ import { DeleteAccountError, type DeleteAccountFailure } from '@/features/auth/d
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /**
- * O que a exclusão levou, na ordem em que é mostrado.
- *
- * A lista é o retrato do que a cascata do banco remove a partir de
- * `auth.users`, e não etapas que o app executa uma a uma: a exclusão é uma
- * chamada só, e uma transação só. Por isso as marcações aparecem **depois** de
- * o servidor confirmar — animar antes seria inventar progresso.
+ * O que a cascata do banco remove, e não etapas que o app executa: a exclusão é
+ * uma chamada só, então as marcações aparecem depois de o servidor confirmar.
  */
 const REMOVAL_STEPS = [
   { label: 'Viagens e checklists', icon: 'airplane' },
@@ -27,10 +23,7 @@ const REMOVAL_STEPS = [
 /** Ritmo da revelação: rápido o bastante para não virar espera. */
 const STEP_DELAY = 260;
 
-/**
- * Nenhuma mensagem fala em falha nem menciona serviço, status ou termo técnico:
- * cada uma diz o que a pessoa pode fazer a seguir.
- */
+/** Cada mensagem diz o que a pessoa pode fazer a seguir, sem termo técnico. */
 const MESSAGES: Record<DeleteAccountFailure, string> = {
   connection: 'Sua conexão oscilou. Toque para tentar de novo.',
   session: 'Sua sessão expirou. Entre de novo para excluir a conta.',
@@ -40,12 +33,8 @@ const MESSAGES: Record<DeleteAccountFailure, string> = {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Exclusão da conta, do pedido confirmado até a despedida.
- *
- * A sessão só cai quando a pessoa toca em "Ir para o login". Encerrá-la junto
- * com a exclusão trocaria a tela na mesma hora, e a confirmação de que deu
- * certo não teria onde aparecer. Nada leva embora sozinho: a saída é do
- * usuário.
+ * Exclusão da conta. A sessão só cai quando a pessoa toca em "Ir para o login":
+ * encerrá-la junto deixaria a confirmação sem onde aparecer.
  */
 export default function AccountDeletingScreen() {
   const { deleteAccount, signOutLocal } = useAuth();
@@ -96,10 +85,7 @@ export default function AccountDeletingScreen() {
     }
   }, [attempt, deleteAccount]);
 
-  /**
-   * O botão físico de voltar do Android não atravessa esta tela: no meio da
-   * exclusão não há o que cancelar, e no fim a única saída é a mesma do botão.
-   */
+  // O voltar do Android não atravessa: no meio da exclusão não há o que cancelar.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 

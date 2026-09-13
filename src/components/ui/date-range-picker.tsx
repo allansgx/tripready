@@ -39,12 +39,9 @@ function monthKey({ year, month }: Month): number {
 }
 
 /**
- * Calendário de intervalo, escrito em JS puro para não depender de um módulo
- * nativo (o app precisa rodar no Expo Go sem build).
- *
- * A regra de seleção já impede intervalo invertido: tocar numa data anterior
- * ao início reinicia a seleção a partir dela, então a data final nunca fica
- * antes da inicial.
+ * Calendário de intervalo em JS puro, para rodar no Expo Go sem build. Tocar
+ * numa data anterior ao início reinicia a seleção, então nunca há intervalo
+ * invertido.
  */
 export function DateRangePicker({
   value,
@@ -62,13 +59,7 @@ export function DateRangePicker({
       : { year: today.getFullYear(), month: today.getMonth() },
   );
 
-  /**
-   * Até onde o calendário volta no tempo.
-   *
-   * Viagem nenhuma começa em 1998, e sem limite a seta da esquerda leva a um
-   * passado que ninguém procurava. O piso é o mês atual — exceto na edição de
-   * uma viagem que já começou, cujo mês precisa continuar alcançável.
-   */
+  // O piso é o mês atual, exceto na edição de uma viagem que já começou.
   const [floor] = useState<Month>(() => {
     const current = { year: today.getFullYear(), month: today.getMonth() };
     const started = value.start ? monthFromISO(value.start) : null;
@@ -111,13 +102,7 @@ export function DateRangePicker({
     onChange({ start: value.start, end: iso });
   }
 
-  /**
-   * Escolha direta de mês e ano.
-   *
-   * Uma viagem marcada para daqui a um ano custava doze toques na seta; aqui
-   * custa dois. Ocupa o lugar do calendário, e não uma camada sobre ele, para o
-   * cartão continuar sendo uma coisa só.
-   */
+  // Escolha direta de mês e ano, no lugar do calendário — não sobre ele.
   if (pickingMonth) {
     const canGoBackYear = pickerYear > floor.year;
 

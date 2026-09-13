@@ -6,12 +6,8 @@ import { useAuth } from '@/features/auth/auth-context';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /**
- * Destino do deep link `.../auth/callback` do OAuth.
- *
- * Normalmente o `WebBrowser` intercepta o redirect e esta tela nem aparece; ela
- * existe para o caso em que o sistema entrega o link ao app (comum no Expo Go
- * no Android), evitando cair na rota "Unmatched Route". A troca do `code` por
- * sessão é feita uma única vez no `AuthProvider`; aqui só aguardamos.
+ * Destino do deep link do OAuth, para o caso em que o sistema entrega o link ao
+ * app em vez do `WebBrowser`. A troca do `code` acontece no `AuthProvider`.
  */
 export default function AuthCallbackScreen() {
   const { session, error } = useAuth();

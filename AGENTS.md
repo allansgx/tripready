@@ -21,6 +21,27 @@ Estrutura atual em `src/`: `app/` (rotas), `features/` (domínios: auth, trips, 
 - Preferir componentes nativos da plataforma (ex.: `@expo/ui`) a reimplementações customizadas em JS.
 - Não faça comentários no código, exceto se for extremamente necessário, e comentário curtos se precisar.
 
+### Comentários
+
+O limite prático é **três linhas**. Acima disso, o comentário virou texto e
+precisa ser cortado ou movido para `tasks/`.
+
+Um comentário só se justifica quando explica **por que** o código é daquele
+jeito e a resposta não está no próprio código — uma armadilha de plataforma, uma
+decisão que parece errada até ser explicada, um valor que veio de fora.
+
+Nunca comentar:
+
+- o que o nome da função, do tipo ou da constante já diz;
+- justificativa de produto ou de design que não muda a leitura do código;
+- histórico ("antes era assim", "isto substituiu aquilo") — quem guarda isso é
+  o git;
+- banners de seção (`// ===== Catálogo =====`) — se o arquivo precisa de
+  divisórias, ele precisa é de ser dividido.
+
+Comentário e código envelhecem juntos: ao alterar um trecho, conferir se o que
+está escrito acima dele ainda é verdade.
+
 ## Antes de implementar
 
 1. Verificar se já existe componente, função ou serviço reutilizável.
@@ -121,7 +142,22 @@ O TripReady é simples, claro, mobile-first, orientado à ação e positivo.
 - Sempre claro, objetivo e curto, mas não deixe faltar informação.
 - Pode usar tópicos se necessário.
 
-### Feature organization
+## Documentos de trabalho
+
+`tasks/` guarda só o que ainda está em aberto: plano em execução, avaliação sem
+decisão tomada, coleta de dados em andamento. Plano concluído sai da pasta —
+o que ele decidiu já está no código e nas migrations, e o histórico está no git.
+
+Não existe pasta `docs/`. Um documento que continua útil depois de a feature
+ficar pronta é ou uma coleta de dados com fonte e data de conferência, que
+permanece em `tasks/` porque será retomada, ou uma regra de como o projeto
+trabalha, que pertence a este arquivo.
+
+Ao concluir ou abandonar um documento, conferir se alguém aponta para ele:
+link quebrado dentro de `tasks/` é o sintoma mais comum de plano removido pela
+metade.
+
+## Feature organization
 
 Organize feature code by responsibility when the feature has enough files to justify it:
 

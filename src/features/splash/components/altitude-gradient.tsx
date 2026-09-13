@@ -3,15 +3,9 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { SPLASH_COLORS } from '@/features/splash/domain/plane-art';
 
 /**
- * O céu ganhando altitude.
- *
- * É o que faz o avião parecer estar indo a algum lugar em vez de subir parado:
- * conforme ele sobe, o alto do céu escurece no roxo da marca, como quem sai da
- * camada baixa. O azul de partida continua embaixo, então a tela nunca deixa de
- * ser o mesmo céu — ela só muda de altura.
- *
- * Entra por opacidade, a partir do zero. O primeiro quadro precisa continuar
- * sendo a cor chapada do splash nativo, ou a costura com ele aparece.
+ * O céu ganhando altitude: o alto escurece no roxo da marca conforme o avião
+ * sobe. Entra por opacidade, a partir do zero, para o primeiro quadro continuar
+ * sendo a cor chapada do splash nativo.
  */
 
 const STOPS = [
