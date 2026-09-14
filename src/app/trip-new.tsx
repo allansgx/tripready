@@ -21,6 +21,13 @@ import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { CityStep } from '@/features/trips/components/city-step';
 import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import { createTripWithDestinations } from '@/features/trips/data/trip-persistence';
+import {
+  canAddCountry,
+  checkTripLimits,
+  MAX_TRIP_DURATION_DAYS,
+  TRIP_DURATION_HINT,
+  TRIP_LIMIT_MESSAGES,
+} from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { colors, spacing, typography } from '@/theme/tokens';
 
@@ -60,12 +67,35 @@ export default function NewTripScreen() {
   const step = STEPS[stepIndex];
   const { countryCodes, cities, range, name } = draft;
 
+  const limits = checkTripLimits({
+    countryCodes,
+    startDate: range.start,
+    endDate: range.end,
+  });
+
   function goBack() {
     if (stepIndex === 0) {
       router.back();
       return;
     }
+    setNotice(null);
     setStepIndex((current) => current - 1);
+  }
+
+  function goForward() {
+    setNotice(null);
+    setStepIndex((current) => current + 1);
+  }
+
+  // O país que não cabe não entra calado: a lista continua aberta e o rodapé
+  // explica por que aquele toque não marcou nada.
+  function selectCountry(country: Country) {
+    if (!canAddCountry(countryCodes, country.code)) {
+      setNotice(TRIP_LIMIT_MESSAGES.countries);
+      return;
+    }
+    setNotice(null);
+    toggleCountry(country.code);
   }
 
   // Sem país nenhum não há cidade a escolher, e o fluxo volta para os destinos.
@@ -76,6 +106,13 @@ export default function NewTripScreen() {
 
   async function createTrip() {
     if (!user || busy) return;
+
+    // Última barreira antes de gravar: nenhum caminho da tela pode criar uma
+    // viagem fora dos limites.
+    if (!limits.isValid) {
+      setNotice(limits.message);
+      return;
+    }
 
     setBusy(true);
     setNotice(null);
@@ -88,11 +125,17 @@ export default function NewTripScreen() {
     }
   }
 
+  // Na etapa de países o aviso mora embaixo do botão, no lugar da orientação
+  // que ele substitui; nas demais, acima. O rótulo do botão já conta quantos
+  // países foram escolhidos, então não há contador a repetir aqui.
+  const countriesHint =
+    notice ?? (countryCodes.length === 0 ? 'Escolha ao menos um país para continuar.' : null);
+
   const canContinue =
     step === 'countries'
       ? countryCodes.length > 0
       : step === 'dates'
-        ? Boolean(range.start && range.end)
+        ? Boolean(range.start && range.end) && limits.isValid
         : true;
 
   // Um botão só por etapa: sem cidade escolhida, seguir é pular.
@@ -131,11 +174,7 @@ export default function NewTripScreen() {
       </View>
 
       {step === 'countries' ? (
-        <CountryPickerList
-          searchByCity
-          onSelect={(country: Country) => toggleCountry(country.code)}
-          selectedCodes={countryCodes}
-        />
+        <CountryPickerList searchByCity onSelect={selectCountry} selectedCodes={countryCodes} />
       ) : (
         <KeyboardAvoidingView
           style={styles.flex}
@@ -156,11 +195,18 @@ export default function NewTripScreen() {
 
             {step === 'dates' ? (
               <View style={styles.datesArea}>
-                <DateRangePicker value={range} onChange={setRange} />
+                <DateRangePicker
+                  value={range}
+                  onChange={setRange}
+                  maxDurationDays={MAX_TRIP_DURATION_DAYS}
+                />
                 <DateRangeSummary
                   value={range}
                   onClear={() => setRange({ start: null, end: null })}
                 />
+                <Text style={styles.hint}>
+                  {limits.isValid ? TRIP_DURATION_HINT : limits.message}
+                </Text>
               </View>
             ) : null}
 
@@ -203,20 +249,16 @@ export default function NewTripScreen() {
       )}
 
       <View style={styles.footer}>
-        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+        {notice && step !== 'countries' ? <Text style={styles.notice}>{notice}</Text> : null}
 
         {step === 'name' ? (
           <Button label="Criar viagem" onPress={() => void createTrip()} loading={busy} />
         ) : (
-          <Button
-            label={continueLabel}
-            onPress={() => setStepIndex((current) => current + 1)}
-            disabled={!canContinue}
-          />
+          <Button label={continueLabel} onPress={goForward} disabled={!canContinue} />
         )}
 
-        {step === 'countries' && countryCodes.length === 0 ? (
-          <Text style={styles.hint}>Escolha ao menos um país para continuar.</Text>
+        {step === 'countries' && countriesHint ? (
+          <Text style={styles.hint}>{countriesHint}</Text>
         ) : null}
       </View>
     </SafeAreaView>

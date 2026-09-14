@@ -33,6 +33,12 @@ function monthFromISO(value: string): Month {
   return { year, month: month - 1 };
 }
 
+// Em UTC: somar dias no fuso local tropeça no horário de verão.
+function addDays(value: string, days: number): string {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 /** Meses em linha reta, para comparar meses de anos diferentes. */
 function monthKey({ year, month }: Month): number {
   return year * 12 + month;
@@ -46,9 +52,12 @@ function monthKey({ year, month }: Month): number {
 export function DateRangePicker({
   value,
   onChange,
+  maxDurationDays,
 }: {
   value: DateRange;
   onChange: (range: DateRange) => void;
+  /** Duração máxima, contando ida e volta: o que passa disso fica apagado. */
+  maxDurationDays?: number;
 }) {
   const today = new Date();
   const todayISO = toISO(today.getFullYear(), today.getMonth(), today.getDate());
@@ -78,6 +87,11 @@ export function DateRangePicker({
   }, [cursor]);
 
   const canGoBack = monthKey(cursor) > monthKey(floor);
+
+  // Só enquanto falta a volta: com o intervalo fechado, ou sem ida, o
+  // calendário volta a ficar inteiro à disposição.
+  const lastSelectable =
+    maxDurationDays && value.start && !value.end ? addDays(value.start, maxDurationDays - 1) : null;
 
   function shiftMonth(delta: number) {
     setCursor((current) => {
@@ -239,14 +253,16 @@ export function DateRangePicker({
           const spans = Boolean(value.start && value.end && value.end > value.start);
           const edge = spans ? (isStart ? styles.edgeRight : isEnd ? styles.edgeLeft : null) : null;
 
+          const blocked = lastSelectable !== null && iso > lastSelectable;
+
           return (
             <Pressable
               key={iso}
               accessibilityRole="button"
               accessibilityLabel={`${day} de ${MONTH_NAMES[cursor.month]}`}
-              accessibilityState={{ selected: isStart || isEnd }}
-              onPress={() => handlePress(day)}
-              style={[styles.cell, inRange && styles.cellInRange]}>
+              accessibilityState={{ disabled: blocked, selected: isStart || isEnd }}
+              onPress={blocked ? undefined : () => handlePress(day)}
+              style={[styles.cell, inRange && styles.cellInRange, blocked && styles.cellBlocked]}>
               {edge ? <View style={[styles.edge, edge]} /> : null}
               <View
                 style={[
@@ -314,6 +330,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellInRange: { backgroundColor: colors.primarySoft },
+  cellBlocked: { opacity: 0.35 },
   edge: {
     position: 'absolute',
     top: 0,

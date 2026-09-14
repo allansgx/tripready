@@ -4,6 +4,7 @@ import type { DateRange } from '@/components/ui/date-range-picker';
 import { normalizeSearch } from '@/constants/countries';
 import type { SelectedCity } from '@/features/trips/components/city-step';
 import { suggestTripName } from '@/features/trips/domain/trip-format';
+import { canAddCountry } from '@/features/trips/domain/trip-limits';
 
 export type TripDraft = {
   name: string;
@@ -62,7 +63,11 @@ export function useTripDraft(initial?: TripDraft) {
 
   const toggleCountry = useCallback((code: string) => {
     setCountryCodes((current) => {
-      if (!current.includes(code)) return [...current, code];
+      // O teto vale aqui, e não só na tela: as duas telas passam por este
+      // estado, e nenhuma delas pode gravar um roteiro maior do que o limite.
+      if (!current.includes(code)) {
+        return canAddCountry(current, code) ? [...current, code] : current;
+      }
       // País removido leva junto as cidades dele.
       setCities((currentCities) => currentCities.filter((city) => city.countryCode !== code));
       return current.filter((item) => item !== code);

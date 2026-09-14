@@ -28,6 +28,14 @@ import {
   updateTripWithDestinations,
   type TripEditBaseline,
 } from '@/features/trips/data/trip-persistence';
+import {
+  canAddCountry,
+  checkTripLimits,
+  formatCountrySelection,
+  MAX_TRIP_DURATION_DAYS,
+  TRIP_DURATION_HINT,
+  TRIP_LIMIT_MESSAGES,
+} from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
@@ -100,6 +108,23 @@ export default function EditTripScreen() {
     };
   }, [tripId, hydrate]);
 
+  const limits = checkTripLimits({
+    countryCodes: draft.countryCodes,
+    startDate: draft.range.start,
+    endDate: draft.range.end,
+  });
+
+  // O país que não cabe não entra calado: o rodapé explica por que aquele toque
+  // não marcou nada.
+  function selectCountry(country: Country) {
+    if (!canAddCountry(draft.countryCodes, country.code)) {
+      setNotice(TRIP_LIMIT_MESSAGES.countries);
+      return;
+    }
+    setNotice(null);
+    toggleCountry(country.code);
+  }
+
   const close = useCallback(() => {
     if (!isDirty) {
       router.back();
@@ -114,6 +139,13 @@ export default function EditTripScreen() {
 
   async function save() {
     if (!tripId || !baseline) return;
+
+    // Última barreira antes de gravar: editar não pode levar a viagem para fora
+    // dos limites.
+    if (!limits.isValid) {
+      setNotice(limits.message);
+      return;
+    }
 
     setBusy(true);
     setNotice(null);
@@ -155,19 +187,27 @@ export default function EditTripScreen() {
 
         <CountryPickerList
           searchByCity
-          onSelect={(country: Country) => toggleCountry(country.code)}
+          onSelect={selectCountry}
           selectedCodes={draft.countryCodes}
         />
 
         <View style={styles.footer}>
           <Button
             label="Concluir seleção"
-            onPress={() => setPickingCountries(false)}
+            onPress={() => {
+              setNotice(null);
+              setPickingCountries(false);
+            }}
             disabled={draft.countryCodes.length === 0}
           />
-          {draft.countryCodes.length === 0 ? (
-            <Text style={styles.hint}>Mantenha ao menos um país no roteiro.</Text>
-          ) : null}
+          {/* Aqui o botão não conta os países, então o contador segue útil — e
+              dá lugar ao aviso quando o toque esbarra no teto. */}
+          <Text style={styles.hint}>
+            {notice ??
+              (draft.countryCodes.length === 0
+                ? 'Mantenha ao menos um país no roteiro.'
+                : formatCountrySelection(draft.countryCodes.length))}
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -255,11 +295,16 @@ export default function EditTripScreen() {
 
           <View style={styles.section}>
             <SectionLabel>Datas</SectionLabel>
-            <DateRangePicker value={draft.range} onChange={setRange} />
+            <DateRangePicker
+              value={draft.range}
+              onChange={setRange}
+              maxDurationDays={MAX_TRIP_DURATION_DAYS}
+            />
             <DateRangeSummary
               value={draft.range}
               onClear={() => setRange({ start: null, end: null })}
             />
+            <Text style={styles.hint}>{limits.isValid ? TRIP_DURATION_HINT : limits.message}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -270,7 +315,7 @@ export default function EditTripScreen() {
           label="Salvar alterações"
           onPress={() => void save()}
           loading={busy}
-          disabled={!isDirty || saved || draft.countryCodes.length === 0}
+          disabled={!isDirty || saved || draft.countryCodes.length === 0 || !limits.isValid}
         />
         {!isDirty && !saved ? (
           <Text style={styles.hint}>Altere algo acima para salvar.</Text>
