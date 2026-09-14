@@ -26,8 +26,8 @@ Não entra:
 - Firebase;
 - qualquer notificação que não seja sobre uma viagem.
 
-Dependência nova da feature: **`expo-notifications`**, e só ela. O
-`expo-dev-client` veio depois, junto da preparação de build da §11.
+Dependência nova: **`expo-notifications`**, e só ela — o `expo-dev-client` é
+incompatível com o Expo Go e entra só na hora do build (§11.1).
 
 ## 2. Situação verificada
 
@@ -140,7 +140,7 @@ nenhuma tela.
 
 | Arquivo                                                  | Mudança                                                                                                              |
 | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `package.json`                                           | `expo-notifications` e, para o build, `expo-dev-client`                                                              |
+| `package.json`                                           | `expo-notifications` (o `expo-dev-client` foi removido, §11.1)                                                       |
 | `app.json`                                               | plugin com ícone monocromático e `#6C4EE3`; `bundleIdentifier`/`package`; `projectId` e `owner` vindos do `eas init` |
 | `eas.json`                                               | novo — perfis de build (§11)                                                                                         |
 | `src/features/trips/domain/trip-status.ts`               | `todayISO` passou a aceitar um `Date` opcional, para o domínio de lembretes não duplicar a conversão                 |
@@ -323,7 +323,19 @@ O Expo Go valida o conteúdo, o horário, o cancelamento e a navegação — tud
 que tem decisão de produto. O que sobra depende de um build assinado, porque
 depende da identidade do app.
 
-### 11.1 Antes de gastar o primeiro build
+### 11.1 O `expo-dev-client` só entra na hora do build
+
+Instalar o pacote **quebra o Expo Go**, e o `--go` não salva. O CLI decide o
+scheme dos links em `resolveOptions.js` perguntando apenas se `expo-dev-launcher`
+resolve — a flag não é consultada nessa decisão. Com o pacote presente, o QR
+passa a apontar para `tripready://` e o iPhone abre o navegador em vez do app.
+
+Por isso ele foi removido. Reinstalar com `npx expo install expo-dev-client`
+imediatamente antes do primeiro `eas build --profile development`, que é quando
+o perfil `developmentClient: true` passa a exigi-lo. Enquanto o Expo Go for o
+ambiente de teste, o projeto fica sem ele.
+
+### 11.2 Antes de gastar o primeiro build
 
 **Conferir o App ID do Sign in with Apple.** O app já usa login com Apple, então
 existe um App ID registrado no portal da Apple, com um bundle identifier
@@ -336,7 +348,7 @@ e em `android.package`.
 `buildNumber` sob controle da EAS. No primeiro build ela inicializa a contagem;
 conferir que o número que saiu é o esperado antes de submeter.
 
-### 11.2 O que o dev build finalmente mostra
+### 11.3 O que o dev build finalmente mostra
 
 | Item                           | Situação hoje                                                           |
 | ------------------------------ | ----------------------------------------------------------------------- |
@@ -354,7 +366,7 @@ AsyncStorage do app, que também nasce vazio.
 A entrada `__DEV__` de teste continua disponível no perfil `development`, porque
 ali o bundle ainda roda em modo de desenvolvimento.
 
-### 11.3 Push remoto
+### 11.4 Push remoto
 
 Só depois de o dev build estar de pé, porque push no iOS exige APNs e APNs exige
 a conta paga da Apple. O desenho e o custo estão na §10; some-se a ele:
