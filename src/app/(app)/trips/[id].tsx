@@ -9,6 +9,17 @@ import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { ReminderOptInCard } from '@/features/notifications/components/reminder-opt-in-card';
+import {
+  canAskForReminders,
+  markRemindersAsked,
+  requestReminderPermission,
+} from '@/features/notifications/data/reminder-permission';
+import {
+  cancelTripReminders,
+  scheduleReminderPreview,
+  syncTripReminders,
+} from '@/features/notifications/data/reminder-scheduler';
 import {
   CelebrationOverlay,
   type Celebration,
@@ -75,6 +86,11 @@ export default function TripChecklistScreen() {
   const [expanded, setExpanded] = useState<ReadonlySet<RequirementCategory>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const [showOptIn, setShowOptIn] = useState(false);
+  const [optInBusy, setOptInBusy] = useState(false);
+
+  /** A viagem no formato que o agendador espera. */
+  const reminderTrip = { id: id ?? '', start_date: range.start, end_date: range.end };
 
   /** Menu ••• : edição e exclusão ficam separadas, como ações distintas. */
   function openMenu() {
@@ -86,8 +102,31 @@ export default function TripChecklistScreen() {
         onPress: () => router.push({ pathname: '/trip-edit', params: { tripId: id } }),
       },
       { text: 'Excluir viagem', style: 'destructive', onPress: confirmDelete },
+      // Some do build de produção junto com o `__DEV__`.
+      ...(__DEV__ ? [{ text: 'Testar lembretes', onPress: previewReminders }] : []),
       { text: 'Cancelar', style: 'cancel' },
     ]);
+  }
+
+  /** Só em desenvolvimento: os lembretes reais desta viagem, em segundos. */
+  async function previewReminders() {
+    if (!id) return;
+
+    try {
+      if (!(await requestReminderPermission())) {
+        setNotice('Ative os lembretes nos ajustes do sistema para ver o teste.');
+        return;
+      }
+
+      const count = await scheduleReminderPreview(reminderTrip, requirements);
+      setNotice(
+        count === 0
+          ? 'Esta viagem não tem lembrete para mostrar agora.'
+          : `${count === 1 ? '1 lembrete a caminho' : `${count} lembretes a caminho`}. Feche o app para vê-los.`,
+      );
+    } catch {
+      setNotice('Sua conexão oscilou. Toque no menu para tentar de novo.');
+    }
   }
 
   function confirmDelete() {
@@ -104,6 +143,7 @@ export default function TripChecklistScreen() {
             try {
               // A cascata do banco remove países, cidades e requisitos junto.
               await tripsService.remove(id);
+              await cancelTripReminders(id).catch(() => {});
               router.replace('/trips');
             } catch {
               setNotice('Sua conexão oscilou. Toque no menu para tentar de novo.');
@@ -188,6 +228,43 @@ export default function TripChecklistScreen() {
     }
   }, [isLoading, progress]);
 
+  // O convite espera a checklist carregar: é diante dos itens que ele se
+  // explica. Viagem sem data futura não tem lembrete a oferecer.
+  useEffect(() => {
+    if (isLoading || !range.start) return;
+    if (getTripStatus({ start_date: range.start, end_date: range.end }) !== 'upcoming') return;
+
+    let active = true;
+    void canAskForReminders()
+      .then((canAsk) => {
+        if (active && canAsk) setShowOptIn(true);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [isLoading, range]);
+
+  async function enableReminders() {
+    setOptInBusy(true);
+    try {
+      if (await requestReminderPermission()) {
+        await syncTripReminders(reminderTrip, requirements);
+      }
+    } catch {
+      // Nada a dizer: o app funciona igual sem lembrete.
+    } finally {
+      setOptInBusy(false);
+      setShowOptIn(false);
+    }
+  }
+
+  function dismissReminders() {
+    setShowOptIn(false);
+    void markRemindersAsked().catch(() => {});
+  }
+
   // A estação sai dos países da viagem: dezembro é inverno em Viena e verão no Rio.
   const season = useMemo(
     () =>
@@ -218,14 +295,20 @@ export default function TripChecklistScreen() {
   async function toggle(requirement: TripRequirementWithGroup) {
     const next = !requirement.completed;
 
-    // Atualiza na hora: a checklist reflete o progresso sem esperar a rede.
-    setRequirements((current) =>
-      current.map((item) => (item.id === requirement.id ? { ...item, completed: next } : item)),
+    const updated = requirements.map((item) =>
+      item.id === requirement.id ? { ...item, completed: next } : item,
     );
+
+    // Atualiza na hora: a checklist reflete o progresso sem esperar a rede.
+    setRequirements(updated);
     setNotice(null);
 
     try {
       await tripRequirementsService.setCompleted(requirement.id, next);
+
+      // Aqui, e não só ao voltar para a lista: marcar o último obrigatório
+      // cancela o lembrete de pendência no ato.
+      void syncTripReminders(reminderTrip, updated).catch(() => {});
     } catch {
       setRequirements((current) =>
         current.map((item) =>
@@ -331,6 +414,14 @@ export default function TripChecklistScreen() {
         </View>
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+
+        {showOptIn ? (
+          <ReminderOptInCard
+            onEnable={enableReminders}
+            onDismiss={dismissReminders}
+            busy={optInBusy}
+          />
+        ) : null}
 
         <View style={styles.list}>
           {sections.length === 0 ? (

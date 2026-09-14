@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { useAuth } from '@/features/auth/auth-context';
 import { getAvatarIconSource, getAvatarUrl } from '@/features/auth/user-profile';
+import { useNotificationNavigation } from '@/features/notifications/hooks/use-notification-navigation';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -22,6 +23,9 @@ const tabContentStyle = { backgroundColor: colors.background } as const;
 
 export default function AppLayout() {
   const { user } = useAuth();
+
+  // Aqui, e não no layout raiz: as rotas de viagem só existem deste lado.
+  useNotificationNavigation();
 
   const avatarUrl = getAvatarUrl(user);
   // Memoizado por uma string estável: o expo-router compara a identidade do

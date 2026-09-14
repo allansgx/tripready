@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
+import { syncAllTripReminders } from '@/features/notifications/data/reminder-scheduler';
 import { TripCard } from '@/features/trips/components/trip-card';
 import { TripFilterBar } from '@/features/trips/components/trip-filter-bar';
 import {
@@ -36,6 +37,9 @@ export default function TripsScreen() {
     try {
       const rows = await tripsService.listWithRelations(user.id);
       setSummaries(buildTripSummaries(rows));
+
+      // Reconciliação completa: é aqui que lembrete de viagem excluída some.
+      void syncAllTripReminders(rows).catch(() => {});
     } catch {
       setNeedsRetry(true);
     } finally {

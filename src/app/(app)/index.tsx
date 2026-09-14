@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
+import { syncAllTripReminders } from '@/features/notifications/data/reminder-scheduler';
 import { NextTripHero } from '@/features/trips/components/next-trip-hero';
 import type { FieldPointer } from '@/features/trips/components/season-field';
 import { SeasonalBackdrop } from '@/features/trips/components/seasonal-backdrop';
@@ -58,6 +59,10 @@ export default function HomeScreen() {
       // `buildTripSummaries` já ordena por relevância.
       const { active } = splitTripSections(buildTripSummaries(rows));
       setNextTrip(active[0] ?? null);
+
+      // Sem espera e sem `catch` visível: falha de agendamento não pode
+      // atrapalhar a tela, e a próxima abertura reconcilia de novo.
+      void syncAllTripReminders(rows).catch(() => {});
     } catch {
       setNeedsRetry(true);
     } finally {

@@ -10,8 +10,7 @@ type DateRange = Pick<Trip, 'start_date' | 'end_date'>;
 
 // Partes locais do `Date`, e não `toISOString()`: em fuso negativo o UTC
 // devolveria o dia anterior à noite.
-export function todayISO(): string {
-  const now = new Date();
+export function todayISO(now: Date = new Date()): string {
   const month = `${now.getMonth() + 1}`.padStart(2, '0');
   const day = `${now.getDate()}`.padStart(2, '0');
   return `${now.getFullYear()}-${month}-${day}`;
