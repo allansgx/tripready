@@ -86,59 +86,28 @@ export function suggestTripName(countryCodes: readonly string[]): string {
 }
 
 /** Como cada estação se apresenta na checklist. */
-const SEASONS: Record<
-  Season,
-  { emoji: string; label: string; complement: string; possessive: string; tip: string }
-> = {
-  winter: {
-    emoji: '❄️',
-    label: 'Inverno',
-    complement: 'no inverno',
-    possessive: 'do inverno',
-    tip: 'Vai fazer frio. Um casaco impermeável e boas meias dão conta do dia inteiro.',
-  },
-  spring: {
-    emoji: '🌸',
-    label: 'Primavera',
-    complement: 'na primavera',
-    possessive: 'da primavera',
-    tip: 'Dias floridos com chuvas rápidas. Uma jaqueta leve resolve as duas coisas.',
-  },
-  summer: {
-    emoji: '☀️',
-    label: 'Verão',
-    complement: 'no verão',
-    possessive: 'do verão',
-    tip: 'Sol firme. Protetor solar, roupas leves e uma garrafa de água deixam o passeio melhor.',
-  },
-  autumn: {
-    emoji: '🍂',
-    label: 'Outono',
-    complement: 'no outono',
-    possessive: 'do outono',
-    tip: 'Período de folhas douradas. Leve um casaco leve para as noites mais frescas.',
-  },
+const SEASONS: Record<Season, { emoji: string; label: string; complement: string }> = {
+  winter: { emoji: '❄️', label: 'Inverno', complement: 'no inverno' },
+  spring: { emoji: '🌸', label: 'Primavera', complement: 'na primavera' },
+  summer: { emoji: '☀️', label: 'Verão', complement: 'no verão' },
+  autumn: { emoji: '🍂', label: 'Outono', complement: 'no outono' },
 };
 
-/** As estações em linha: "❄️ Inverno" ou "🍂 Outono · ❄️ Inverno". */
-export function formatSeasonTrail(seasons: readonly Season[]): string | null {
+/** Quantas estações o ano tem: atravessar todas elas é o caso que vira contagem. */
+const SEASON_COUNT = 4;
+
+/** Ícone da viagem que passa pelo ano inteiro, quando nenhuma estação a define. */
+const ALL_SEASONS_EMOJI = '🌎';
+
+/**
+ * As estações da viagem em uma linha: "☀️ Verão" ou "☀️ Verão · 🍂 Outono". Nas
+ * quatro vira "🌎 4 estações", porque a trilha inteira não cabe no cabeçalho.
+ */
+export function formatSeasonContext(seasons: readonly Season[]): string | null {
   if (seasons.length === 0) return null;
+  if (seasons.length >= SEASON_COUNT) return `${ALL_SEASONS_EMOJI} ${SEASON_COUNT} estações`;
 
   return seasons.map((season) => `${SEASONS[season].emoji} ${SEASONS[season].label}`).join(' · ');
-}
-
-export type SeasonTip = {
-  /** "🍂 Dica do outono". */
-  label: string;
-  text: string;
-};
-
-/** A dica da estação de chegada; atravessando duas, vale a primeira. */
-export function formatSeasonTip(seasons: readonly Season[]): SeasonTip | null {
-  if (seasons.length === 0) return null;
-
-  const season = SEASONS[seasons[0]];
-  return { label: `${season.emoji} Dica ${season.possessive}`, text: season.tip };
 }
 
 /** Com duas ou mais estações, empilhar os ícones vira ruído. */

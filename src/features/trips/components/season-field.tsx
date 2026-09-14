@@ -13,10 +13,14 @@ import { useReduceMotion } from '@/lib/animation';
 import { seasonColors } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 
-/** Quantas estações o campo representa ao mesmo tempo. */
-const MAX_SEASONS = 2;
-/** Divisão das partículas quando a viagem atravessa duas estações. */
-const FIRST_SEASON_SHARE = 0.6;
+/** Quantas estações o campo representa com as formas delas. */
+const MAX_SEASONS = 3;
+
+/** Divisão das partículas entre as estações, indexada pela quantidade. */
+const SEASON_SHARES: readonly (readonly number[])[] = [[1], [0.6, 0.4], [0.5, 0.3, 0.2]];
+
+/** Atravessar todas as estações é o caso em que nenhuma forma representa a viagem. */
+const ALL_SEASONS = 4;
 
 /** Teto de partículas: um `useAnimatedStyle` por quadro em cada uma. */
 const MAX_PARTICLES = 16;
@@ -131,6 +135,25 @@ const SEASON_PHYSICS: Record<Season, SeasonPhysics> = {
   },
 };
 
+/**
+ * O campo da viagem que passa pelo ano inteiro: poeira no ar, em tom neutro. É
+ * movimento e passagem de tempo, sem prometer estação nenhuma.
+ */
+const DRIFT_PHYSICS: SeasonPhysics = {
+  kind: 'mote',
+  count: 9,
+  size: [8, 20],
+  opacity: [0.16, 0.28],
+  gravity: [8, 14],
+  terminal: [12, 22],
+  sway: [16, 30],
+  spin: [0, 5],
+  tumble: [0.3, 0.8],
+  flattens: false,
+};
+
+const DRIFT_COLOR = '#9A9AA2';
+
 /** O que cada partícula é — sorteado uma vez e nunca mais alterado. */
 type Descriptor = {
   key: string;
@@ -193,15 +216,34 @@ function pickDepth(random: () => number): number {
   return 0.7 + random() * 0.3;
 }
 
+type FieldPart = { key: string; physics: SeasonPhysics; color: string; share: number };
+
+/** Quem o campo desenha: as estações da viagem, ou a poeira quando são todas. */
+function planField(seasons: readonly Season[]): FieldPart[] {
+  if (seasons.length >= ALL_SEASONS) {
+    return [{ key: 'drift', physics: DRIFT_PHYSICS, color: DRIFT_COLOR, share: 1 }];
+  }
+
+  const chosen = seasons.slice(0, MAX_SEASONS);
+  const shares = SEASON_SHARES[chosen.length - 1];
+
+  return chosen.map((season, index) => ({
+    key: season,
+    physics: SEASON_PHYSICS[season],
+    color: seasonColors[season],
+    share: shares[index],
+  }));
+}
+
 function createDescriptors(
   seasons: readonly Season[],
   seed: string,
   screenArea: number,
 ): Descriptor[] {
-  const chosen = seasons.slice(0, MAX_SEASONS);
-  if (chosen.length === 0) return [];
+  if (seasons.length === 0) return [];
 
-  const planned = chosen.reduce((total, season) => total + SEASON_PHYSICS[season].count, 0);
+  const parts = planField(seasons);
+  const planned = parts.reduce((total, part) => total + part.physics.count, 0);
   const areaScale = Math.min(
     MAX_AREA_SCALE,
     Math.max(MIN_AREA_SCALE, screenArea / AREA_BASE),
@@ -212,18 +254,16 @@ function createDescriptors(
   const between = ([min, max]: [number, number]) => min + random() * (max - min);
   const sign = () => (random() > 0.5 ? 1 : -1);
 
-  const descriptors = chosen.flatMap((season, seasonIndex) => {
-    const physics = SEASON_PHYSICS[season];
-    const share =
-      chosen.length === 1 ? 1 : seasonIndex === 0 ? FIRST_SEASON_SHARE : 1 - FIRST_SEASON_SHARE;
-    const count = Math.max(3, Math.round(physics.count * share * areaScale));
+  const descriptors = parts.flatMap((part) => {
+    const physics = part.physics;
+    const count = Math.max(3, Math.round(physics.count * part.share * areaScale));
 
     return Array.from({ length: count }, (_, index): Descriptor => {
       const depth = pickDepth(random);
 
       return {
-        key: `${season}-${index}`,
-        color: seasonColors[season],
+        key: `${part.key}-${index}`,
+        color: part.color,
         kind: physics.kind,
         size: between(physics.size) * (DEPTH_SIZE_FLOOR + (1 - DEPTH_SIZE_FLOOR) * depth),
         opacity:

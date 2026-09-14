@@ -7,22 +7,15 @@ import { colors, seasonBackdropColors } from '@/theme/tokens';
 import type { Season } from '@/types/models';
 
 /**
- * O ambiente da Home: base quente, halo da estação e partículas, tudo atrás do
+ * O ambiente da Home: base neutra, halo da estação e partículas, tudo atrás do
  * conteúdo e sem receber toque. O halo é um gradiente estático, sem custo por
  * quadro.
  */
 
-/** Opacidade no centro do halo da estação principal. */
+/** Opacidade no centro do halo da estação. */
 const TINT_CORE = 0.13;
 /** Opacidade no meio do halo, antes de ele se dissolver na base. */
 const TINT_MID = 0.05;
-
-/**
- * A segunda estação entra por baixo, mais fraca: uma viagem que atravessa duas
- * estações muda de tom do começo para o fim, sem que a tela vire duas telas.
- */
-const SECOND_TINT_CORE = 0.07;
-const SECOND_TINT_MID = 0.03;
 
 export function SeasonalBackdrop({
   seasons,
@@ -34,40 +27,27 @@ export function SeasonalBackdrop({
   seed: string;
   pointer: SharedValue<FieldPointer>;
 }) {
-  const [first, second] = seasons;
+  // A partir de duas estações o halo mentiria: a viagem não pertence a nenhuma
+  // delas, e o fundo ficaria dizendo que pertence.
+  const tint = seasons.length === 1 ? seasonBackdropColors[seasons[0]] : null;
 
   return (
     // Sem estação a Home volta a ser uma tela comum, no cinza das demais.
-    <View style={[styles.backdrop, first ? styles.seasonal : styles.plain]} pointerEvents="none">
-      {first ? (
+    <View
+      style={[styles.backdrop, seasons.length > 0 ? styles.seasonal : styles.plain]}
+      pointerEvents="none">
+      {tint ? (
         <Svg style={StyleSheet.absoluteFill}>
           <Defs>
             {/* Elipse ancorada no topo, como um clarão de céu. */}
             <RadialGradient id="topTint" cx="50%" cy="0%" rx="90%" ry="55%">
-              <Stop offset="0" stopColor={seasonBackdropColors[first]} stopOpacity={TINT_CORE} />
-              <Stop offset="0.55" stopColor={seasonBackdropColors[first]} stopOpacity={TINT_MID} />
-              <Stop offset="1" stopColor={seasonBackdropColors[first]} stopOpacity={0} />
+              <Stop offset="0" stopColor={tint} stopOpacity={TINT_CORE} />
+              <Stop offset="0.55" stopColor={tint} stopOpacity={TINT_MID} />
+              <Stop offset="1" stopColor={tint} stopOpacity={0} />
             </RadialGradient>
-
-            {second ? (
-              <RadialGradient id="bottomTint" cx="50%" cy="100%" rx="90%" ry="45%">
-                <Stop
-                  offset="0"
-                  stopColor={seasonBackdropColors[second]}
-                  stopOpacity={SECOND_TINT_CORE}
-                />
-                <Stop
-                  offset="0.55"
-                  stopColor={seasonBackdropColors[second]}
-                  stopOpacity={SECOND_TINT_MID}
-                />
-                <Stop offset="1" stopColor={seasonBackdropColors[second]} stopOpacity={0} />
-              </RadialGradient>
-            ) : null}
           </Defs>
 
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#topTint)" />
-          {second ? <Rect x="0" y="0" width="100%" height="100%" fill="url(#bottomTint)" /> : null}
         </Svg>
       ) : null}
 

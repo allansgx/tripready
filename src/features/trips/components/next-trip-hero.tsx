@@ -4,12 +4,8 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { FlagRow } from '@/features/trips/components/flag-row';
-import {
-  formatSeasonTip,
-  formatSeasonTrail,
-  formatTripDates,
-  suggestTripName,
-} from '@/features/trips/domain/trip-format';
+import { pickTravelTips } from '@/features/trips/data/travel-tips';
+import { formatSeasonContext, formatTripDates } from '@/features/trips/domain/trip-format';
 import {
   formatPendingLabel,
   formatProgressLabel,
@@ -45,9 +41,12 @@ const ENTRANCE_DURATION_MS = 420;
 const ENTRANCE_OFFSET = 16;
 const COUNT_UP_DURATION_MS = 1200;
 
-// Bandeiras no cabeçalho do embarque antes de a fila virar lista; o resto vira
-// contagem ao lado.
-const DEPARTURE_FLAGS = 4;
+/** Bandeiras no cabeçalho antes de o resto virar contagem. */
+const HEADER_FLAGS = 3;
+const HEADER_FLAG_SIZE = 18;
+
+/** A dica não fala de estação: os destinos de uma mesma viagem não combinam. */
+const TIP_LABEL = '💡 Dica da viagem';
 
 function useEntrance(reduceMotion: boolean) {
   // Inicializador de `useState`: voltar para a aba não reinicia a animação.
@@ -100,9 +99,9 @@ function useCountUp(target: number | null, animated: boolean): number | null {
 }
 
 /**
- * A próxima viagem ocupando a Home: contagem, preparação, próximo passo e a
- * dica da estação. Embarque e viagem em andamento são variações da mesma
- * composição, não telas separadas.
+ * A próxima viagem ocupando a Home: nome, destinos, estações, contagem,
+ * preparação, próximo passo e uma dica de preparo. Embarque e viagem em
+ * andamento são variações da mesma composição, não telas separadas.
  */
 export function NextTripHero({
   summary,
@@ -122,18 +121,15 @@ export function NextTripHero({
   const entrance = useEntrance(reduceMotion);
   const countingDays = useCountUp(countdown.days, !reduceMotion);
 
+  // `useState`, e não `useMemo`: o React pode recalcular um memo, e aqui isso
+  // seria a dica trocando debaixo do olho de quem lê.
+  const [tip] = useState(() => pickTravelTips(1)[0]);
+
   const isDeparture = countdown.kind === 'today';
   const isOngoing = countdown.kind === 'ongoing';
   const dayCount = buildTripDayCount(trip);
 
-  const seasonTrail = formatSeasonTrail(seasons);
-  const seasonTip = formatSeasonTip(seasons);
-
-  const eyebrow = isDeparture
-    ? 'Embarque hoje'
-    : countdown.kind === 'ongoing'
-      ? 'Sua viagem'
-      : 'Sua próxima viagem';
+  const seasonContext = formatSeasonContext(seasons);
 
   // O leitor de tela ouve "Dia 3 de 7": o número sozinho não carrega a inversão
   // que a tela faz na viagem em andamento.
@@ -143,14 +139,6 @@ export function NextTripHero({
       : countdown.days === null
         ? [countdown.message, countdown.label].filter(Boolean).join('. ')
         : `${countdown.days} ${countdown.days === 1 ? 'dia' : 'dias'} para viajar`;
-
-  // Some quando o nome da viagem já é o próprio destino, que é o nome sugerido
-  // na criação.
-  const destination = countryCodes.length > 0 ? suggestTripName(countryCodes) : null;
-  const showsDestination = destination !== null && destination !== trip.name;
-
-  const departureFlags = countryCodes.slice(0, DEPARTURE_FLAGS);
-  const hiddenFlags = countryCodes.length - departureFlags.length;
 
   const sectionTitle = isOngoing ? 'Na viagem' : isDeparture ? 'Antes de embarcar' : 'Preparação';
   const sectionNote = isOngoing
@@ -185,48 +173,22 @@ export function NextTripHero({
           ],
         },
       ]}>
+      {/* Coluna, e não linha: nada divide a largura com o nome da viagem. */}
       <View style={styles.header}>
-        <View style={styles.identity}>
-          <Text style={styles.eyebrow}>{eyebrow}</Text>
-
-          {isDeparture ? (
-            <View style={styles.flags}>
-              <FlagRow codes={departureFlags} />
-              {hiddenFlags > 0 ? (
-                <View style={styles.flagsChip}>
-                  <Text
-                    style={styles.flagsChipText}
-                    accessibilityLabel={`e mais ${hiddenFlags} ${
-                      hiddenFlags === 1 ? 'destino' : 'destinos'
-                    }`}>
-                    +{hiddenFlags}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          ) : (
-            <>
-              {showsDestination ? (
-                <View style={styles.destination}>
-                  <FlagRow codes={countryCodes} size={15} />
-                  <Text style={styles.destinationName} numberOfLines={1}>
-                    {destination}
-                  </Text>
-                </View>
-              ) : null}
-              <Text style={styles.name} numberOfLines={2}>
-                {trip.name}
-              </Text>
-            </>
-          )}
-        </View>
-
-        {seasonTrail ? (
+        {seasonContext ? (
           <View style={styles.seasonChip}>
             <Text style={styles.seasonChipText} numberOfLines={1}>
-              {seasonTrail}
+              {seasonContext}
             </Text>
           </View>
+        ) : null}
+
+        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+          {trip.name}
+        </Text>
+
+        {countryCodes.length > 0 ? (
+          <FlagRow codes={countryCodes} size={HEADER_FLAG_SIZE} max={HEADER_FLAGS} />
         ) : null}
       </View>
 
@@ -234,11 +196,9 @@ export function NextTripHero({
         <View
           style={styles.departure}
           accessible
-          accessibilityLabel={`Hoje é o dia. ${trip.name}. ${dates}`}>
-          <Text style={styles.departureLabel}>Hoje é o dia</Text>
-
-          <Text style={styles.departureName} numberOfLines={2} adjustsFontSizeToFit>
-            {trip.name}
+          accessibilityLabel={`${countdown.message}. ${dates}`}>
+          <Text style={styles.departureMessage} numberOfLines={1} adjustsFontSizeToFit>
+            {countdown.message}
           </Text>
 
           <View style={styles.dateRule}>
@@ -268,64 +228,64 @@ export function NextTripHero({
         </View>
       )}
 
-      <View style={styles.divider} />
+      {/* A preparação sai do ambiente sazonal e vira superfície: daqui para
+          baixo é conteúdo de trabalho, não mais ambientação. */}
+      <View style={styles.panel}>
+        <View style={styles.preparation}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressTitle}>{sectionTitle}</Text>
+            {showsPercent ? (
+              <Text style={styles.percent}>{progress.percent}%</Text>
+            ) : sectionNote ? (
+              <Text style={styles.sideNote}>{sectionNote}</Text>
+            ) : null}
+          </View>
 
-      <View style={styles.preparation}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>{sectionTitle}</Text>
-          {showsPercent ? (
-            <Text style={styles.percent}>{progress.percent}%</Text>
-          ) : sectionNote ? (
-            <Text style={styles.sideNote}>{sectionNote}</Text>
-          ) : null}
-        </View>
+          {/* Medir preparação é cobrança para quem já está viajando. */}
+          {isOngoing ? null : (
+            <ProgressBar
+              percent={progress.percent}
+              height={5}
+              color={isDeparture ? PRIMARY_CALM : colors.primary}
+            />
+          )}
 
-        {/* Medir preparação é cobrança para quem já está viajando. */}
-        {isOngoing ? null : (
-          <ProgressBar
-            percent={progress.percent}
-            height={5}
-            color={isDeparture ? PRIMARY_CALM : colors.primary}
-          />
-        )}
-
-        <Text style={styles.progressLabel}>
-          {isOngoing ? formatReferenceLabel(progress) : formatProgressLabel(progress)}
-        </Text>
-      </View>
-
-      <View style={styles.nextStep}>
-        <Text style={styles.nextStepLabel}>{nextStepLabel}</Text>
-
-        <View style={styles.nextStepRow}>
-          <Text style={styles.nextStepTitle} numberOfLines={3}>
-            {nextStep
-              ? nextStep.title
-              : progress.isReady
-                ? 'Você já verificou todos os itens importantes.'
-                : 'Veja o que falta conferir antes de viajar.'}
+          <Text style={styles.progressLabel}>
+            {isOngoing ? formatReferenceLabel(progress) : formatProgressLabel(progress)}
           </Text>
+        </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              nextStep ? `Verificar: ${nextStep.title}` : 'Abrir a checklist da viagem'
-            }
-            accessibilityHint="Abre a checklist da viagem"
-            onPress={onOpen}
-            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
-            <Text style={styles.actionLabel}>{nextStep ? 'Verificar' : 'Abrir'}</Text>
-            <Ionicons name="chevron-forward" size={13} color={colors.contrastText} />
-          </Pressable>
+        <View style={styles.nextStep}>
+          <Text style={styles.nextStepLabel}>{nextStepLabel}</Text>
+
+          <View style={styles.nextStepRow}>
+            <Text style={styles.nextStepTitle} numberOfLines={3}>
+              {nextStep
+                ? nextStep.title
+                : progress.isReady
+                  ? 'Você já verificou todos os itens importantes.'
+                  : 'Veja o que falta conferir antes de viajar.'}
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                nextStep ? `Verificar: ${nextStep.title}` : 'Abrir a checklist da viagem'
+              }
+              accessibilityHint="Abre a checklist da viagem"
+              onPress={onOpen}
+              style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
+              <Text style={styles.actionLabel}>{nextStep ? 'Verificar' : 'Abrir'}</Text>
+              <Ionicons name="chevron-forward" size={13} color={colors.contrastText} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.tip}>
+          <Text style={styles.tipLabel}>{TIP_LABEL}</Text>
+          <Text style={styles.tipText}>{tip.text}</Text>
         </View>
       </View>
-
-      {seasonTip ? (
-        <View style={styles.tip}>
-          <Text style={styles.tipLabel}>{seasonTip.label}</Text>
-          <Text style={styles.tipText}>{seasonTip.text}</Text>
-        </View>
-      ) : null}
     </Animated.View>
   );
 }
@@ -338,55 +298,18 @@ const styles = StyleSheet.create({
     gap: BLOCK_GAP,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.md,
   },
-  identity: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  eyebrow: {
-    ...typography.sectionLabel,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-  },
-  destination: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  flags: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  flagsChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    backgroundColor: INK_CHIP,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: INK_LINE,
-  },
-  flagsChipText: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  destinationName: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    flexShrink: 1,
-  },
+  // Uma linha só, com reticências: o nome nunca quebra por causa do resto.
   name: {
-    ...typography.title,
+    ...typography.screenTitle,
     color: colors.text,
+    alignSelf: 'stretch',
+    textAlign: 'center',
   },
   seasonChip: {
-    flexShrink: 1,
+    maxWidth: '100%',
     paddingHorizontal: spacing.md,
     paddingVertical: 5,
     borderRadius: radius.pill,
@@ -432,14 +355,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingTop: spacing.sm,
   },
-  departureLabel: {
-    ...typography.sectionLabel,
-    fontSize: 11,
-    letterSpacing: 1.8,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-  },
-  departureName: {
+  departureMessage: {
     ...typography.departureName,
     color: colors.text,
     textAlign: 'center',
@@ -459,9 +375,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     color: colors.textSecondary,
   },
-  divider: {
-    height: 1,
-    backgroundColor: INK_RULE,
+  // As margens negativas desfazem o respiro da Home — `spacing.xl` nas laterais
+  // e `spacing.xxl` embaixo — para o painel ir de borda a borda e descer até o
+  // fim. O respiro volta como padding aqui dentro.
+  panel: {
+    flexGrow: 1,
+    gap: spacing.xl,
+    marginHorizontal: -spacing.xl,
+    marginBottom: -spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    // A barra de abas do iOS é translúcida e flutua sobre o conteúdo.
+    paddingBottom: spacing.xxl,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   preparation: {
     gap: spacing.sm,
@@ -470,6 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
+    boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.03)',
   },
   progressTitle: {
     ...typography.bodyStrong,
