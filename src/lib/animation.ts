@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Platform } from 'react-native';
+import { AccessibilityInfo, LayoutAnimation, Platform } from 'react-native';
 
 /**
  * Driver nativo do `Animated`, quando a plataforma tem um. Use esta constante
@@ -34,4 +34,20 @@ export function useReduceMotion(): boolean {
   }, []);
 
   return reduceMotion;
+}
+
+/** Quanto dura abrir ou fechar uma seção da checklist, em milissegundos. */
+export const SECTION_TOGGLE_MS = 260;
+
+/**
+ * Transição de layout com `opacity` na entrada e na saída do conteúdo. O
+ * `scaleXY` dos presets encolhe o corpo a partir do canto, o que salta aos
+ * olhos quando o que sai é uma seção inteira.
+ */
+export function layoutTransition(duration = SECTION_TOGGLE_MS) {
+  return LayoutAnimation.create(
+    duration,
+    LayoutAnimation.Types.easeInEaseOut,
+    LayoutAnimation.Properties.opacity,
+  );
 }

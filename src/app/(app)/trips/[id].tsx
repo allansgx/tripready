@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  LayoutAnimation,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccordionSection } from '@/components/ui/accordion-section';
@@ -33,6 +41,8 @@ import {
 } from '@/features/trips/data/checklist-catalog';
 import {
   groupRequirementsByCategory,
+  isSectionComplete,
+  nextPendingCategory,
   tripSeasons,
 } from '@/features/trips/domain/requirement-matching';
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
@@ -42,6 +52,7 @@ import {
   formatProgressLabel,
 } from '@/features/trips/domain/trip-progress';
 import { getTripStatus } from '@/features/trips/domain/trip-status';
+import { layoutTransition, SECTION_TOGGLE_MS, useReduceMotion } from '@/lib/animation';
 import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
 import {
   colors,
@@ -56,6 +67,14 @@ import {
   typography,
 } from '@/theme/tokens';
 import type { RequirementCategory, TripCity, TripCountry } from '@/types/models';
+
+// Uma pausa para a marcação do último item ser vista — a fração da seção fecha
+// a conta — antes de a seção ceder o lugar para a próxima.
+const COMPLETION_BEAT_MS = 360;
+
+function wait(duration: number) {
+  return new Promise((resolve) => setTimeout(resolve, duration));
+}
 
 export default function TripChecklistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -88,6 +107,39 @@ export default function TripChecklistScreen() {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [showOptIn, setShowOptIn] = useState(false);
   const [optInBusy, setOptInBusy] = useState(false);
+
+  const reduceMotion = useReduceMotion();
+
+  // Rolagem até a seção recém-aberta. As posições vêm do `onLayout` de cada
+  // cartão, medidas dentro da lista; o alvo espera a medida chegar atualizada.
+  const scrollRef = useRef<ScrollView>(null);
+  const listTopRef = useRef(0);
+  const sectionTopsRef = useRef(new Map<RequirementCategory, number>());
+  const scrollTargetRef = useRef<RequirementCategory | null>(null);
+  /** Identifica o avanço em curso: um novo toque invalida o anterior. */
+  const advanceRef = useRef(0);
+
+  function consumeScrollTarget(category: RequirementCategory) {
+    if (scrollTargetRef.current !== category) return;
+    scrollTargetRef.current = null;
+
+    const top = sectionTopsRef.current.get(category);
+    if (top === undefined) return;
+
+    scrollRef.current?.scrollTo({
+      y: Math.max(listTopRef.current + top - spacing.lg, 0),
+      animated: !reduceMotion,
+    });
+  }
+
+  function animateSections() {
+    if (!reduceMotion) LayoutAnimation.configureNext(layoutTransition());
+  }
+
+  /** Espera só quando há animação a acompanhar. */
+  function beat(duration: number) {
+    return reduceMotion ? Promise.resolve() : wait(duration);
+  }
 
   /** A viagem no formato que o agendador espera. */
   const reminderTrip = { id: id ?? '', start_date: range.start, end_date: range.end };
@@ -285,11 +337,54 @@ export default function TripChecklistScreen() {
   );
 
   function toggleSection(category: RequirementCategory) {
+    // O toque manual assume o comando e cancela um avanço em curso.
+    advanceRef.current += 1;
+
+    // Seção lá embaixo abre fora da janela: a rolagem leva o cabeçalho para o
+    // topo e os itens aparecem sem o usuário procurar.
+    if (!expanded.has(category)) scrollTargetRef.current = category;
+
     setExpanded((current) => {
       const next = new Set(current);
       if (!next.delete(category)) next.add(category);
       return next;
     });
+  }
+
+  /**
+   * Seção completa fecha e entrega a vez à próxima com item por verificar, um
+   * tempo de cada vez: a marcação se vê, a seção recolhe, a seguinte abre junto
+   * com a rolagem que a traz para a janela.
+   */
+  async function advanceAfterCompleting(
+    category: RequirementCategory,
+    updated: TripRequirementWithGroup[],
+  ) {
+    const grouped = groupRequirementsByCategory(updated, CHECKLIST_CATEGORIES);
+    const section = grouped.find((item) => item.category === category);
+    if (!section || !isSectionComplete(section)) return;
+
+    const following = nextPendingCategory(grouped, category);
+    const run = (advanceRef.current += 1);
+
+    await beat(COMPLETION_BEAT_MS);
+    if (advanceRef.current !== run) return;
+
+    animateSections();
+    setExpanded((current) => {
+      const next = new Set(current);
+      next.delete(category);
+      return next;
+    });
+
+    if (!following) return;
+
+    await beat(SECTION_TOGGLE_MS);
+    if (advanceRef.current !== run) return;
+
+    animateSections();
+    setExpanded((current) => new Set(current).add(following));
+    scrollTargetRef.current = following;
   }
 
   async function toggle(requirement: TripRequirementWithGroup) {
@@ -300,8 +395,11 @@ export default function TripChecklistScreen() {
     );
 
     // Atualiza na hora: a checklist reflete o progresso sem esperar a rede.
+    animateSections();
     setRequirements(updated);
     setNotice(null);
+
+    if (next) void advanceAfterCompleting(requirement.category, updated);
 
     try {
       await tripRequirementsService.setCompleted(requirement.id, next);
@@ -341,8 +439,15 @@ export default function TripChecklistScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       {/* "automatic": sem isso o fim da lista fica sob a tab bar flutuante do iOS. */}
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
+        // Rede de segurança: quando o alvo já estava aberto, o `onLayout` dele
+        // não dispara e só a mudança de altura da lista denuncia o rearranjo.
+        onContentSizeChange={() => {
+          const target = scrollTargetRef.current;
+          if (target) requestAnimationFrame(() => consumeScrollTarget(target));
+        }}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Pressable
@@ -423,37 +528,47 @@ export default function TripChecklistScreen() {
           />
         ) : null}
 
-        <View style={styles.list}>
+        <View
+          style={styles.list}
+          onLayout={(event) => {
+            listTopRef.current = event.nativeEvent.layout.y;
+          }}>
           {sections.length === 0 ? (
             <Text style={styles.hint}>Sua checklist aparece aqui assim que ficar pronta.</Text>
           ) : (
             sections.map((section) => (
-              <AccordionSection
+              <View
                 key={section.category}
-                title={CATEGORY_LABELS[section.category]}
-                icon={
-                  <Ionicons
-                    name={CATEGORY_ICONS[section.category]}
-                    size={18}
-                    color={colors.primary}
-                  />
-                }
-                progress={{ done: section.done, total: section.total }}
-                // Categoria só de informativos não tem fração: uma barra em
-                // zero pareceria trabalho pendente.
-                meta={`${section.items.length} ${section.items.length === 1 ? 'item' : 'itens'}`}
-                expanded={expanded.has(section.category)}
-                onToggle={() => toggleSection(section.category)}>
-                {section.items.map((requirement, index) => (
-                  <RequirementRow
-                    key={requirement.id}
-                    requirement={requirement}
-                    first={index === 0}
-                    onToggle={() => void toggle(requirement)}
-                    onOpen={() => openRequirement(requirement)}
-                  />
-                ))}
-              </AccordionSection>
+                onLayout={(event) => {
+                  sectionTopsRef.current.set(section.category, event.nativeEvent.layout.y);
+                  consumeScrollTarget(section.category);
+                }}>
+                <AccordionSection
+                  title={CATEGORY_LABELS[section.category]}
+                  icon={
+                    <Ionicons
+                      name={CATEGORY_ICONS[section.category]}
+                      size={18}
+                      color={colors.primary}
+                    />
+                  }
+                  progress={{ done: section.done, total: section.total }}
+                  // Categoria só de informativos não tem fração: uma barra em
+                  // zero pareceria trabalho pendente.
+                  meta={`${section.items.length} ${section.items.length === 1 ? 'item' : 'itens'}`}
+                  expanded={expanded.has(section.category)}
+                  onToggle={() => toggleSection(section.category)}>
+                  {section.items.map((requirement, index) => (
+                    <RequirementRow
+                      key={requirement.id}
+                      requirement={requirement}
+                      first={index === 0}
+                      onToggle={() => void toggle(requirement)}
+                      onOpen={() => openRequirement(requirement)}
+                    />
+                  ))}
+                </AccordionSection>
+              </View>
             ))
           )}
         </View>

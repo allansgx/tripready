@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { useReduceMotion } from '@/lib/animation';
+import { layoutTransition, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type AccordionSectionProps = {
@@ -43,7 +43,7 @@ export function AccordionSection({
 
   function toggle() {
     if (!reduceMotion) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      LayoutAnimation.configureNext(layoutTransition());
     }
     onToggle();
   }

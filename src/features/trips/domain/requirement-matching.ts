@@ -669,3 +669,29 @@ export function groupRequirementsByCategory<T extends CategorizedRequirement>(
 
   return sections;
 }
+
+/** Seção sem nada por verificar — informativos incluídos. */
+export function isSectionComplete<T extends CategorizedRequirement>(
+  section: ChecklistCategorySection<T>,
+): boolean {
+  return section.items.every((item) => item.completed);
+}
+
+/**
+ * Para onde a checklist continua quando uma seção fecha completa: a próxima com
+ * item pendente, voltando ao começo se as de baixo já estiverem verificadas.
+ */
+export function nextPendingCategory<T extends CategorizedRequirement>(
+  sections: readonly ChecklistCategorySection<T>[],
+  after: RequirementCategory,
+): RequirementCategory | null {
+  const start = sections.findIndex((section) => section.category === after);
+  if (start < 0) return null;
+
+  for (let step = 1; step <= sections.length; step++) {
+    const section = sections[(start + step) % sections.length];
+    if (!isSectionComplete(section)) return section.category;
+  }
+
+  return null;
+}
