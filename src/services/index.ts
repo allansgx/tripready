@@ -1,3 +1,4 @@
+export { affiliateClicksService } from '@/services/affiliate-clicks';
 export { DataAccessError } from '@/services/errors';
 export { passportsService } from '@/services/passports';
 export { profilesService } from '@/services/profiles';

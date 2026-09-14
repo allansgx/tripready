@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,8 +16,10 @@ import {
   PRIORITY_LABELS,
   type IoniconName,
 } from '@/features/trips/data/checklist-catalog';
+import { buildAffiliateClick } from '@/features/trips/domain/affiliate-click';
 import { describeRequirementScope } from '@/features/trips/domain/requirement-matching';
 import {
+  affiliateClicksService,
   requirementOffersService,
   tripDestinationsService,
   tripRequirementsService,
@@ -40,6 +42,13 @@ const AFFILIATE_DISCLOSURE =
 
 /** Rodapé do bloco de fonte oficial; só em item que tem fonte a citar. */
 const OFFICIAL_REMINDER = 'Confirme sempre nos canais oficiais antes de viajar.';
+
+/**
+ * No iOS o `await` já segura a linha durante toda a visita, porque a promise só
+ * resolve quando o navegador fecha; no Android ela resolve na abertura, e sem
+ * esta espera a linha destravaria com a tela ainda em transição.
+ */
+const OFFER_PRESS_COOLDOWN_MS = 1000;
 
 export default function RequirementDetailScreen() {
   const { requirementId, tripId } = useLocalSearchParams<{
@@ -211,7 +220,7 @@ export default function RequirementDetailScreen() {
             <SectionLabel>Opções para contratar</SectionLabel>
             <View style={styles.offers}>
               {offers.map((offer) => (
-                <OfferRow key={offer.id} offer={offer} />
+                <OfferRow key={offer.id} offer={offer} tripId={requirement.trip_id} />
               ))}
             </View>
             {hasAffiliate ? <Text style={styles.disclosure}>{AFFILIATE_DISCLOSURE}</Text> : null}
@@ -272,16 +281,33 @@ function Header({ onBack }: { onBack: () => void }) {
 }
 
 /** Uma sugestão de onde resolver o requisito. */
-function OfferRow({ offer }: { offer: RequirementOffer }) {
+function OfferRow({ offer, tripId }: { offer: RequirementOffer; tripId: string }) {
   // O ícone vem como nome do Ionicons ou emoji; sem testar, o emoji viraria um
   // quadrado vazio.
   const glyph = offer.icon && offer.icon in Ionicons.glyphMap ? (offer.icon as IoniconName) : null;
+
+  // Toque repetido por ansiedade é uma intenção só, e o registro sai antes do
+  // navegador: invertido, o clique de quem fecha o app de dentro dele sumiria
+  // no iOS, e a métrica diria que iPhone converte menos.
+  const opening = useRef(false);
+
+  async function handlePress() {
+    if (opening.current) return;
+    opening.current = true;
+
+    void affiliateClicksService.record(buildAffiliateClick(offer, tripId));
+    await openLink(offer.url);
+
+    setTimeout(() => {
+      opening.current = false;
+    }, OFFER_PRESS_COOLDOWN_MS);
+  }
 
   return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={`Abrir ${offer.name}`}
-      onPress={() => openLink(offer.url)}
+      onPress={() => void handlePress()}
       style={({ pressed }) => [styles.card, styles.offer, pressed && styles.cardPressed]}>
       <View style={styles.offerIcon}>
         {glyph ? (

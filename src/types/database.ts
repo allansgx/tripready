@@ -504,6 +504,7 @@ export type Database = {
         Row: {
           id: string;
           requirement_template_id: string;
+          partner_code: string;
           name: string;
           description: string | null;
           url: string;
@@ -521,6 +522,7 @@ export type Database = {
         Insert: {
           id?: string;
           requirement_template_id: string;
+          partner_code: string;
           name: string;
           description?: string | null;
           url: string;
@@ -538,6 +540,7 @@ export type Database = {
         Update: {
           id?: string;
           requirement_template_id?: string;
+          partner_code?: string;
           name?: string;
           description?: string | null;
           url?: string;
@@ -558,6 +561,55 @@ export type Database = {
             columns: ['requirement_template_id'];
             isOneToOne: false;
             referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      affiliate_clicks: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          offer_id: string | null;
+          partner_code: string;
+          trip_id: string | null;
+          clicked_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          offer_id?: string | null;
+          partner_code: string;
+          trip_id?: string | null;
+          clicked_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          offer_id?: string | null;
+          partner_code?: string;
+          trip_id?: string | null;
+          clicked_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'affiliate_clicks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'affiliate_clicks_offer_id_fkey';
+            columns: ['offer_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_offers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'affiliate_clicks_trip_id_fkey';
+            columns: ['trip_id'];
+            isOneToOne: false;
+            referencedRelation: 'trips';
             referencedColumns: ['id'];
           },
         ];
