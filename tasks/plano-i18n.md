@@ -1657,9 +1657,70 @@ null` — `null` quando a véspera não tem nada específico a citar (ainda
 
 ### Fase 2 — Países e cidades
 
-10. `scripts/build-country-names.mjs` + overrides curados; `getCountryName`
+10. ✅ `scripts/build-country-names.mjs` + overrides curados; `getCountryName`
     localizado.
-11. Overrides de cidade em `en` e `es`; ordenação por locale.
+11. ✅ Overrides de cidade em `en` e `es`; ordenação por locale.
+
+**Fase 2 concluída.** `scripts/build-country-names.mjs` (novo, `npm run
+countries`), `src/i18n/countries/{pt-BR,en,es}.ts` (gerados),
+`src/i18n/cities/{en,es}.ts` (curados à mão), `constants/countries.ts`,
+`constants/cities.ts`, `constants/destinations.ts` e dois arquivos de teste
+novos/ampliados (`constants/tests/countries.test.ts`,
+`constants/tests/cities.test.ts`).
+
+- **Achado que mudou o desenho do §9.1 durante a implementação**: `getCountry`/
+  `normalizeSearch` são carregados direto por `cities.test.ts` sob
+  `node --test` (já valia antes desta fase) — então `getCountryName` não podia
+  simplesmente chamar `t()`/`getLocale()` de `src/i18n/index.ts`, que importa
+  `expo-localization` e quebraria o teste. A saída foi extrair o estado do
+  idioma ativo (`choice`/`active`/`apply`/`subscribe`, antes só dentro de
+  `index.ts`) para um módulo novo e puro, `src/i18n/active-locale.ts` — sem
+  `expo-localization` nem `AsyncStorage`. `index.ts` passou a delegar todo o
+  estado para lá, mantendo a mesma API pública (`getLocale`, `t`, `useLocale`,
+  `chooseLocale`...); nenhum dos ~30 arquivos que já importavam `@/i18n`
+  precisou mudar. Isso também abriu a porta para `getCountryName(code, locale
+= getActiveLocale())` — parâmetro opcional, então os ~10 pontos de chamada
+  existentes continuaram funcionando sem alteração, e a reatividade continua
+  vindo do `key={locale}` do `_layout.tsx` (sub-etapa 7): trocar de idioma
+  remonta a tela, que lê `getActiveLocale()` de novo.
+- **Verificado, não assumido: a lista pt-BR já era gerada.** Rodei
+  `Intl.DisplayNames(['pt-BR'], {type:'region'})` para os 251 códigos e
+  comparei com a lista curada em `constants/countries.ts` — diferença zero.
+  Por isso `pt-BR.ts` saiu do script sem nenhum override, e `COUNTRIES` (o
+  array antigo) continua existindo, mas só como fonte dos 251 códigos e da
+  base pt-BR que o script lê — nunca mais como texto final: `getCountryName`/
+  `getCountries`/`searchCountries` leem os datasets gerados, no idioma ativo.
+- **12 overrides em `en`** (`&` do CLDR virou "and", como o resto do app
+  escreve por extenso) e nenhum em `es` — o `OVERRIDES` do script existe, mas
+  ficou vazio para es/pt-BR, exatamente como o §9.1 previa ("preservar
+  overrides manuais" é a capacidade, não a obrigação de ter algum).
+- **Um bug pego pelo próprio `tsc`, não por mim**: `codes.map(getCountryName)`
+  em três arquivos (`flag-row.tsx`, `trip-card.tsx`, `trip-format.ts`) parou
+  de compilar assim que `getCountryName` ganhou um segundo parâmetro opcional
+  — o `Array.prototype.map` passa `(value, index, array)`, e `index` (um
+  `number`) caiu no lugar de `locale`. Corrigido para `.map((code) =>
+getCountryName(code))` nos três. Fica registrado porque é o tipo de erro que
+  passaria batido sem o parâmetro ser _obrigatório_ em algum lugar do tipo —
+  aqui o `tsc` pegou porque `number` não é atribuível a `Locale | undefined`.
+- **`destinations.ts` tinha uma lacuna real, fora dos ~10 pontos de chamada
+  do "achado" acima**: `searchDestinations` usava `COUNTRIES` (o array pt-BR
+  cru) direto para o caso de busca vazia e para achar o país por cidade —
+  então limpar a busca ou digitar uma cidade continuava devolvendo nome de
+  país em português com o app em inglês. Troquei pelas versões localizadas
+  (`getCountries()`, `getCitySuggestions()`).
+- **Cidades: 78 overrides em `en`, 44 em `es`** — perto da estimativa do §9.2
+  (~120/~60); boa parte das cerca de 375 sugestões já é igual nos três
+  idiomas (Dubai, Bali, Cancún) e não precisa de entrada nenhuma. `constants/tests/cities.test.ts` ganhou dois testes de integridade
+  que não existiam antes: toda chave de override precisa ser um nome real de
+  `CITY_SUGGESTIONS` (pega override para uma cidade que nunca existiu, por
+  erro de digitação), e nenhum override pode repetir o próprio nome-base (pega
+  um "no-op" esquecido) — os dois já pegaram um erro meu durante a escrita.
+- O trade-off (α) do §9.2 (`trip_cities.city_name` guarda texto, nunca muda de
+  idioma depois de gravado) não mudou: só a lista de _sugestões_ ficou
+  localizada, nenhuma migration, nenhuma linha de `trip_cities` tocada.
+- `npx tsc`, `expo lint`, `prettier --check` e os 214 testes (11 novos) passam.
+  Verificação manual em Android/iOS real fica pendente — o ambiente aqui não
+  roda o Expo Go.
 
 ### Fase 3 — Catálogo do banco
 

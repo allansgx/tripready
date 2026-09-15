@@ -139,7 +139,7 @@ export function suggestTripName(countryCodes: readonly string[]): string {
   const region = REGIONS.find((candidate) => codes.every((code) => candidate.codes.includes(code)));
   if (region) return t(region.labelKey);
 
-  const names = codes.map(getCountryName);
+  const names = codes.map((code) => getCountryName(code));
   if (names.length === 2) return t('trip.name.twoCountries', { a: names[0], b: names[1] });
   return t('trip.name.moreCountries', { a: names[0], b: names[1], count: names.length - 2 });
 }

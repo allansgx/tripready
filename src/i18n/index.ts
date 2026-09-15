@@ -1,6 +1,14 @@
 import { getLocales } from 'expo-localization';
 import { useSyncExternalStore } from 'react';
 
+import {
+  apply,
+  getActiveLocale,
+  getChoice,
+  getDeviceLocale,
+  initDeviceLocale,
+  subscribe,
+} from './active-locale.ts';
 import { DEFAULT_LOCALE, pickLocale, type Locale } from './locales.ts';
 import { resolveMessage, type MessageParams, type Messages } from './message.ts';
 import { messages as en } from './messages/en.ts';
@@ -9,6 +17,7 @@ import { messages as ptBR, type MessageKey } from './messages/pt-BR.ts';
 import { readLocaleChoice, writeLocaleChoice } from './storage.ts';
 
 export type { Locale, MessageKey, MessageParams };
+export { getDeviceLocale };
 
 const DICTIONARIES: Record<Locale, Messages> = { 'pt-BR': ptBR, en, es };
 
@@ -25,41 +34,10 @@ function readDeviceLocale(): Locale {
 }
 
 /** Lido uma vez: a primeira renderização já sai no idioma do aparelho. */
-const deviceLocale = readDeviceLocale();
-
-/** Nulo enquanto a pessoa não escolher — aí vale o aparelho. */
-let choice: Locale | null = null;
-let active: Locale = deviceLocale;
-
-const listeners = new Set<() => void>();
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-function apply(next: Locale | null) {
-  choice = next;
-  active = next ?? deviceLocale;
-  for (const listener of listeners) listener();
-}
-
-function readActive(): Locale {
-  return active;
-}
-
-function readChoice(): Locale | null {
-  return choice;
-}
+initDeviceLocale(readDeviceLocale());
 
 export function getLocale(): Locale {
-  return active;
-}
-
-export function getDeviceLocale(): Locale {
-  return deviceLocale;
+  return getActiveLocale();
 }
 
 /**
@@ -67,17 +45,18 @@ export function getDeviceLocale(): Locale {
  * notificações também produzem texto, e nenhum deles é componente.
  */
 export function t(key: MessageKey, params?: MessageParams): string {
-  return resolveMessage(key, active, DICTIONARIES[active], DICTIONARIES[DEFAULT_LOCALE], params);
+  const locale = getActiveLocale();
+  return resolveMessage(key, locale, DICTIONARIES[locale], DICTIONARIES[DEFAULT_LOCALE], params);
 }
 
 /** Assinar em um ponto alto da árvore é o que faz a troca redesenhar a tela. */
 export function useLocale(): Locale {
-  return useSyncExternalStore(subscribe, readActive, readActive);
+  return useSyncExternalStore(subscribe, getActiveLocale, getActiveLocale);
 }
 
 /** Nulo quando a pessoa segue o aparelho, para a tela marcar a opção certa. */
 export function useLocaleChoice(): Locale | null {
-  return useSyncExternalStore(subscribe, readChoice, readChoice);
+  return useSyncExternalStore(subscribe, getChoice, getChoice);
 }
 
 /** A escolha gravada neste aparelho. Nunca levanta erro. */

@@ -18,7 +18,7 @@ export function FlagRow({
   const visible = codes.slice(0, max);
   const remaining = codes.length - visible.length;
   // O rótulo lista todos: o "+N" corta a linha, não a informação.
-  const label = codes.map(getCountryName).join(', ');
+  const label = codes.map((code) => getCountryName(code)).join(', ');
 
   return (
     <View style={styles.row} accessibilityLabel={label}>

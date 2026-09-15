@@ -77,7 +77,7 @@ export function TripCard({ summary, onPress }: { summary: TripSummary; onPress: 
   const spoken = [
     trip.name,
     momentLabel(moment),
-    countryCodes.map(getCountryName).join(', '),
+    countryCodes.map((code) => getCountryName(code)).join(', '),
     dates,
     isCompleted ? null : fraction,
     progress.requiredPending > 0 && !isCompleted
