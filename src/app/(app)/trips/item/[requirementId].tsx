@@ -37,13 +37,6 @@ import {
 } from '@/theme/tokens';
 import type { RequirementOffer } from '@/types/models';
 
-/** Só aparece quando alguma das ofertas exibidas é de fato afiliada. */
-const AFFILIATE_DISCLOSURE =
-  'Algumas indicações podem gerar comissão para o TripReady, sem custo adicional para você.';
-
-/** Rodapé do bloco de fonte oficial; só em item que tem fonte a citar. */
-const OFFICIAL_REMINDER = 'Confirme sempre nos canais oficiais antes de viajar.';
-
 /**
  * No iOS o `await` já segura a linha durante toda a visita, porque a promise só
  * resolve quando o navegador fecha; no Android ela resolve na abertura, e sem
@@ -92,7 +85,7 @@ export default function RequirementDetailScreen() {
           void loadOffers(item);
         }
       } catch {
-        if (active) setNotice('Sua conexão oscilou. Volte e abra o item de novo.');
+        if (active) setNotice(t('requirement.error.loadRetry'));
       } finally {
         if (active) setIsLoading(false);
       }
@@ -136,7 +129,7 @@ export default function RequirementDetailScreen() {
       setRequirement({ ...requirement, completed: next });
       if (next) goBack();
     } catch {
-      setNotice('Sua conexão oscilou. Toque de novo para salvar.');
+      setNotice(t('requirement.error.toggleRetry'));
     } finally {
       setIsSaving(false);
     }
@@ -158,8 +151,8 @@ export default function RequirementDetailScreen() {
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Header onBack={goBack} />
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>Este item não está mais na sua checklist.</Text>
-          <Button label="Voltar para a viagem" variant="ghost" onPress={goBack} />
+          <Text style={styles.emptyTitle}>{t('requirement.notFound')}</Text>
+          <Button label={t('trips.action.backToTrip')} variant="ghost" onPress={goBack} />
         </View>
       </SafeAreaView>
     );
@@ -224,7 +217,9 @@ export default function RequirementDetailScreen() {
                 <OfferRow key={offer.id} offer={offer} tripId={requirement.trip_id} />
               ))}
             </View>
-            {hasAffiliate ? <Text style={styles.disclosure}>{AFFILIATE_DISCLOSURE}</Text> : null}
+            {hasAffiliate ? (
+              <Text style={styles.disclosure}>{t('requirement.affiliateDisclosure')}</Text>
+            ) : null}
           </View>
         ) : null}
 
@@ -233,7 +228,7 @@ export default function RequirementDetailScreen() {
             <SectionLabel>{t('requirement.section.source')}</SectionLabel>
             <Pressable
               accessibilityRole="link"
-              accessibilityLabel={`Abrir a fonte oficial: ${sourceName}`}
+              accessibilityLabel={t('a11y.requirement.openSource', { name: sourceName })}
               onPress={() => openLink(sourceUrl)}
               style={({ pressed }) => [styles.card, styles.source, pressed && styles.cardPressed]}>
               <Ionicons name="open-outline" size={16} color={colors.primary} />
@@ -246,7 +241,7 @@ export default function RequirementDetailScreen() {
 
         {hasSource ? (
           <View style={styles.reminder}>
-            <Text style={styles.reminderText}>💡 {OFFICIAL_REMINDER}</Text>
+            <Text style={styles.reminderText}>💡 {t('requirement.officialReminder')}</Text>
           </View>
         ) : null}
 
@@ -255,7 +250,7 @@ export default function RequirementDetailScreen() {
 
       <View style={styles.footer}>
         <Button
-          label={requirement.completed ? 'Desmarcar item' : '✓ Marcar como verificado'}
+          label={t(requirement.completed ? 'requirement.uncheckButton' : 'requirement.checkButton')}
           variant={requirement.completed ? 'ghost' : 'primary'}
           loading={isSaving}
           onPress={() => void toggleCompleted()}
@@ -270,13 +265,13 @@ function Header({ onBack }: { onBack: () => void }) {
     <View style={styles.header}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Voltar"
+        accessibilityLabel={t('common.action.back')}
         hitSlop={12}
         onPress={onBack}
         style={styles.back}>
         <Ionicons name="chevron-back" size={22} color={colors.text} />
       </Pressable>
-      <Text style={styles.headerTitle}>Detalhes</Text>
+      <Text style={styles.headerTitle}>{t('trips.detail.title')}</Text>
     </View>
   );
 }
@@ -307,7 +302,7 @@ function OfferRow({ offer, tripId }: { offer: RequirementOffer; tripId: string }
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={`Abrir ${offer.name}`}
+      accessibilityLabel={t('a11y.openItem', { name: offer.name })}
       onPress={() => void handlePress()}
       style={({ pressed }) => [styles.card, styles.offer, pressed && styles.cardPressed]}>
       <View style={styles.offerIcon}>

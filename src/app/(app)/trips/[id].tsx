@@ -157,13 +157,13 @@ export default function TripChecklistScreen() {
 
     showDialog(name, undefined, [
       {
-        text: 'Editar viagem',
+        text: t('trips.action.edit'),
         onPress: () => router.push({ pathname: '/trip-edit', params: { tripId: id } }),
       },
-      { text: 'Excluir viagem', style: 'destructive', onPress: confirmDelete },
+      { text: t('trips.action.delete'), style: 'destructive', onPress: confirmDelete },
       // Some do build de produção junto com o `__DEV__`.
-      ...(__DEV__ ? [{ text: 'Testar lembretes', onPress: previewReminders }] : []),
-      { text: 'Cancelar', style: 'cancel' },
+      ...(__DEV__ ? [{ text: t('trips.menu.testReminders'), onPress: previewReminders }] : []),
+      { text: t('common.action.cancel'), style: 'cancel' },
     ]);
   }
 
@@ -173,44 +173,38 @@ export default function TripChecklistScreen() {
 
     try {
       if (!(await requestReminderPermission())) {
-        setNotice('Ative os lembretes nos ajustes do sistema para ver o teste.');
+        setNotice(t('trips.reminders.permissionNeeded'));
         return;
       }
 
       const count = await scheduleReminderPreview(reminderTrip, requirements);
       setNotice(
-        count === 0
-          ? 'Esta viagem não tem lembrete para mostrar agora.'
-          : `${count === 1 ? '1 lembrete a caminho' : `${count} lembretes a caminho`}. Feche o app para vê-los.`,
+        count === 0 ? t('trips.reminders.none') : t('trips.reminders.scheduled', { count }),
       );
     } catch {
-      setNotice('Sua conexão oscilou. Toque no menu para tentar de novo.');
+      setNotice(t('trips.error.menuRetry'));
     }
   }
 
   function confirmDelete() {
-    showDialog(
-      'Excluir esta viagem?',
-      'Esta viagem e sua checklist serão removidas do seu histórico.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir viagem',
-          style: 'destructive',
-          onPress: async () => {
-            if (!id) return;
-            try {
-              // A cascata do banco remove países, cidades e requisitos junto.
-              await tripsService.remove(id);
-              await cancelTripReminders(id).catch(() => {});
-              router.replace('/trips');
-            } catch {
-              setNotice('Sua conexão oscilou. Toque no menu para tentar de novo.');
-            }
-          },
+    showDialog(t('trips.deleteConfirm.title'), t('trips.deleteConfirm.message'), [
+      { text: t('common.action.cancel'), style: 'cancel' },
+      {
+        text: t('trips.action.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          if (!id) return;
+          try {
+            // A cascata do banco remove países, cidades e requisitos junto.
+            await tripsService.remove(id);
+            await cancelTripReminders(id).catch(() => {});
+            router.replace('/trips');
+          } catch {
+            setNotice(t('trips.error.menuRetry'));
+          }
         },
-      ],
-    );
+      },
+    ]);
   }
 
   // Abertura inicial decidida uma vez por viagem: a primeira categoria com
@@ -243,7 +237,7 @@ export default function TripChecklistScreen() {
         if (first) setExpanded(new Set([first.category]));
       }
     } catch {
-      setNotice('Sua conexão oscilou. Toque em atualizar para ver a checklist.');
+      setNotice(t('trips.checklist.loadRetry'));
     } finally {
       setIsLoading(false);
     }
@@ -273,16 +267,16 @@ export default function TripChecklistScreen() {
 
     if (!previous.complete && complete) {
       setCelebration({
-        title: 'Tudo pronto! 🎉',
-        message: 'Você verificou todos os itens da checklist. Boa viagem!',
+        title: t('trips.celebration.allDone.title'),
+        message: t('trips.celebration.allDone.message'),
       });
       return;
     }
 
     if (!previous.ready && progress.isReady) {
       setCelebration({
-        title: 'Viagem pronta! 🎉',
-        message: 'Você verificou todos os itens obrigatórios.',
+        title: t('trips.celebration.ready.title'),
+        message: t('trips.celebration.ready.message'),
       });
     }
   }, [isLoading, progress]);
@@ -420,7 +414,7 @@ export default function TripChecklistScreen() {
           item.id === requirement.id ? { ...item, completed: requirement.completed } : item,
         ),
       );
-      setNotice('Sua conexão oscilou. Toque no item de novo para salvar.');
+      setNotice(t('trips.checklist.toggleRetry'));
     }
   }
 
@@ -436,7 +430,7 @@ export default function TripChecklistScreen() {
       <SafeAreaView style={styles.screen} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.hint}>Abrindo sua checklist...</Text>
+          <Text style={styles.hint}>{t('trips.checklist.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -459,7 +453,7 @@ export default function TripChecklistScreen() {
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Voltar"
+            accessibilityLabel={t('common.action.back')}
             hitSlop={12}
             onPress={goBackToTrips}
             style={styles.back}>
@@ -481,7 +475,7 @@ export default function TripChecklistScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Opções da viagem"
+            accessibilityLabel={t('a11y.trips.menuOptions')}
             hitSlop={12}
             onPress={openMenu}
             style={styles.menuButton}>
@@ -541,7 +535,7 @@ export default function TripChecklistScreen() {
             listTopRef.current = event.nativeEvent.layout.y;
           }}>
           {sections.length === 0 ? (
-            <Text style={styles.hint}>Sua checklist aparece aqui assim que ficar pronta.</Text>
+            <Text style={styles.hint}>{t('trips.checklist.empty')}</Text>
           ) : (
             sections.map((section) => (
               <View
@@ -562,7 +556,7 @@ export default function TripChecklistScreen() {
                   progress={{ done: section.done, total: section.total }}
                   // Categoria só de informativos não tem fração: uma barra em
                   // zero pareceria trabalho pendente.
-                  meta={`${section.items.length} ${section.items.length === 1 ? 'item' : 'itens'}`}
+                  meta={t('trips.checklist.itemCount', { count: section.items.length })}
                   expanded={expanded.has(section.category)}
                   onToggle={() => toggleSection(section.category)}>
                   {section.items.map((requirement, index) => (
@@ -581,7 +575,11 @@ export default function TripChecklistScreen() {
         </View>
 
         {progress.total === 0 ? (
-          <Button label="Atualizar checklist" variant="ghost" onPress={() => void load()} />
+          <Button
+            label={t('trips.checklist.refresh')}
+            variant="ghost"
+            onPress={() => void load()}
+          />
         ) : null}
       </ScrollView>
 
@@ -597,7 +595,7 @@ function RequiredLine({ progress }: { progress: ReturnType<typeof computeTripPro
   if (progress.isReady) {
     return (
       <Text style={[styles.progressPending, { color: colors.primary }]}>
-        ✓ Tudo certo com os itens obrigatórios!
+        {t('trips.checklist.allRequiredDone')}
       </Text>
     );
   }
@@ -628,7 +626,7 @@ function RequirementRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Abrir ${requirement.title}`}
+      accessibilityLabel={t('a11y.openItem', { name: requirement.title })}
       onPress={onOpen}
       style={({ pressed }) => [
         styles.item,
@@ -638,11 +636,10 @@ function RequirementRow({
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: requirement.completed }}
-        accessibilityLabel={
-          requirement.completed
-            ? `Desmarcar ${requirement.title}`
-            : `Marcar ${requirement.title} como verificado`
-        }
+        accessibilityLabel={t(
+          requirement.completed ? 'a11y.requirement.uncheck' : 'a11y.requirement.check',
+          { title: requirement.title },
+        )}
         hitSlop={8}
         onPress={onToggle}
         style={[styles.checkbox, requirement.completed && styles.checkboxDone]}>

@@ -15,6 +15,7 @@ import {
   type TripFilter,
   type TripSummary,
 } from '@/features/trips/domain/trip-summary';
+import { t } from '@/i18n';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
@@ -62,11 +63,11 @@ export default function TripsScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
         <View style={styles.header}>
-          <Text style={styles.title}>Minhas viagens</Text>
+          <Text style={styles.title}>{t('trips.list.title')}</Text>
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Criar nova viagem"
+            accessibilityLabel={t('a11y.trips.createNew')}
             hitSlop={10}
             onPress={createTrip}
             style={({ pressed }) => [styles.create, pressed && styles.createPressed]}>
@@ -82,12 +83,16 @@ export default function TripsScreen() {
         {isLoading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.hint}>Buscando suas viagens...</Text>
+            <Text style={styles.hint}>{t('trips.list.loading')}</Text>
           </View>
         ) : needsRetry ? (
           <View style={styles.centered}>
-            <Text style={styles.hint}>Sua conexão oscilou. Toque para carregar de novo.</Text>
-            <Button label="Carregar viagens" onPress={() => void load()} variant="ghost" />
+            <Text style={styles.hint}>{t('trips.error.loadRetry')}</Text>
+            <Button
+              label={t('trips.list.loadRetryButton')}
+              onPress={() => void load()}
+              variant="ghost"
+            />
           </View>
         ) : summaries.length === 0 ? (
           <EmptyState onCreate={createTrip} />
@@ -129,18 +134,18 @@ function FilterEmptyState({
     { text: string; label: string; action: () => void }
   > = {
     ongoing: {
-      text: 'Quando sua viagem começar, ela aparece aqui.',
-      label: 'Ver as futuras',
+      text: t('trips.filterEmpty.ongoing.text'),
+      label: t('trips.filterEmpty.ongoing.action'),
       action: () => onSelect('upcoming'),
     },
     upcoming: {
-      text: 'Que tal marcar a próxima?',
-      label: 'Criar viagem',
+      text: t('trips.filterEmpty.upcoming.text'),
+      label: t('trips.action.create'),
       action: onCreate,
     },
     completed: {
-      text: 'Suas viagens concluídas ficam guardadas aqui.',
-      label: 'Ver todas',
+      text: t('trips.filterEmpty.completed.text'),
+      label: t('trips.filterEmpty.completed.action'),
       action: () => onSelect('all'),
     },
   };
@@ -161,12 +166,10 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <View style={styles.emptyIcon}>
         <Ionicons name="airplane" size={30} color={colors.primary} />
       </View>
-      <Text style={styles.emptyTitle}>Você ainda não tem nenhuma viagem</Text>
-      <Text style={styles.emptyText}>
-        Crie sua primeira viagem para descobrir o que precisa verificar antes de embarcar.
-      </Text>
+      <Text style={styles.emptyTitle}>{t('trips.list.emptyTitle')}</Text>
+      <Text style={styles.emptyText}>{t('trips.list.emptyText')}</Text>
       <View style={styles.emptyAction}>
-        <Button label="Criar viagem" onPress={onCreate} />
+        <Button label={t('trips.action.create')} onPress={onCreate} />
       </View>
     </View>
   );

@@ -25,6 +25,7 @@ import {
   splitTripSections,
   type TripSummary,
 } from '@/features/trips/domain/trip-summary';
+import { t } from '@/i18n';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
@@ -133,12 +134,16 @@ export default function HomeScreen() {
           {isLoading ? (
             <View style={styles.status}>
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.hint}>Buscando sua próxima viagem...</Text>
+              <Text style={styles.hint}>{t('trips.home.loading')}</Text>
             </View>
           ) : needsRetry ? (
             <View style={styles.status}>
-              <Text style={styles.hint}>Sua conexão oscilou. Toque para carregar de novo.</Text>
-              <Button label="Carregar viagem" onPress={() => void load()} variant="ghost" />
+              <Text style={styles.hint}>{t('trips.error.loadRetry')}</Text>
+              <Button
+                label={t('trips.home.loadRetryButton')}
+                onPress={() => void load()}
+                variant="ghost"
+              />
             </View>
           ) : nextTrip ? (
             <NextTripHero
@@ -163,13 +168,10 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <View style={styles.emptyIcon}>
         <Ionicons name="airplane" size={30} color={colors.primary} />
       </View>
-      <Text style={styles.emptyTitle}>Para onde você vai?</Text>
-      <Text style={styles.emptyText}>
-        Crie sua viagem e acompanhe aqui a contagem regressiva e tudo o que preparar antes de
-        embarcar.
-      </Text>
+      <Text style={styles.emptyTitle}>{t('trips.home.emptyTitle')}</Text>
+      <Text style={styles.emptyText}>{t('trips.home.emptyText')}</Text>
       <View style={styles.emptyAction}>
-        <Button label="Criar viagem" onPress={onCreate} />
+        <Button label={t('trips.action.create')} onPress={onCreate} />
       </View>
       <TravelTipsCarousel />
     </View>

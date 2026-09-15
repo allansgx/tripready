@@ -352,4 +352,71 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
     other: '{days} days of travel',
   },
   'a11y.dateRange.clear': 'Clear dates',
+
+  'trips.action.create': 'Create trip',
+  'trips.action.edit': 'Edit trip',
+  'trips.action.delete': 'Delete trip',
+  'trips.action.backToTrip': 'Back to the trip',
+  'trips.error.loadRetry': 'Your connection dropped. Tap to load again.',
+  'trips.error.menuRetry': 'Your connection dropped. Tap the menu to try again.',
+  'a11y.openItem': 'Open {name}',
+
+  'trips.home.loading': 'Finding your next trip...',
+  'trips.home.loadRetryButton': 'Load trip',
+  'trips.home.emptyTitle': 'Where are you headed?',
+  'trips.home.emptyText':
+    'Create your trip and track the countdown and everything to prepare before boarding, right here.',
+
+  'trips.list.title': 'My trips',
+  'a11y.trips.createNew': 'Create new trip',
+  'trips.list.loading': 'Finding your trips...',
+  'trips.list.loadRetryButton': 'Load trips',
+  'trips.list.emptyTitle': "You don't have any trips yet",
+  'trips.list.emptyText': 'Create your first trip to find out what to check before boarding.',
+
+  'trips.filterEmpty.ongoing.text': 'Once your trip starts, it shows up here.',
+  'trips.filterEmpty.ongoing.action': 'View upcoming',
+  'trips.filterEmpty.upcoming.text': 'How about planning the next one?',
+  'trips.filterEmpty.completed.text': 'Your completed trips are kept here.',
+  'trips.filterEmpty.completed.action': 'View all',
+
+  'trips.menu.testReminders': 'Test reminders',
+  'trips.reminders.permissionNeeded': 'Turn on reminders in system settings to see the test.',
+  'trips.reminders.none': 'This trip has no reminder to show right now.',
+  'trips.reminders.scheduled': {
+    one: '1 reminder on the way. Close the app to see it.',
+    other: '{count} reminders on the way. Close the app to see them.',
+  },
+
+  'trips.deleteConfirm.title': 'Delete this trip?',
+  'trips.deleteConfirm.message': 'This trip and its checklist will be removed from your history.',
+
+  'trips.checklist.loading': 'Opening your checklist...',
+  'trips.checklist.loadRetry': 'Your connection dropped. Tap refresh to see the checklist.',
+  'trips.checklist.toggleRetry': 'Your connection dropped. Tap the item again to save.',
+  'a11y.trips.menuOptions': 'Trip options',
+  'trips.checklist.empty': 'Your checklist shows up here as soon as it is ready.',
+  'trips.checklist.itemCount': { one: '{count} item', other: '{count} items' },
+  'trips.checklist.refresh': 'Refresh checklist',
+  'trips.checklist.allRequiredDone': "✓ You're all set with the required items!",
+
+  'trips.celebration.allDone.title': 'All done! 🎉',
+  'trips.celebration.allDone.message':
+    "You've checked every item on the checklist. Have a great trip!",
+  'trips.celebration.ready.title': 'Trip ready! 🎉',
+  'trips.celebration.ready.message': "You've checked all the required items.",
+
+  'a11y.requirement.uncheck': 'Uncheck {title}',
+  'a11y.requirement.check': 'Check {title} as done',
+
+  'requirement.affiliateDisclosure':
+    'Some suggestions may earn TripReady a commission, at no extra cost to you.',
+  'requirement.officialReminder': 'Always confirm with official channels before you travel.',
+  'requirement.notFound': "This item isn't on your checklist anymore.",
+  'requirement.error.loadRetry': 'Your connection dropped. Go back and open the item again.',
+  'requirement.error.toggleRetry': 'Your connection dropped. Tap again to save.',
+  'a11y.requirement.openSource': 'Open the official source: {name}',
+  'requirement.uncheckButton': 'Uncheck item',
+  'requirement.checkButton': '✓ Mark as checked',
+  'trips.detail.title': 'Details',
 };

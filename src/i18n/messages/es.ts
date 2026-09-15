@@ -359,4 +359,71 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
     other: '{days} días de viaje',
   },
   'a11y.dateRange.clear': 'Borrar fechas',
+
+  'trips.action.create': 'Crear viaje',
+  'trips.action.edit': 'Editar viaje',
+  'trips.action.delete': 'Eliminar viaje',
+  'trips.action.backToTrip': 'Volver al viaje',
+  'trips.error.loadRetry': 'Tu conexión falló. Toca para cargar de nuevo.',
+  'trips.error.menuRetry': 'Tu conexión falló. Toca el menú para volver a intentar.',
+  'a11y.openItem': 'Abrir {name}',
+
+  'trips.home.loading': 'Buscando tu próximo viaje...',
+  'trips.home.loadRetryButton': 'Cargar viaje',
+  'trips.home.emptyTitle': '¿A dónde vas?',
+  'trips.home.emptyText':
+    'Crea tu viaje y sigue aquí la cuenta regresiva y todo lo que preparar antes de embarcar.',
+
+  'trips.list.title': 'Mis viajes',
+  'a11y.trips.createNew': 'Crear nuevo viaje',
+  'trips.list.loading': 'Buscando tus viajes...',
+  'trips.list.loadRetryButton': 'Cargar viajes',
+  'trips.list.emptyTitle': 'Aún no tienes ningún viaje',
+  'trips.list.emptyText': 'Crea tu primer viaje para descubrir qué verificar antes de embarcar.',
+
+  'trips.filterEmpty.ongoing.text': 'Cuando tu viaje empiece, aparecerá aquí.',
+  'trips.filterEmpty.ongoing.action': 'Ver las próximas',
+  'trips.filterEmpty.upcoming.text': '¿Qué tal planear el próximo?',
+  'trips.filterEmpty.completed.text': 'Tus viajes concluidos se guardan aquí.',
+  'trips.filterEmpty.completed.action': 'Ver todas',
+
+  'trips.menu.testReminders': 'Probar recordatorios',
+  'trips.reminders.permissionNeeded':
+    'Activa los recordatorios en los ajustes del sistema para ver la prueba.',
+  'trips.reminders.none': 'Este viaje no tiene ningún recordatorio para mostrar ahora.',
+  'trips.reminders.scheduled': {
+    one: '1 recordatorio en camino. Cierra la app para verlo.',
+    other: '{count} recordatorios en camino. Cierra la app para verlos.',
+  },
+
+  'trips.deleteConfirm.title': '¿Eliminar este viaje?',
+  'trips.deleteConfirm.message': 'Este viaje y su lista se eliminarán de tu historial.',
+
+  'trips.checklist.loading': 'Abriendo tu lista...',
+  'trips.checklist.loadRetry': 'Tu conexión falló. Toca actualizar para ver la lista.',
+  'trips.checklist.toggleRetry': 'Tu conexión falló. Toca el elemento de nuevo para guardar.',
+  'a11y.trips.menuOptions': 'Opciones del viaje',
+  'trips.checklist.empty': 'Tu lista aparece aquí en cuanto esté lista.',
+  'trips.checklist.itemCount': { one: '{count} elemento', other: '{count} elementos' },
+  'trips.checklist.refresh': 'Actualizar lista',
+  'trips.checklist.allRequiredDone': '✓ ¡Todo listo con los elementos obligatorios!',
+
+  'trips.celebration.allDone.title': '¡Todo listo! 🎉',
+  'trips.celebration.allDone.message': 'Verificaste todos los elementos de la lista. ¡Buen viaje!',
+  'trips.celebration.ready.title': '¡Viaje listo! 🎉',
+  'trips.celebration.ready.message': 'Verificaste todos los elementos obligatorios.',
+
+  'a11y.requirement.uncheck': 'Desmarcar {title}',
+  'a11y.requirement.check': 'Marcar {title} como verificado',
+
+  'requirement.affiliateDisclosure':
+    'Algunas sugerencias pueden generar una comisión para TripReady, sin costo adicional para ti.',
+  'requirement.officialReminder': 'Confirma siempre en los canales oficiales antes de viajar.',
+  'requirement.notFound': 'Este elemento ya no está en tu lista.',
+  'requirement.error.loadRetry': 'Tu conexión falló. Vuelve y abre el elemento de nuevo.',
+  'requirement.error.toggleRetry': 'Tu conexión falló. Toca de nuevo para guardar.',
+  'a11y.requirement.openSource': 'Abrir la fuente oficial: {name}',
+  'requirement.uncheckButton': 'Desmarcar elemento',
+  'requirement.checkButton': '✓ Marcar como verificado',
+  'trips.detail.title': 'Detalles',
 };

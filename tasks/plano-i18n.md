@@ -1324,7 +1324,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 4. ✅ `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
    em vez de frase. Os testes correspondentes são reescritos junto.
 5. ✅ `features/trips/components/*` + `trip-card` + `next-trip-hero`
-6. `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
+6. ✅ `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
 7. `trip-new`, `trip-edit`, `trip-preparing`, `account-deleting`, `auth/callback`
 8. `features/notifications/*`
 9. `travel-tips.ts`, `checklist-catalog.ts`
@@ -1525,6 +1525,41 @@ precisou de mudança aqui. ~35 chaves novas nos seis arquivos restantes
   caixa alta nos três idiomas — sem mudança visual, só saindo do código-fonte.
 - Nenhum arquivo desta sub-etapa precisou de descritor: são todos
   apresentação pura (JSX com `Text`), a mesma categoria de `trip-format.ts`.
+- `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
+
+**Sub-etapa 6 concluída.** As quatro telas de `app/(app)/`: `index.tsx`
+(Home), `trips/index.tsx` (lista), `trips/[id].tsx` (checklist) e
+`trips/item/[requirementId].tsx` (detalhe). ~45 chaves novas.
+
+- **Texto repetido entre telas virou chave compartilhada, não duplicada**:
+  "Sua conexão oscilou. Toque para carregar de novo." (Home e lista) é
+  `trips.error.loadRetry`; "Sua conexão oscilou. Toque no menu para tentar de
+  novo." (menu ••• e exclusão, ambos em `trips/[id].tsx`) é
+  `trips.error.menuRetry`; "Criar viagem" (botão vazio da Home, botão vazio da
+  lista, e a ação do filtro "Futuras" vazio) é `trips.action.create`;
+  "Excluir viagem"/"Editar viagem" (menu ••• e diálogo de confirmação) são
+  `trips.action.delete`/`trips.action.edit`. Todo o resto de "Sua conexão
+  oscilou..." tem uma frase final diferente por tela (atualizar / salvar /
+  tentar de novo) e ficou uma chave por caso — juntar teria exigido um
+  parâmetro só para a ação final, mais complicado que ter cinco chaves curtas.
+- **Texto de `__DEV__` também foi traduzido** ("Testar lembretes" e a
+  mensagem de lembretes agendados, em `trips/[id].tsx`): não roda em produção,
+  mas ainda é texto que a pessoa lê ao testar, e o plano não abre exceção para
+  código atrás de flag.
+- **`a11y.openItem: 'Abrir {name}'`** ficou genérico de propósito: o mesmo
+  padrão "Abrir X" aparecia em `RequirementRow` (abre o detalhe do item) e em
+  `OfferRow` (abre um link externo) — semânticas diferentes, texto idêntico.
+  Já a fonte oficial (`Pressable` de `source_url`) tem uma frase mais longa,
+  "Abrir a fonte oficial: X", e ficou com chave própria
+  (`a11y.requirement.openSource`) em vez de forçar o mesmo molde.
+- `CATEGORY_LABELS`/`PRIORITY_LABELS`/`CATEGORY_ICONS` de
+  `checklist-catalog.ts`, usados em `trips/[id].tsx` e
+  `item/[requirementId].tsx`, não foram tocados — pertencem à sub-etapa 9.
+- Durante a edição tentei mexer por engano em
+  `features/trips/domain/requirement-matching.ts` (arquivo de outra
+  sub-etapa, já concluída); percebi antes de rodar qualquer verificação e
+  desfiz a troca no mesmo passo, então o arquivo saiu deste commit sem
+  diferença.
 - `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
 
 ### Fase 2 — Países e cidades

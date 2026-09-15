@@ -359,6 +359,73 @@ export const messages = {
     other: '{days} dias de viagem',
   },
   'a11y.dateRange.clear': 'Limpar datas',
+
+  'trips.action.create': 'Criar viagem',
+  'trips.action.edit': 'Editar viagem',
+  'trips.action.delete': 'Excluir viagem',
+  'trips.action.backToTrip': 'Voltar para a viagem',
+  'trips.error.loadRetry': 'Sua conexão oscilou. Toque para carregar de novo.',
+  'trips.error.menuRetry': 'Sua conexão oscilou. Toque no menu para tentar de novo.',
+  'a11y.openItem': 'Abrir {name}',
+
+  'trips.home.loading': 'Buscando sua próxima viagem...',
+  'trips.home.loadRetryButton': 'Carregar viagem',
+  'trips.home.emptyTitle': 'Para onde você vai?',
+  'trips.home.emptyText':
+    'Crie sua viagem e acompanhe aqui a contagem regressiva e tudo o que preparar antes de embarcar.',
+
+  'trips.list.title': 'Minhas viagens',
+  'a11y.trips.createNew': 'Criar nova viagem',
+  'trips.list.loading': 'Buscando suas viagens...',
+  'trips.list.loadRetryButton': 'Carregar viagens',
+  'trips.list.emptyTitle': 'Você ainda não tem nenhuma viagem',
+  'trips.list.emptyText':
+    'Crie sua primeira viagem para descobrir o que precisa verificar antes de embarcar.',
+
+  'trips.filterEmpty.ongoing.text': 'Quando sua viagem começar, ela aparece aqui.',
+  'trips.filterEmpty.ongoing.action': 'Ver as futuras',
+  'trips.filterEmpty.upcoming.text': 'Que tal marcar a próxima?',
+  'trips.filterEmpty.completed.text': 'Suas viagens concluídas ficam guardadas aqui.',
+  'trips.filterEmpty.completed.action': 'Ver todas',
+
+  'trips.menu.testReminders': 'Testar lembretes',
+  'trips.reminders.permissionNeeded': 'Ative os lembretes nos ajustes do sistema para ver o teste.',
+  'trips.reminders.none': 'Esta viagem não tem lembrete para mostrar agora.',
+  'trips.reminders.scheduled': {
+    one: '1 lembrete a caminho. Feche o app para vê-los.',
+    other: '{count} lembretes a caminho. Feche o app para vê-los.',
+  },
+
+  'trips.deleteConfirm.title': 'Excluir esta viagem?',
+  'trips.deleteConfirm.message': 'Esta viagem e sua checklist serão removidas do seu histórico.',
+
+  'trips.checklist.loading': 'Abrindo sua checklist...',
+  'trips.checklist.loadRetry': 'Sua conexão oscilou. Toque em atualizar para ver a checklist.',
+  'trips.checklist.toggleRetry': 'Sua conexão oscilou. Toque no item de novo para salvar.',
+  'a11y.trips.menuOptions': 'Opções da viagem',
+  'trips.checklist.empty': 'Sua checklist aparece aqui assim que ficar pronta.',
+  'trips.checklist.itemCount': { one: '{count} item', other: '{count} itens' },
+  'trips.checklist.refresh': 'Atualizar checklist',
+  'trips.checklist.allRequiredDone': '✓ Tudo certo com os itens obrigatórios!',
+
+  'trips.celebration.allDone.title': 'Tudo pronto! 🎉',
+  'trips.celebration.allDone.message': 'Você verificou todos os itens da checklist. Boa viagem!',
+  'trips.celebration.ready.title': 'Viagem pronta! 🎉',
+  'trips.celebration.ready.message': 'Você verificou todos os itens obrigatórios.',
+
+  'a11y.requirement.uncheck': 'Desmarcar {title}',
+  'a11y.requirement.check': 'Marcar {title} como verificado',
+
+  'requirement.affiliateDisclosure':
+    'Algumas indicações podem gerar comissão para o TripReady, sem custo adicional para você.',
+  'requirement.officialReminder': 'Confirme sempre nos canais oficiais antes de viajar.',
+  'requirement.notFound': 'Este item não está mais na sua checklist.',
+  'requirement.error.loadRetry': 'Sua conexão oscilou. Volte e abra o item de novo.',
+  'requirement.error.toggleRetry': 'Sua conexão oscilou. Toque de novo para salvar.',
+  'a11y.requirement.openSource': 'Abrir a fonte oficial: {name}',
+  'requirement.uncheckButton': 'Desmarcar item',
+  'requirement.checkButton': '✓ Marcar como verificado',
+  'trips.detail.title': 'Detalhes',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof messages;
