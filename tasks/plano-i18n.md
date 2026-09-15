@@ -1323,7 +1323,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 3. ✅ `features/passports/*` + `passport-picker` + `onboarding`
 4. ✅ `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
    em vez de frase. Os testes correspondentes são reescritos junto.
-5. `features/trips/components/*` + `trip-card` + `next-trip-hero`
+5. ✅ `features/trips/components/*` + `trip-card` + `next-trip-hero`
 6. `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
 7. `trip-new`, `trip-edit`, `trip-preparing`, `account-deleting`, `auth/callback`
 8. `features/notifications/*`
@@ -1496,6 +1496,35 @@ pendentes"` e `${headline}` montado por concatenação de peças já traduzidas 
   dicionário). Como o texto que passa por esses estilos só é migrado por inteiro
   na sub-etapa 5, a correção fica para lá — misturar agora inflaria o diff desta
   sub-etapa com uma mudança que não tem relação com o contrato do domínio.
+- `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
+
+**Sub-etapa 5 concluída.** Os 12 arquivos de `features/trips/components/`.
+`season-shapes.tsx`, `season-field.tsx` e `seasonal-backdrop.tsx` não tinham
+texto de usuário (só física de partículas e SVG) e ficaram sem alteração.
+`trip-card.tsx` já tinha saído totalmente traduzido da sub-etapa 4 (os ajustes
+cirúrgicos cobriram o arquivo inteiro por acaso, não só as linhas quebradas) e
+`travel-tips-carousel.tsx` também já usava `t()` desde antes — nenhum dos dois
+precisou de mudança aqui. ~35 chaves novas nos seis arquivos restantes
+(`next-trip-hero.tsx`, `city-step.tsx`, `celebration-overlay.tsx`,
+`trip-country-chips.tsx`, `trip-filter-bar.tsx`, `date-range-summary.tsx`).
+
+- **O achado da sub-etapa 4 foi corrigido aqui**: os dois `textTransform:
+'uppercase'` de `next-trip-hero.tsx` (`countdownLabel`, `nextStepLabel`)
+  saíram dos estilos. O texto que passava por eles — os rótulos de
+  `trip.countdown.*.label` e os quatro rótulos de `nextStepLabel`
+  (`✨ Verifique agora` etc.) — já era exibido em caixa alta antes da mudança,
+  então a caixa alta foi movida para dentro do dicionário em vez de
+  desaparecer, mesmo padrão que `SectionLabel` já usa desde a sub-etapa 1.
+  Como `trip.countdown.ongoing.label` (sem `totalDays`) reaproveitava
+  `trip.moment.ongoing` — uma chave também usada por `trip-card.tsx` em
+  contexto que não é caixa alta —, não deu para só maiusculizar o valor
+  existente sem quebrar o card; ganhou uma chave própria,
+  `trip.countdown.ongoingUndated.label`, só para este uso.
+- **`date-range-summary.tsx`** trocou os literais "IDA"/"VOLTA" (que já eram
+  texto solto em caixa alta, sem `textTransform`) por chaves já escritas em
+  caixa alta nos três idiomas — sem mudança visual, só saindo do código-fonte.
+- Nenhum arquivo desta sub-etapa precisou de descritor: são todos
+  apresentação pura (JSX com `Text`), a mesma categoria de `trip-format.ts`.
 - `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
 
 ### Fase 2 — Países e cidades

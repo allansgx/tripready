@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { CountryFlag } from '@/components/ui/country-flag';
 import { getCountryName } from '@/constants/countries';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /** Quantos destinos cabem na linha antes de o resto virar contagem. */
@@ -32,7 +33,7 @@ export function TripCountryChips({ codes }: { codes: readonly string[] }) {
         <View style={[styles.chip, styles.more]}>
           <Text
             style={styles.name}
-            accessibilityLabel={`e mais ${hidden} ${hidden === 1 ? 'destino' : 'destinos'}`}>
+            accessibilityLabel={t('a11y.tripCountryChips.more', { count: hidden })}>
             +{hidden}
           </Text>
         </View>

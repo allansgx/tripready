@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanim
 import { CountryFlag } from '@/components/ui/country-flag';
 import { getCitySuggestions } from '@/constants/cities';
 import { getCountryName, normalizeSearch } from '@/constants/countries';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 export type SelectedCity = { countryCode: string; cityName: string };
@@ -94,7 +95,9 @@ function CountrySection({
     .filter((cityName) => !suggestionKeys.has(normalizeSearch(cityName)));
 
   const summary =
-    selected.length > 0 ? selected.map((city) => city.cityName).join(', ') : 'Nenhuma cidade ainda';
+    selected.length > 0
+      ? selected.map((city) => city.cityName).join(', ')
+      : t('trips.cityStep.none');
 
   function submitDraft() {
     const typed = draft.trim();
@@ -118,7 +121,7 @@ function CountrySection({
           accessibilityRole={collapsible ? 'button' : undefined}
           accessibilityLabel={countryName}
           accessibilityState={collapsible ? { expanded } : undefined}
-          accessibilityHint={collapsible ? 'Mostra as cidades deste país' : undefined}
+          accessibilityHint={collapsible ? t('a11y.cityStep.openCountry') : undefined}
           onPress={collapsible ? onOpen : undefined}
           style={styles.header}>
           <CountryFlag code={code} />
@@ -142,7 +145,7 @@ function CountrySection({
         {onRemoveCountry ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Remover ${countryName} do roteiro`}
+            accessibilityLabel={t('a11y.cityStep.removeCountry', { country: countryName })}
             hitSlop={10}
             onPress={() => onRemoveCountry(code)}
             style={styles.removeButton}>
@@ -187,7 +190,7 @@ function CountrySection({
                 <Pressable
                   key={cityName}
                   accessibilityRole="button"
-                  accessibilityLabel={`Remover ${cityName}`}
+                  accessibilityLabel={t('a11y.cityStep.removeCity', { city: cityName })}
                   onPress={() => onToggle({ countryCode: code, cityName })}
                   style={[styles.chip, styles.chipSelected]}>
                   <Text style={[styles.chipLabel, styles.chipLabelSelected]}>{cityName}</Text>
@@ -204,7 +207,7 @@ function CountrySection({
               ))}
             </View>
           ) : (
-            <Text style={styles.emptyBody}>Cidades a definir neste país.</Text>
+            <Text style={styles.emptyBody}>{t('trips.cityStep.emptyCountry')}</Text>
           )}
 
           {onAdd ? (
@@ -213,9 +216,11 @@ function CountrySection({
                 style={styles.input}
                 value={draft}
                 onChangeText={setDraft}
-                placeholder={
-                  suggestions.length > 0 ? 'Adicionar outra cidade' : 'Digite uma cidade deste país'
-                }
+                placeholder={t(
+                  suggestions.length > 0
+                    ? 'trips.cityStep.addPlaceholder'
+                    : 'trips.cityStep.addPlaceholderEmpty',
+                )}
                 placeholderTextColor={colors.textSecondary}
                 returnKeyType="done"
                 onSubmitEditing={submitDraft}
@@ -223,7 +228,7 @@ function CountrySection({
               />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Adicionar cidade"
+                accessibilityLabel={t('a11y.cityStep.addCity')}
                 onPress={submitDraft}
                 style={styles.addButton}>
                 <Ionicons name="add" size={20} color={colors.primary} />

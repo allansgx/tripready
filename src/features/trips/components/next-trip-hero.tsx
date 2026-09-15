@@ -15,7 +15,7 @@ import {
   type TripCountdown,
 } from '@/features/trips/domain/trip-status';
 import type { TripSummary } from '@/features/trips/domain/trip-summary';
-import { t } from '@/i18n';
+import { t, type MessageKey } from '@/i18n';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 import type { Season } from '@/types/models';
@@ -31,7 +31,10 @@ function countdownText(countdown: TripCountdown): { message: string | null; labe
             message: null,
             label: t('trip.countdown.ongoing.label', { totalDays: countdown.totalDays }),
           }
-        : { message: t('trip.countdown.ongoingUndated.message'), label: t('trip.moment.ongoing') };
+        : {
+            message: t('trip.countdown.ongoingUndated.message'),
+            label: t('trip.countdown.ongoingUndated.label'),
+          };
     case 'undated':
       return {
         message: t('trip.countdown.undated.message'),
@@ -100,9 +103,6 @@ const COUNT_UP_DURATION_MS = 1200;
 /** Bandeiras no cabeçalho antes de o resto virar contagem. */
 const HEADER_FLAGS = 3;
 const HEADER_FLAG_SIZE = 18;
-
-/** A dica não fala de estação: os destinos de uma mesma viagem não combinam. */
-const TIP_LABEL = '💡 Dica da viagem';
 
 function useEntrance(reduceMotion: boolean) {
   // Inicializador de `useState`: voltar para a aba não reinicia a animação.
@@ -197,7 +197,13 @@ export function NextTripHero({
         ? [countdownContent.message, countdownContent.label].filter(Boolean).join('. ')
         : `${countdown.days} ${countdownContent.label}`;
 
-  const sectionTitle = isOngoing ? 'Na viagem' : isDeparture ? 'Antes de embarcar' : 'Preparação';
+  const sectionTitle = t(
+    isOngoing
+      ? 'trip.hero.section.ongoing'
+      : isDeparture
+        ? 'trip.hero.section.departure'
+        : 'trip.hero.section.preparing',
+  );
   const sectionNote = isOngoing
     ? dayCount && returnCountdownText(describeReturnCountdown(dayCount))
     : isDeparture
@@ -206,13 +212,14 @@ export function NextTripHero({
   // A porcentagem é a linguagem da preparação: some junto com ela.
   const showsPercent = !isDeparture && !isOngoing;
 
-  const nextStepLabel = nextStep
+  const nextStepLabelKey: MessageKey = nextStep
     ? isDeparture
-      ? '✨ Verifique agora'
-      : '✨ Próximo passo'
+      ? 'trip.hero.nextStep.checkNow'
+      : 'trip.hero.nextStep.next'
     : progress.isReady
-      ? '🎉 Tudo pronto'
-      : '✨ Comece por aqui';
+      ? 'trip.hero.nextStep.ready'
+      : 'trip.hero.nextStep.start';
+  const nextStepLabel = t(nextStepLabelKey);
 
   return (
     <Animated.View
@@ -322,26 +329,30 @@ export function NextTripHero({
               {nextStep
                 ? nextStep.title
                 : progress.isReady
-                  ? 'Você já verificou todos os itens importantes.'
-                  : 'Veja o que falta conferir antes de viajar.'}
+                  ? t('trip.hero.allChecked')
+                  : t('trip.hero.pendingHint')}
             </Text>
 
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
-                nextStep ? `Verificar: ${nextStep.title}` : 'Abrir a checklist da viagem'
+                nextStep
+                  ? t('a11y.tripHero.checkItem', { title: nextStep.title })
+                  : t('a11y.tripHero.openChecklist')
               }
-              accessibilityHint="Abre a checklist da viagem"
+              accessibilityHint={t('a11y.tripHero.openChecklistHint')}
               onPress={onOpen}
               style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
-              <Text style={styles.actionLabel}>{nextStep ? 'Verificar' : 'Abrir'}</Text>
+              <Text style={styles.actionLabel}>
+                {t(nextStep ? 'common.action.check' : 'common.action.open')}
+              </Text>
               <Ionicons name="chevron-forward" size={13} color={colors.contrastText} />
             </Pressable>
           </View>
         </View>
 
         <View style={styles.tip}>
-          <Text style={styles.tipLabel}>{TIP_LABEL}</Text>
+          <Text style={styles.tipLabel}>{t('trip.hero.tipLabel')}</Text>
           <Text style={styles.tipText}>{tip.text}</Text>
         </View>
       </View>
@@ -402,7 +413,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.8,
     color: colors.textSecondary,
-    textTransform: 'uppercase',
   },
   dates: {
     ...typography.caption,
@@ -491,7 +501,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.2,
     color: colors.primary,
-    textTransform: 'uppercase',
   },
   nextStepRow: {
     flexDirection: 'row',

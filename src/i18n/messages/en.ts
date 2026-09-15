@@ -8,6 +8,10 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'common.action.back': 'Back',
   'common.action.close': 'Close',
   'common.action.ok': 'OK',
+  'common.action.check': 'Check',
+  'common.action.open': 'Open',
+  'common.action.continue': 'Continue',
+  'common.action.clear': 'Clear',
   'common.search.placeholder': 'Search...',
 
   'a11y.avatar.profilePhoto': 'Profile photo',
@@ -230,14 +234,15 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   },
 
   'trip.countdown.today.message': "It's time!",
-  'trip.countdown.today.label': 'Have a great trip!',
-  'trip.countdown.ongoing.label': 'of {totalDays} days',
+  'trip.countdown.today.label': 'HAVE A GREAT TRIP!',
+  'trip.countdown.ongoing.label': 'OF {totalDays} DAYS',
   'trip.countdown.ongoingUndated.message': 'Enjoy!',
+  'trip.countdown.ongoingUndated.label': 'TRIP IN PROGRESS',
   'trip.countdown.undated.message': 'Almost there...',
-  'trip.countdown.undated.label': 'Choose the dates to see the countdown',
+  'trip.countdown.undated.label': 'CHOOSE THE DATES TO SEE THE COUNTDOWN',
   'trip.countdown.tomorrow.message': '1 day left',
-  'trip.countdown.tomorrow.label': 'Last preparations',
-  'trip.countdown.days.label': 'days to go',
+  'trip.countdown.tomorrow.label': 'LAST PREPARATIONS',
+  'trip.countdown.days.label': 'DAYS TO GO',
 
   'trip.returnCountdown.lastDay': 'last day',
   'trip.returnCountdown.tomorrow': 'returns tomorrow',
@@ -300,4 +305,51 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.card.ready': 'Ready 🎉',
 
   'a11y.tripHero.dayOf': 'Day {day} of {total}',
+  'a11y.tripHero.checkItem': 'Check: {title}',
+  'a11y.tripHero.openChecklist': 'Open the trip checklist',
+  'a11y.tripHero.openChecklistHint': 'Opens the trip checklist',
+
+  'trip.hero.section.ongoing': 'On the trip',
+  'trip.hero.section.departure': 'Before boarding',
+  'trip.hero.section.preparing': 'Preparation',
+  'trip.hero.nextStep.checkNow': '✨ CHECK NOW',
+  'trip.hero.nextStep.next': '✨ NEXT STEP',
+  'trip.hero.nextStep.ready': '🎉 ALL SET',
+  'trip.hero.nextStep.start': '✨ START HERE',
+  'trip.hero.allChecked': "You've already checked all the important items.",
+  'trip.hero.pendingHint': 'See what still needs checking before you travel.',
+  'trip.hero.tipLabel': '💡 Trip tip',
+
+  'trips.cityStep.none': 'No cities yet',
+  'trips.cityStep.emptyCountry': 'Cities to be set for this country.',
+  'trips.cityStep.addPlaceholder': 'Add another city',
+  'trips.cityStep.addPlaceholderEmpty': 'Type a city in this country',
+  'a11y.cityStep.openCountry': 'Shows the cities for this country',
+  'a11y.cityStep.removeCountry': 'Remove {country} from the itinerary',
+  'a11y.cityStep.addCity': 'Add city',
+  'a11y.cityStep.removeCity': 'Remove {city}',
+
+  'a11y.celebration.close': 'Close celebration',
+
+  'a11y.tripCountryChips.more': {
+    one: 'and 1 more destination',
+    other: 'and {count} more destinations',
+  },
+
+  'trips.filter.all': 'All',
+  'trips.filter.ongoing': 'Ongoing',
+  'trips.filter.upcoming': 'Upcoming',
+  'trips.filter.completed': 'Completed',
+  'a11y.tripFilter.filterBy': 'Filter by {filter}',
+
+  'trips.dateRange.hint': 'Choose the departure date on the calendar.',
+  'trips.dateRange.depart': 'DEPART',
+  'trips.dateRange.return': 'RETURN',
+  'trips.dateRange.pending': 'to be chosen',
+  'trips.dateRange.chooseReturn': 'Now tap the return date.',
+  'trips.dateRange.duration': {
+    one: '{days} day of travel',
+    other: '{days} days of travel',
+  },
+  'a11y.dateRange.clear': 'Clear dates',
 };

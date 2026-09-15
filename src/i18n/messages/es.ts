@@ -8,6 +8,10 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'common.action.back': 'Volver',
   'common.action.close': 'Cerrar',
   'common.action.ok': 'OK',
+  'common.action.check': 'Verificar',
+  'common.action.open': 'Abrir',
+  'common.action.continue': 'Continuar',
+  'common.action.clear': 'Borrar',
   'common.search.placeholder': 'Buscar...',
 
   'a11y.avatar.profilePhoto': 'Foto de perfil',
@@ -237,14 +241,15 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   },
 
   'trip.countdown.today.message': '¡Llegó la hora!',
-  'trip.countdown.today.label': '¡Buen viaje!',
-  'trip.countdown.ongoing.label': 'de {totalDays} días',
+  'trip.countdown.today.label': '¡BUEN VIAJE!',
+  'trip.countdown.ongoing.label': 'DE {totalDays} DÍAS',
   'trip.countdown.ongoingUndated.message': '¡Disfruta!',
+  'trip.countdown.ongoingUndated.label': 'VIAJE EN CURSO',
   'trip.countdown.undated.message': 'Ya casi...',
-  'trip.countdown.undated.label': 'Elige las fechas para ver la cuenta regresiva',
+  'trip.countdown.undated.label': 'ELIGE LAS FECHAS PARA VER LA CUENTA REGRESIVA',
   'trip.countdown.tomorrow.message': 'Falta 1 día',
-  'trip.countdown.tomorrow.label': 'Últimos preparativos',
-  'trip.countdown.days.label': 'días para viajar',
+  'trip.countdown.tomorrow.label': 'ÚLTIMOS PREPARATIVOS',
+  'trip.countdown.days.label': 'DÍAS PARA VIAJAR',
 
   'trip.returnCountdown.lastDay': 'último día',
   'trip.returnCountdown.tomorrow': 'regresa mañana',
@@ -307,4 +312,51 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.card.ready': '¡Lista! 🎉',
 
   'a11y.tripHero.dayOf': 'Día {day} de {total}',
+  'a11y.tripHero.checkItem': 'Verificar: {title}',
+  'a11y.tripHero.openChecklist': 'Abrir la lista del viaje',
+  'a11y.tripHero.openChecklistHint': 'Abre la lista del viaje',
+
+  'trip.hero.section.ongoing': 'En el viaje',
+  'trip.hero.section.departure': 'Antes de embarcar',
+  'trip.hero.section.preparing': 'Preparación',
+  'trip.hero.nextStep.checkNow': '✨ VERIFICA AHORA',
+  'trip.hero.nextStep.next': '✨ SIGUIENTE PASO',
+  'trip.hero.nextStep.ready': '🎉 TODO LISTO',
+  'trip.hero.nextStep.start': '✨ EMPIEZA AQUÍ',
+  'trip.hero.allChecked': 'Ya verificaste todos los elementos importantes.',
+  'trip.hero.pendingHint': 'Mira qué falta revisar antes de viajar.',
+  'trip.hero.tipLabel': '💡 Consejo del viaje',
+
+  'trips.cityStep.none': 'Aún no hay ciudades',
+  'trips.cityStep.emptyCountry': 'Ciudades por definir en este país.',
+  'trips.cityStep.addPlaceholder': 'Agregar otra ciudad',
+  'trips.cityStep.addPlaceholderEmpty': 'Escribe una ciudad de este país',
+  'a11y.cityStep.openCountry': 'Muestra las ciudades de este país',
+  'a11y.cityStep.removeCountry': 'Quitar {country} del itinerario',
+  'a11y.cityStep.addCity': 'Agregar ciudad',
+  'a11y.cityStep.removeCity': 'Quitar {city}',
+
+  'a11y.celebration.close': 'Cerrar celebración',
+
+  'a11y.tripCountryChips.more': {
+    one: 'y 1 destino más',
+    other: 'y {count} destinos más',
+  },
+
+  'trips.filter.all': 'Todas',
+  'trips.filter.ongoing': 'En curso',
+  'trips.filter.upcoming': 'Próximas',
+  'trips.filter.completed': 'Concluidas',
+  'a11y.tripFilter.filterBy': 'Filtrar por {filter}',
+
+  'trips.dateRange.hint': 'Elige la fecha de ida en el calendario.',
+  'trips.dateRange.depart': 'IDA',
+  'trips.dateRange.return': 'VUELTA',
+  'trips.dateRange.pending': 'por elegir',
+  'trips.dateRange.chooseReturn': 'Ahora toca la fecha de vuelta.',
+  'trips.dateRange.duration': {
+    one: '{days} día de viaje',
+    other: '{days} días de viaje',
+  },
+  'a11y.dateRange.clear': 'Borrar fechas',
 };
