@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/features/auth/auth-context';
+import { t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /**
@@ -29,7 +30,7 @@ export default function AuthCallbackScreen() {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.label}>Concluindo login...</Text>
+      <Text style={styles.label}>{t('auth.callback.loading')}</Text>
     </View>
   );
 }

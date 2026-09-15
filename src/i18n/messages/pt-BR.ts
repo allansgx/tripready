@@ -16,6 +16,8 @@ export const messages = {
   'common.action.open': 'Abrir',
   'common.action.continue': 'Continuar',
   'common.action.clear': 'Limpar',
+  'common.action.change': 'Alterar',
+  'common.action.retry': 'Tentar de novo',
   'common.search.placeholder': 'Buscar...',
 
   'a11y.avatar.profilePhoto': 'Foto do perfil',
@@ -426,6 +428,85 @@ export const messages = {
   'requirement.uncheckButton': 'Desmarcar item',
   'requirement.checkButton': '✓ Marcar como verificado',
   'trips.detail.title': 'Detalhes',
+
+  'trip.name.label': 'Nome da viagem',
+  'trip.countryStep.title': 'Para onde você vai?',
+
+  'trip.new.title.countries': 'Para onde você vai?',
+  'trip.new.title.cities': 'Quais cidades você pretende visitar?',
+  'trip.new.title.dates': 'Quando você vai viajar?',
+  'trip.new.title.name': 'Como quer chamar esta viagem?',
+  'trip.new.subtitle.countries': 'Escolha um ou mais países do seu roteiro.',
+  'trip.new.subtitle.cities':
+    'Escolha as cidades que já estão no plano. Dá para decidir isso depois.',
+  'trip.new.subtitle.dates': 'Toque na data de ida e depois na de volta.',
+  'trip.new.subtitle.name': 'Confira o roteiro e ajuste o nome se quiser.',
+  'trip.new.stepIndicator': 'Etapa {current} de {total}',
+  'trip.new.error.createRetry': 'Sua conexão oscilou. Toque em "Criar viagem" para tentar de novo.',
+  'trip.new.hint.chooseCountry': 'Escolha ao menos um país para continuar.',
+  'trip.new.continueWithCountries': {
+    one: 'Continuar com {count} país',
+    other: 'Continuar com {count} países',
+  },
+  'trip.new.skipForNow': 'Pular por enquanto',
+  'trip.new.continueWithCities': {
+    one: 'Continuar com {count} cidade',
+    other: 'Continuar com {count} cidades',
+  },
+  'trip.new.name.placeholder': 'Minha viagem',
+
+  'trip.review.dates.label': 'DATAS',
+  'trip.review.dates.action': 'Alterar datas',
+  'trip.review.itinerary.label': 'ROTEIRO',
+  'trip.review.itinerary.action': 'Alterar roteiro',
+
+  'trip.edit.error.loadRetry': 'Sua conexão oscilou. Toque em salvar para tentar de novo.',
+  'trip.edit.discardConfirm.title': 'Descartar alterações?',
+  'trip.edit.discardConfirm.message': 'Você tem alterações que ainda não foram salvas.',
+  'trip.edit.discardConfirm.continue': 'Continuar editando',
+  'trip.edit.discardConfirm.discard': 'Descartar',
+  'trip.edit.error.saveRetry':
+    'Sua conexão oscilou. Toque em "Salvar alterações" para tentar de novo.',
+  'trip.edit.loading': 'Abrindo sua viagem...',
+  'trip.edit.countryPicker.subtitle': 'Toque para adicionar ou remover países do roteiro.',
+  'trip.edit.countryPicker.done': 'Concluir seleção',
+  'trip.edit.hint.keepCountry': 'Mantenha ao menos um país no roteiro.',
+  'trip.edit.savedBanner': 'Viagem atualizada! 🎉',
+  'trip.edit.name.placeholder': 'Europa Central',
+  'a11y.tripEdit.removeCountry': 'Remover {country}',
+  'trip.edit.addRemoveCountries': 'Adicionar ou remover países',
+  'trip.edit.save': 'Salvar alterações',
+  'trip.edit.hint.changeToSave': 'Altere algo acima para salvar.',
+
+  'trip.preparing.title.loading': 'Preparando sua checklist...',
+  'trip.preparing.title.done': 'Checklist pronta! 🎉',
+  'trip.preparing.subtitle.loading': 'Estamos organizando o que você precisa verificar.',
+  'trip.preparing.subtitle.done': 'Sua checklist personalizada está pronta.',
+  'trip.preparing.error.retry': 'Sua conexão oscilou. Toque para continuar a preparação.',
+  'trip.preparing.continueButton': 'Continuar preparação',
+  'trip.preparing.viewNow': 'Ver a viagem agora',
+
+  'account.deleting.step.trips': 'Viagens e checklists',
+  'account.deleting.step.passports': 'Passaportes',
+  'account.deleting.step.profile': 'Dados do perfil',
+  'account.deleting.step.account': 'Conta e acesso',
+  'account.deleting.error.connection': 'Sua conexão oscilou. Toque para tentar de novo.',
+  'account.deleting.error.session': 'Sua sessão expirou. Entre de novo para excluir a conta.',
+  'account.deleting.error.unknown': 'Não foi possível concluir agora. Toque para tentar de novo.',
+  'account.deleting.title.loading': 'Excluindo sua conta...',
+  'account.deleting.title.done': 'Conta excluída',
+  'account.deleting.subtitle.loading': 'Estamos removendo seus dados.',
+  'account.deleting.subtitle.done': 'Sua conta e seus dados foram excluídos com sucesso.',
+  'account.deleting.goToLogin': 'Ir para o login',
+  'account.deleting.backToProfile': 'Voltar ao perfil',
+
+  'auth.callback.loading': 'Concluindo login...',
+
+  'app.connectionError': 'Sua conexão oscilou.',
+
+  'tabs.home': 'Início',
+  'tabs.trips': 'Viagens',
+  'tabs.profile': 'Perfil',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof messages;

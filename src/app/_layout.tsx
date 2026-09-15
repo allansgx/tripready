@@ -10,7 +10,7 @@ import { DialogHost } from '@/components/ui/dialog';
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
 import { PassportsProvider, usePassports } from '@/features/passports/passports-context';
 import { SplashOverlay } from '@/features/splash/components/splash-overlay';
-import { loadLocaleChoice, useLocale } from '@/i18n';
+import { loadLocaleChoice, t, useLocale } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -108,8 +108,11 @@ function AppContent() {
   if (session && passportsFailed) {
     return (
       <View style={styles.center}>
-        <Text style={styles.retryText}>Sua conexão oscilou.</Text>
-        <Button label="Tentar de novo" onPress={() => void refreshPassports().catch(() => {})} />
+        <Text style={styles.retryText}>{t('app.connectionError')}</Text>
+        <Button
+          label={t('common.action.retry')}
+          onPress={() => void refreshPassports().catch(() => {})}
+        />
       </View>
     );
   }

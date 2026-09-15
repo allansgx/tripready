@@ -1325,7 +1325,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
    em vez de frase. Os testes correspondentes são reescritos junto.
 5. ✅ `features/trips/components/*` + `trip-card` + `next-trip-hero`
 6. ✅ `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
-7. `trip-new`, `trip-edit`, `trip-preparing`, `account-deleting`, `auth/callback`
+7. ✅ `trip-new`, `trip-edit`, `trip-preparing`, `account-deleting`, `auth/callback`
 8. `features/notifications/*`
 9. `travel-tips.ts`, `checklist-catalog.ts`
 
@@ -1560,6 +1560,38 @@ precisou de mudança aqui. ~35 chaves novas nos seis arquivos restantes
   sub-etapa, já concluída); percebi antes de rodar qualquer verificação e
   desfiz a troca no mesmo passo, então o arquivo saiu deste commit sem
   diferença.
+- `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
+
+**Sub-etapa 7 concluída.** As cinco telas da lista mais `_layout.tsx` e
+`(app)/_layout.tsx`, incluídos por conta própria — ambos estão na lista de
+"Alterados" do §21 do plano, mas nenhum dos nove itens da ordem os cobria
+explicitamente; ficariam sem dono até o fim da Fase 1. ~70 chaves novas.
+
+- **Bug real corrigido antes desta sub-etapa, fora do plano**: trocar de
+  idioma no seletor do perfil não atualizava as telas já montadas — só o
+  próprio seletor, que assina `useLocaleChoice()` diretamente. A causa é o
+  `StaticContainer` do React Navigation, que embrulha o conteúdo de cada tela
+  e ignora re-renderizações do pai quando só os `children` mudam — por isso
+  assinar `useLocale()` só no `_layout.tsx`, como a sub-etapa 0 desenhou,
+  nunca chegava a redesenhar uma tela já em cena. Corrigido com `key={locale}`
+  no `Stack` de `AppContent`: a troca agora remonta a árvore de navegação
+  inteira, o mesmo efeito do reload manual que o problema exigia, mas
+  instantâneo e sem perder sessão/passaportes (esses ficam fora da `key`,
+  achatados em `AuthProvider`/`PassportsProvider`). Commit `c3ab5a7`, separado
+  desta sub-etapa por não ser trabalho de tradução.
+- **`ReviewHeader` (`trip-new.tsx`) parou de computar `.toUpperCase()`/
+  `.toLowerCase()` sobre texto traduzido** — o mesmo problema do
+  `SectionLabel`, só que em JS em vez de `textTransform`. Agora recebe
+  `label` (já em caixa alta) e `a11yLabel` (frase pronta) diretamente do
+  chamador, e o texto do botão ("Alterar") vira `common.action.change`.
+- **Texto repetido virou chave compartilhada**: "Para onde você vai?"
+  (`trip-new` e o seletor de países do `trip-edit`) é `trip.countryStep.title`;
+  "Nome da viagem" (rótulo do campo nos dois fluxos) é `trip.name.label`;
+  "Editar viagem" no cabeçalho do `trip-edit` reaproveita `trips.action.edit`,
+  já criada na sub-etapa 6; "Fechar"/"Voltar"/"Criar viagem" reaproveitam
+  `common.action.close`/`common.action.back`/`trips.action.create`.
+  "Tentar de novo" ganhou `common.action.retry`, usada em `_layout.tsx` e em
+  `account-deleting.tsx`.
 - `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
 
 ### Fase 2 — Países e cidades
