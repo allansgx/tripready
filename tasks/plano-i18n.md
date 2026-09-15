@@ -1321,7 +1321,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 1. ✅ `components/ui/*` (8 arquivos, poucas strings)
 2. ✅ `features/auth/*` + telas `(auth)/*` + `profile/*`
 3. ✅ `features/passports/*` + `passport-picker` + `onboarding`
-4. `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
+4. ✅ `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
    em vez de frase. Os testes correspondentes são reescritos junto.
 5. `features/trips/components/*` + `trip-card` + `next-trip-hero`
 6. `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
@@ -1433,6 +1433,70 @@ de `node --test` a considerar. Pontos que valem registrar:
   cru no momento da varredura. Adicionado como `a11y.passport.openOptions`.
 - `npx tsc`, `expo lint`, `prettier --check` passam; nenhum teste a rodar além
   da suíte completa (201, inalterada).
+
+**Sub-etapa 4 concluída.** `trip-limits.ts`, `trip-progress.ts`, `trip-status.ts`,
+`requirement-matching.ts` (2 pontos) e `trip-format.ts` — os cinco arquivos de
+`features/trips/domain/`. 6 testes reescritos, ~55 chaves novas. Esta foi a
+etapa mais delicada da Fase 1, e o que mudou em relação ao desenho original do
+plano vale registrar com cuidado:
+
+- **`trip-format.ts` não virou descritor — continua devolvendo string, só que
+  chamando `t()` internamente.** O plano (§5.2) previa
+  `summarizeTripSeasons → { season, seasons[], status }`, mas ao chegar na
+  implementação isso se mostrou desnecessário: nenhum teste do projeto trava
+  este arquivo a texto em português (não existe `trip-format.test.ts`), e ele
+  não precisa rodar sob `node --test`. As duas razões que justificam a
+  conversão para descritor em `trip-limits.ts`/`trip-status.ts` — destravar o
+  arquivo para `node --test` e parar de travar teste a idioma — simplesmente
+  não se aplicam aqui. Reclassifiquei o arquivo como **formatador de
+  apresentação**, mesma categoria de `src/i18n/format.ts`: continua morando em
+  `domain/` porque as regras que ele formata (limite de país, status, estação)
+  são daqui, mas não tem mais a obrigação de ficar livre de idioma que os
+  módulos com teste têm. Isso evitou mudar a assinatura de `summarizeTripSeasons`
+  e, com isso, evitou tocar `trips/[id].tsx` para nada além do que já ia mudar.
+  Fica registrado como desvio deliberado do desenho original, não um
+  esquecimento — a essência do princípio ("domínio não hardcoda idioma") continua
+  valendo, só que por uma regra mais específica: "só o que um teste trava a
+  português, ou o que precisa rodar puro, vira descritor".
+- **`requirement-matching.ts` só precisou de dois pontos**: `TRIP_SECTION_LABEL`
+  ('Toda a viagem') virou `label: null` quando `kind === 'trip'`, resolvido pela
+  tela com `t('trips.checklist.wholeTrip')`; e o `localeCompare(a, b, 'pt-BR')`
+  de `groupRequirementsByScope` passou a receber `locale` como parâmetro — a
+  correção que a §7 item 4 do plano já apontava. `groupRequirementsByScope` não
+  tem nenhum consumidor em produção hoje (só `describeRequirementScope` é usado,
+  em `[requirementId].tsx`), mas manteve os testes e a correção mesmo assim: é
+  código já testado e exportado, e a mesma regra vale para quando ganhar uso.
+- **`checkTripLimits` perdeu `message` e ficou só `{ isValid, issue }`,
+  exatamente como o plano previa.** `formatCountrySelection` foi removido do
+  domínio — as duas chamadas (limite estourado, seletor de país) viraram chaves
+  resolvidas na tela. Para não duplicar a resolução de `issue → texto` em
+  `trip-new.tsx` e `trip-edit.tsx` (que compartilham a mesma regra via
+  `useTripDraft`), criei `formatTripLimitMessage(issue, max)` em `trip-format.ts`
+  — reaproveitando a reclassificação do arquivo como formatador — em vez de
+  duplicar o mapa `issue → chave` nos dois arquivos.
+- **`buildTripMoment`/`buildTripCountdown` viraram descritores exatamente como
+  o plano desenhou** (`{ tone, kind, days?, months? }` e
+  `{ kind, days, totalDays? }`), e `formatReturnCountdown` virou
+  `describeReturnCountdown` (`{ kind, days? }`) — não estava no texto do plano,
+  mas é a mesma mudança de forma, e ficou inconsistente deixá-la de fora.
+- **Efeito borboleta esperado e absorvido**: mudar as quatro assinaturas quebrou
+  compilação em `trip-new.tsx`, `trip-edit.tsx`, `trip-card.tsx`,
+  `next-trip-hero.tsx` e `trips/[id].tsx` — todos de sub-etapas futuras (5, 6 e
+  7). Cada um recebeu só as linhas especificamente quebradas resolvidas com
+  `t()`, nunca a migração completa do arquivo, que continua para a sub-etapa
+  correspondente. `trip-card.tsx` e `next-trip-hero.tsx` também tinham dois
+  bugs de concatenação preexistentes ao lado do que quebrou — `${pending}
+pendentes"` e `${headline}` montado por concatenação de peças já traduzidas —
+  corrigidos com chaves de frase inteira (`trips.requiredPendingCount`,
+  `a11y.tripHero.dayOf`) em vez de perpetuados.
+- **Achado fora do escopo, registrado e não corrigido agora**:
+  `next-trip-hero.tsx` tem `textTransform: 'uppercase'` em dois estilos
+  (`countdownLabel`, `nextStepLabel`) — a mesma violação que `SectionLabel` já
+  tinha na sub-etapa 1 (capitalização não pode vir de `textTransform`, só do
+  dicionário). Como o texto que passa por esses estilos só é migrado por inteiro
+  na sub-etapa 5, a correção fica para lá — misturar agora inflaria o diff desta
+  sub-etapa com uma mudança que não tem relação com o contrato do domínio.
+- `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
 
 ### Fase 2 — Países e cidades
 

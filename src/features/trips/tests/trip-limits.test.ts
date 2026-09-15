@@ -4,11 +4,8 @@ import test from 'node:test';
 import {
   canAddCountry,
   checkTripLimits,
-  formatCountrySelection,
   MAX_TRIP_COUNTRIES,
   MAX_TRIP_DURATION_DAYS,
-  TRIP_DURATION_HINT,
-  TRIP_LIMIT_MESSAGES,
 } from '../domain/trip-limits.ts';
 
 /** Códigos de dois caracteres, quantos o teste pedir. */
@@ -45,7 +42,7 @@ test('o teto de países é permitido', () => {
   assert.equal(result.issue, null);
 });
 
-test('um país acima do teto não passa, e a frase diz o limite', () => {
+test('um país acima do teto não passa', () => {
   const result = checkTripLimits({
     countryCodes: countries(MAX_TRIP_COUNTRIES + 1),
     startDate: null,
@@ -54,7 +51,6 @@ test('um país acima do teto não passa, e a frase diz o limite', () => {
 
   assert.equal(result.isValid, false);
   assert.equal(result.issue, 'countries');
-  assert.equal(result.message, TRIP_LIMIT_MESSAGES.countries);
 });
 
 test('uma viagem curta passa', () => {
@@ -87,7 +83,6 @@ test('um dia acima da duração máxima não passa', () => {
 
   assert.equal(result.isValid, false);
   assert.equal(result.issue, 'duration');
-  assert.equal(result.message, TRIP_LIMIT_MESSAGES.duration);
 });
 
 test('volta antes da ida não passa', () => {
@@ -147,20 +142,7 @@ test('o país já escolhido pode sair mesmo no teto', () => {
   assert.equal(canAddCountry(chosen.slice(0, -1), 'ZZ'), true);
 });
 
-test('o contador muda de frase ao encostar no teto', () => {
-  assert.equal(formatCountrySelection(1), '1 país selecionado');
-  assert.equal(formatCountrySelection(8), '8 países selecionados');
-  assert.equal(
-    formatCountrySelection(MAX_TRIP_COUNTRIES),
-    `${MAX_TRIP_COUNTRIES} de ${MAX_TRIP_COUNTRIES} países`,
-  );
-});
-
-test('os limites são os do produto e as frases saem deles', () => {
+test('os limites são os do produto', () => {
   assert.equal(MAX_TRIP_COUNTRIES, 20);
   assert.equal(MAX_TRIP_DURATION_DAYS, 180);
-
-  assert.ok(TRIP_LIMIT_MESSAGES.countries.includes(String(MAX_TRIP_COUNTRIES)));
-  assert.ok(TRIP_LIMIT_MESSAGES.duration.includes(String(MAX_TRIP_DURATION_DAYS)));
-  assert.ok(TRIP_DURATION_HINT.includes(String(MAX_TRIP_DURATION_DAYS)));
 });

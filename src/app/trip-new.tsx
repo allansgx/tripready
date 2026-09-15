@@ -21,15 +21,28 @@ import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { CityStep } from '@/features/trips/components/city-step';
 import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import { createTripWithDestinations } from '@/features/trips/data/trip-persistence';
+import { formatTripLimitMessage } from '@/features/trips/domain/trip-format';
 import {
   canAddCountry,
   checkTripLimits,
+  MAX_TRIP_COUNTRIES,
   MAX_TRIP_DURATION_DAYS,
-  TRIP_DURATION_HINT,
-  TRIP_LIMIT_MESSAGES,
+  type TripLimitIssue,
 } from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
+import { t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
+
+const LIMIT_MESSAGE_MAX: Partial<Record<TripLimitIssue, number>> = {
+  countries: MAX_TRIP_COUNTRIES,
+  duration: MAX_TRIP_DURATION_DAYS,
+};
+
+/** Frase do limite estourado; nula quando a viagem está dentro deles. */
+function limitMessage(issue: TripLimitIssue | null): string | null {
+  if (!issue) return null;
+  return formatTripLimitMessage(issue, LIMIT_MESSAGE_MAX[issue]);
+}
 
 const STEPS = ['countries', 'cities', 'dates', 'name'] as const;
 type Step = (typeof STEPS)[number];
@@ -91,7 +104,7 @@ export default function NewTripScreen() {
   // explica por que aquele toque não marcou nada.
   function selectCountry(country: Country) {
     if (!canAddCountry(countryCodes, country.code)) {
-      setNotice(TRIP_LIMIT_MESSAGES.countries);
+      setNotice(t('trip.limit.countries', { max: MAX_TRIP_COUNTRIES }));
       return;
     }
     setNotice(null);
@@ -110,7 +123,7 @@ export default function NewTripScreen() {
     // Última barreira antes de gravar: nenhum caminho da tela pode criar uma
     // viagem fora dos limites.
     if (!limits.isValid) {
-      setNotice(limits.message);
+      setNotice(limitMessage(limits.issue));
       return;
     }
 
@@ -205,7 +218,9 @@ export default function NewTripScreen() {
                   onClear={() => setRange({ start: null, end: null })}
                 />
                 <Text style={styles.hint}>
-                  {limits.isValid ? TRIP_DURATION_HINT : limits.message}
+                  {limits.isValid
+                    ? t('trip.limit.durationHint', { max: MAX_TRIP_DURATION_DAYS })
+                    : limitMessage(limits.issue)}
                 </Text>
               </View>
             ) : null}

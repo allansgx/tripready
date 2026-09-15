@@ -28,18 +28,29 @@ import {
   updateTripWithDestinations,
   type TripEditBaseline,
 } from '@/features/trips/data/trip-persistence';
+import { formatTripLimitMessage } from '@/features/trips/domain/trip-format';
 import {
   canAddCountry,
   checkTripLimits,
-  formatCountrySelection,
+  MAX_TRIP_COUNTRIES,
   MAX_TRIP_DURATION_DAYS,
-  TRIP_DURATION_HINT,
-  TRIP_LIMIT_MESSAGES,
+  type TripLimitIssue,
 } from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { t } from '@/i18n';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+
+const LIMIT_MESSAGE_MAX: Partial<Record<TripLimitIssue, number>> = {
+  countries: MAX_TRIP_COUNTRIES,
+  duration: MAX_TRIP_DURATION_DAYS,
+};
+
+/** Frase do limite estourado; nula quando a viagem está dentro deles. */
+function limitMessage(issue: TripLimitIssue | null): string | null {
+  if (!issue) return null;
+  return formatTripLimitMessage(issue, LIMIT_MESSAGE_MAX[issue]);
+}
 
 /** O nome cabe no card da lista e no destaque da Home; acima disso, não cabe. */
 const NAME_MAX_LENGTH = 60;
@@ -119,7 +130,7 @@ export default function EditTripScreen() {
   // não marcou nada.
   function selectCountry(country: Country) {
     if (!canAddCountry(draft.countryCodes, country.code)) {
-      setNotice(TRIP_LIMIT_MESSAGES.countries);
+      setNotice(formatTripLimitMessage('countries', MAX_TRIP_COUNTRIES));
       return;
     }
     setNotice(null);
@@ -144,7 +155,7 @@ export default function EditTripScreen() {
     // Última barreira antes de gravar: editar não pode levar a viagem para fora
     // dos limites.
     if (!limits.isValid) {
-      setNotice(limits.message);
+      setNotice(limitMessage(limits.issue));
       return;
     }
 
@@ -207,7 +218,9 @@ export default function EditTripScreen() {
             {notice ??
               (draft.countryCodes.length === 0
                 ? 'Mantenha ao menos um país no roteiro.'
-                : formatCountrySelection(draft.countryCodes.length))}
+                : draft.countryCodes.length >= MAX_TRIP_COUNTRIES
+                  ? t('trip.countrySelection.atLimit', { max: MAX_TRIP_COUNTRIES })
+                  : t('trip.countrySelection', { count: draft.countryCodes.length }))}
           </Text>
         </View>
       </SafeAreaView>
@@ -305,7 +318,11 @@ export default function EditTripScreen() {
               value={draft.range}
               onClear={() => setRange({ start: null, end: null })}
             />
-            <Text style={styles.hint}>{limits.isValid ? TRIP_DURATION_HINT : limits.message}</Text>
+            <Text style={styles.hint}>
+              {limits.isValid
+                ? t('trip.limit.durationHint', { max: MAX_TRIP_DURATION_DAYS })
+                : limitMessage(limits.issue)}
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -46,12 +46,9 @@ import {
   tripSeasons,
 } from '@/features/trips/domain/requirement-matching';
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
-import {
-  computeTripProgress,
-  formatPendingRequiredLabel,
-  formatProgressLabel,
-} from '@/features/trips/domain/trip-progress';
+import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
 import { getTripStatus } from '@/features/trips/domain/trip-status';
+import { t } from '@/i18n';
 import { layoutTransition, SECTION_TOGGLE_MS, useReduceMotion } from '@/lib/animation';
 import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
 import {
@@ -74,6 +71,16 @@ const COMPLETION_BEAT_MS = 360;
 
 function wait(duration: number) {
   return new Promise((resolve) => setTimeout(resolve, duration));
+}
+
+/** "8 de 11 itens verificados", sempre no mesmo formato. */
+function progressLabel(progress: TripProgress): string {
+  if (progress.total === 0) return t('trips.progress.empty');
+  return t('trips.progress.checked', {
+    count: progress.total,
+    done: progress.done,
+    total: progress.total,
+  });
 }
 
 export default function TripChecklistScreen() {
@@ -496,7 +503,7 @@ export default function TripChecklistScreen() {
           <View style={styles.progressRow}>
             <ProgressRing percent={progress.percent} />
             <View style={styles.progressTexts}>
-              <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
+              <Text style={styles.progressLabel}>{progressLabel(progress)}</Text>
               <RequiredLine progress={progress} />
             </View>
           </View>
@@ -595,12 +602,11 @@ function RequiredLine({ progress }: { progress: ReturnType<typeof computeTripPro
     );
   }
 
-  const pending = formatPendingRequiredLabel(progress);
-  if (!pending) return null;
+  if (progress.requiredPending === 0) return null;
 
   return (
     <Text style={[styles.progressPending, { color: priorityColors.required }]}>
-      {pending} {progress.requiredPending === 1 ? 'pendente' : 'pendentes'}
+      {t('trips.requiredPendingCount', { count: progress.requiredPending })}
     </Text>
   );
 }

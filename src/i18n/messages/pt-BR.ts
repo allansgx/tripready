@@ -199,6 +199,114 @@ export const messages = {
   'onboarding.title': 'Qual passaporte você usa para viajar?',
   'onboarding.subtitle':
     'Usamos essa informação para descobrir os requisitos de cada destino. Você pode adicionar outros passaportes depois, no seu perfil.',
+
+  'trip.limit.countries': 'Você pode adicionar até {max} países por viagem.',
+  'trip.limit.duration': 'Escolha um período de até {max} dias.',
+  'trip.limit.range': 'Escolha a data de volta a partir da data de ida.',
+  'trip.limit.durationHint': 'Até {max} dias por viagem',
+  'trip.countrySelection.atLimit': '{max} de {max} países',
+  'trip.countrySelection': {
+    one: '{count} país selecionado',
+    other: '{count} países selecionados',
+  },
+
+  'trips.progress.empty': 'Checklist em preparação',
+  'trips.progress.checked': {
+    one: '{done} de {total} item verificado',
+    other: '{done} de {total} itens verificados',
+  },
+  'trips.progress.fraction': { one: '{done}/{total} item', other: '{done}/{total} itens' },
+  'trips.progress.pending': {
+    one: '{count} item pendente',
+    other: '{count} itens pendentes',
+  },
+  'trips.progress.allChecked': 'Tudo verificado',
+  'trips.progress.referenceEmpty': 'Sua checklist continua à mão.',
+  'trips.progress.reference': {
+    one: '1 informação para consultar quando precisar.',
+    other: '{count} informações para consultar quando precisar.',
+  },
+  'trips.progress.requiredPending': { one: '1 obrigatório', other: '{count} obrigatórios' },
+
+  'trip.moment.completed': 'Concluída',
+  'trip.moment.boardingToday': 'Embarque hoje',
+  'trip.moment.ongoing': 'Viagem em andamento',
+  'trip.moment.undated': 'Escolha as datas',
+  'trip.moment.tomorrow': 'Começa amanhã',
+  'trip.moment.daysUntil': 'Começa em {days} dias',
+  'trip.moment.monthsUntil': { one: 'Começa em {months} mês', other: 'Começa em {months} meses' },
+
+  'trip.countdown.today.message': 'Chegou a hora!',
+  'trip.countdown.today.label': 'Boa viagem!',
+  'trip.countdown.ongoing.label': 'de {totalDays} dias',
+  'trip.countdown.ongoingUndated.message': 'Aproveite!',
+  'trip.countdown.undated.message': 'Quase lá...',
+  'trip.countdown.undated.label': 'Escolha as datas para ver a contagem',
+  'trip.countdown.tomorrow.message': 'Falta 1 dia',
+  'trip.countdown.tomorrow.label': 'Últimos preparativos',
+  'trip.countdown.days.label': 'dias para viajar',
+
+  'trip.returnCountdown.lastDay': 'último dia',
+  'trip.returnCountdown.tomorrow': 'volta amanhã',
+  'trip.returnCountdown.daysLeft': 'volta em {days} dias',
+
+  'date.range.undated': 'Datas a definir',
+  'date.range.openStart': 'A partir de {day} {month} {year}',
+  'date.range.openEnd': 'Até {day} {month} {year}',
+  'date.range.diffYear': '{fromDay} {fromMonth} {fromYear} – {toDay} {toMonth} {toYear}',
+  'date.range.diffMonth': '{fromDay} {fromMonth} – {toDay} {toMonth} {year}',
+  'date.range.sameMonth': '{fromDay}–{toDay} {month} {year}',
+  'date.single': '{day} {month} {year}',
+
+  'trip.name.default': 'Minha viagem',
+  'trip.name.twoCountries': '{a} e {b}',
+  'trip.name.moreCountries': '{a}, {b} e mais {count}',
+
+  'trip.region.centralEurope': 'Europa Central',
+  'trip.region.westernEurope': 'Europa Ocidental',
+  'trip.region.southernEurope': 'Sul da Europa',
+  'trip.region.scandinavia': 'Escandinávia',
+  'trip.region.balkans': 'Bálcãs',
+  'trip.region.southeastAsia': 'Sudeste Asiático',
+  'trip.region.eastAsia': 'Leste da Ásia',
+  'trip.region.middleEast': 'Oriente Médio',
+  'trip.region.southAmerica': 'América do Sul',
+  'trip.region.centralAmerica': 'América Central',
+  'trip.region.northAmerica': 'América do Norte',
+  'trip.region.oceania': 'Oceania',
+  'trip.region.northAfrica': 'Norte da África',
+
+  'season.name.winter': 'Inverno',
+  'season.name.spring': 'Primavera',
+  'season.name.summer': 'Verão',
+  'season.name.autumn': 'Outono',
+  'season.complement.winter': 'no inverno',
+  'season.complement.spring': 'na primavera',
+  'season.complement.summer': 'no verão',
+  'season.complement.autumn': 'no outono',
+  'season.context.allSeasons': '🌎 {count} estações',
+  'season.plural': 'estações',
+
+  'trip.travelVerb.upcoming': 'Você vai viajar',
+  'trip.travelVerb.ongoing': 'Você está viajando',
+  'trip.travelVerb.completed': 'Você viajou',
+  'trip.crossingVerb.upcoming': 'Sua viagem passa por',
+  'trip.crossingVerb.ongoing': 'Sua viagem passa por',
+  'trip.crossingVerb.completed': 'Sua viagem passou por',
+  'trip.seasonCount.two': 'duas',
+  'trip.seasonCount.three': 'três',
+  'trip.seasonCount.four': 'quatro',
+
+  'trips.checklist.wholeTrip': 'Toda a viagem',
+
+  'trips.requiredPendingCount': {
+    one: '1 obrigatório pendente',
+    other: '{count} obrigatórios pendentes',
+  },
+  'a11y.tripCard.openChecklist': 'Abre a checklist da viagem',
+  'trip.card.ready': 'Pronta 🎉',
+
+  'a11y.tripHero.dayOf': 'Dia {day} de {total}',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof messages;

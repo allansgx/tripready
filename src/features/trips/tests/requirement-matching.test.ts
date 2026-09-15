@@ -900,12 +900,13 @@ test('a checklist é agrupada por viagem, grupo e país, sem seção vazia', () 
       scoped({ group_id: 'g-desconhecido' }),
     ],
     (code) => (code === 'HU' ? 'Hungria' : 'Áustria'),
+    'pt-BR',
   );
 
   assert.deepEqual(
     sections.map((section) => [section.kind, section.label, section.items.length]),
     [
-      ['trip', 'Toda a viagem', 2],
+      ['trip', null, 2],
       ['group', 'Espaço Schengen', 1],
       ['country', 'Áustria', 1],
       ['country', 'Hungria', 1],
@@ -923,6 +924,7 @@ test('dentro da seção, os itens saem por prioridade e depois por criação', (
       scoped({ priority: 'required', created_at: '2026-09-01T12:00:04Z' }),
     ],
     (code) => code,
+    'pt-BR',
   );
 
   assert.deepEqual(
@@ -1122,7 +1124,7 @@ test('a origem de um item é a mesma que o agrupamento por escopo enxerga', () =
   assert.deepEqual(describeRequirementScope(scoped(), countryName), {
     kind: 'trip',
     key: 'trip',
-    label: 'Toda a viagem',
+    label: null,
     countryCode: null,
   });
 

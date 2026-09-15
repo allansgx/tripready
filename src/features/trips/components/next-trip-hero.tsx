@@ -6,20 +6,76 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { FlagRow } from '@/features/trips/components/flag-row';
 import { pickTravelTips } from '@/features/trips/data/travel-tips';
 import { formatSeasonContext, formatTripDates } from '@/features/trips/domain/trip-format';
-import {
-  formatPendingLabel,
-  formatProgressLabel,
-  formatReferenceLabel,
-} from '@/features/trips/domain/trip-progress';
+import type { TripProgress } from '@/features/trips/domain/trip-progress';
 import {
   buildTripCountdown,
   buildTripDayCount,
-  formatReturnCountdown,
+  describeReturnCountdown,
+  type ReturnCountdown,
+  type TripCountdown,
 } from '@/features/trips/domain/trip-status';
 import type { TripSummary } from '@/features/trips/domain/trip-summary';
+import { t } from '@/i18n';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 import type { Season } from '@/types/models';
+
+/** Frase grande e legenda de apoio da contagem; nenhuma vem do domínio. */
+function countdownText(countdown: TripCountdown): { message: string | null; label: string | null } {
+  switch (countdown.kind) {
+    case 'today':
+      return { message: t('trip.countdown.today.message'), label: t('trip.countdown.today.label') };
+    case 'ongoing':
+      return countdown.totalDays !== undefined
+        ? {
+            message: null,
+            label: t('trip.countdown.ongoing.label', { totalDays: countdown.totalDays }),
+          }
+        : { message: t('trip.countdown.ongoingUndated.message'), label: t('trip.moment.ongoing') };
+    case 'undated':
+      return {
+        message: t('trip.countdown.undated.message'),
+        label: t('trip.countdown.undated.label'),
+      };
+    case 'tomorrow':
+      return {
+        message: t('trip.countdown.tomorrow.message'),
+        label: t('trip.countdown.tomorrow.label'),
+      };
+    case 'days':
+      return { message: null, label: t('trip.countdown.days.label') };
+  }
+}
+
+function returnCountdownText(countdown: ReturnCountdown): string {
+  if (countdown.kind === 'lastDay') return t('trip.returnCountdown.lastDay');
+  if (countdown.kind === 'tomorrow') return t('trip.returnCountdown.tomorrow');
+  return t('trip.returnCountdown.daysLeft', { days: countdown.days ?? 0 });
+}
+
+/** "8 de 11 itens verificados", sempre no mesmo formato. */
+function progressLabel(progress: TripProgress): string {
+  if (progress.total === 0) return t('trips.progress.empty');
+  return t('trips.progress.checked', {
+    count: progress.total,
+    done: progress.done,
+    total: progress.total,
+  });
+}
+
+/** O que a checklist ainda tem pendente, no recorte da porcentagem. */
+function pendingLabel(progress: TripProgress): string {
+  if (progress.total === 0) return t('trips.progress.empty');
+  const pending = progress.total - progress.done;
+  if (pending === 0) return t('trips.progress.allChecked');
+  return t('trips.progress.pending', { count: pending });
+}
+
+/** O que a checklist oferece a quem já embarcou: os itens `informational`. */
+function referenceLabel(progress: TripProgress): string {
+  if (progress.informationalTotal === 0) return t('trips.progress.referenceEmpty');
+  return t('trips.progress.reference', { count: progress.informationalTotal });
+}
 
 // Tintas translúcidas: o cinza dos tokens foi calibrado para o branco dos
 // cards, e aqui o fundo é o ambiente sazonal.
@@ -115,6 +171,7 @@ export function NextTripHero({
 }) {
   const { trip, countryCodes, progress, nextStep } = summary;
   const countdown = buildTripCountdown(trip);
+  const countdownContent = countdownText(countdown);
   const dates = formatTripDates(trip.start_date, trip.end_date);
 
   const reduceMotion = useReduceMotion();
@@ -135,16 +192,16 @@ export function NextTripHero({
   // que a tela faz na viagem em andamento.
   const headline =
     isOngoing && dayCount
-      ? `Dia ${dayCount.day} de ${dayCount.total}`
+      ? t('a11y.tripHero.dayOf', { day: dayCount.day, total: dayCount.total })
       : countdown.days === null
-        ? [countdown.message, countdown.label].filter(Boolean).join('. ')
-        : `${countdown.days} ${countdown.days === 1 ? 'dia' : 'dias'} para viajar`;
+        ? [countdownContent.message, countdownContent.label].filter(Boolean).join('. ')
+        : `${countdown.days} ${countdownContent.label}`;
 
   const sectionTitle = isOngoing ? 'Na viagem' : isDeparture ? 'Antes de embarcar' : 'Preparação';
   const sectionNote = isOngoing
-    ? dayCount && formatReturnCountdown(dayCount)
+    ? dayCount && returnCountdownText(describeReturnCountdown(dayCount))
     : isDeparture
-      ? formatPendingLabel(progress)
+      ? pendingLabel(progress)
       : null;
   // A porcentagem é a linguagem da preparação: some junto com ela.
   const showsPercent = !isDeparture && !isOngoing;
@@ -196,9 +253,9 @@ export function NextTripHero({
         <View
           style={styles.departure}
           accessible
-          accessibilityLabel={`${countdown.message}. ${dates}`}>
+          accessibilityLabel={`${countdownContent.message}. ${dates}`}>
           <Text style={styles.departureMessage} numberOfLines={1} adjustsFontSizeToFit>
-            {countdown.message}
+            {countdownContent.message}
           </Text>
 
           <View style={styles.dateRule}>
@@ -213,7 +270,7 @@ export function NextTripHero({
         <View style={styles.countdown} accessible accessibilityLabel={`${headline}. ${dates}`}>
           {countdown.days === null ? (
             <Text style={styles.message} numberOfLines={2} adjustsFontSizeToFit>
-              {countdown.message}
+              {countdownContent.message}
             </Text>
           ) : (
             <Text
@@ -223,7 +280,9 @@ export function NextTripHero({
               {countingDays}
             </Text>
           )}
-          {countdown.label ? <Text style={styles.countdownLabel}>{countdown.label}</Text> : null}
+          {countdownContent.label ? (
+            <Text style={styles.countdownLabel}>{countdownContent.label}</Text>
+          ) : null}
           <Text style={styles.dates}>{dates}</Text>
         </View>
       )}
@@ -251,7 +310,7 @@ export function NextTripHero({
           )}
 
           <Text style={styles.progressLabel}>
-            {isOngoing ? formatReferenceLabel(progress) : formatProgressLabel(progress)}
+            {isOngoing ? referenceLabel(progress) : progressLabel(progress)}
           </Text>
         </View>
 

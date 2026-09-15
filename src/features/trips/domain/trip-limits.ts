@@ -11,33 +11,26 @@ export const MAX_TRIP_DURATION_DAYS = 180;
 /** Qual limite a viagem estourou. */
 export type TripLimitIssue = 'countries' | 'duration' | 'range';
 
-/** O que a tela diz em cada caso. Os números saem daqui, nunca da UI. */
-export const TRIP_LIMIT_MESSAGES: Record<TripLimitIssue, string> = {
-  countries: `Você pode adicionar até ${MAX_TRIP_COUNTRIES} países por viagem.`,
-  duration: `Escolha um período de até ${MAX_TRIP_DURATION_DAYS} dias.`,
-  range: 'Escolha a data de volta a partir da data de ida.',
-};
-
-/** Aviso discreto da etapa de datas, antes de existir qualquer problema. */
-export const TRIP_DURATION_HINT = `Até ${MAX_TRIP_DURATION_DAYS} dias por viagem`;
-
 export type TripLimitInput = {
   countryCodes: readonly string[];
   startDate: string | null;
   endDate: string | null;
 };
 
+/**
+ * Nenhuma frase aqui: `issue` é a chave que a tela resolve no idioma ativo
+ * (`t('trip.limit.' + issue, { max })`). O número do limite mora nas
+ * constantes acima, nunca duplicado no texto.
+ */
 export type TripLimitResult = {
   isValid: boolean;
   issue: TripLimitIssue | null;
-  /** Frase pronta para a tela; nula quando está tudo dentro do limite. */
-  message: string | null;
 };
 
-const WITHIN_LIMITS: TripLimitResult = { isValid: true, issue: null, message: null };
+const WITHIN_LIMITS: TripLimitResult = { isValid: true, issue: null };
 
 function exceeded(issue: TripLimitIssue): TripLimitResult {
-  return { isValid: false, issue, message: TRIP_LIMIT_MESSAGES[issue] };
+  return { isValid: false, issue };
 }
 
 /**
@@ -60,12 +53,4 @@ export function checkTripLimits(trip: TripLimitInput): TripLimitResult {
 /** Tirar um país já escolhido sempre cabe; o limite só barra o que entra. */
 export function canAddCountry(countryCodes: readonly string[], code: string): boolean {
   return countryCodes.includes(code) || countryCodes.length < MAX_TRIP_COUNTRIES;
-}
-
-/** "8 países selecionados" até o teto, "20 de 20 países" nele. */
-export function formatCountrySelection(count: number): string {
-  if (count >= MAX_TRIP_COUNTRIES) {
-    return `${MAX_TRIP_COUNTRIES} de ${MAX_TRIP_COUNTRIES} países`;
-  }
-  return `${count} ${count === 1 ? 'país selecionado' : 'países selecionados'}`;
 }

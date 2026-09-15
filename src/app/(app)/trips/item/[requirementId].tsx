@@ -203,7 +203,7 @@ export default function RequirementDetailScreen() {
             <Text style={styles.contextIcon}>{scope.kind === 'trip' ? '🌍' : '🧭'}</Text>
           )}
           <Text style={styles.contextText} numberOfLines={1}>
-            {scope.label}
+            {scope.label ?? t('trips.checklist.wholeTrip')}
           </Text>
         </View>
 

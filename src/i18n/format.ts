@@ -63,8 +63,19 @@ const WEEKDAY_INITIALS: Record<Locale, readonly string[]> = {
   es: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
 };
 
+/** Três letras, para os intervalos de data da checklist e da Home. */
+const MONTH_ABBREVIATIONS: Record<Locale, readonly string[]> = {
+  'pt-BR': ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  es: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+};
+
 export function monthNames(locale: Locale): readonly string[] {
   return MONTH_NAMES[locale];
+}
+
+export function monthAbbreviations(locale: Locale): readonly string[] {
+  return MONTH_ABBREVIATIONS[locale];
 }
 
 export function weekdayInitials(locale: Locale): readonly string[] {

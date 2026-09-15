@@ -1,3 +1,6 @@
+// Caminho relativo, e não o alias `@/`: é o que deixa o módulo carregar no
+// `node --test`, que resolve pelo arquivo real. Só o tipo — sem custo em runtime.
+import type { Locale } from '../../../i18n/locales.ts';
 import type {
   RequirementCategory,
   RequirementPriority,
@@ -473,7 +476,8 @@ export type ChecklistSectionKind = 'trip' | 'group' | 'country';
 export type ChecklistSection<T> = {
   key: string;
   kind: ChecklistSectionKind;
-  label: string;
+  /** Nulo na seção `'trip'` — ver `RequirementScopeDescription.label`. */
+  label: string | null;
   /** Preenchido apenas em seções de país, para a tela mostrar a bandeira. */
   countryCode: string | null;
   items: T[];
@@ -487,8 +491,6 @@ export type ScopedRequirement = {
   created_at: string;
   destination_groups?: { name: string } | null;
 };
-
-const TRIP_SECTION_LABEL = 'Toda a viagem';
 
 // Mesma hierarquia que decide o progresso da viagem.
 const PRIORITY_ORDER: Record<RequirementPriority, number> = {
@@ -530,7 +532,12 @@ export type RequirementScopeDescription = {
   kind: ChecklistSectionKind;
   /** Identifica a seção do item; itens de mesma origem compartilham a chave. */
   key: string;
-  label: string;
+  /**
+   * Nulo quando `kind` é `'trip'`: o texto ("Toda a viagem") sai do idioma
+   * ativo, não do dado — `t('trips.checklist.wholeTrip')`. Nos outros dois
+   * casos vem do banco (nome do país ou do grupo) e permanece como está.
+   */
+  label: string | null;
   /** Preenchido apenas em itens de país, para a tela mostrar a bandeira. */
   countryCode: string | null;
 };
@@ -558,18 +565,23 @@ export function describeRequirementScope<T extends ScopedRequirement>(
     };
   }
 
-  return { kind: 'trip', key: 'trip', label: TRIP_SECTION_LABEL, countryCode: null };
+  return { kind: 'trip', key: 'trip', label: null, countryCode: null };
 }
 
-/** Agrupa a checklist por origem. Seções nascem dos itens, nunca vazias. */
+/**
+ * Agrupa a checklist por origem. Seções nascem dos itens, nunca vazias.
+ * `locale` só decide a ordem alfabética entre grupos e países — o rótulo da
+ * viagem inteira é resolvido pela tela a partir de `kind === 'trip'`.
+ */
 export function groupRequirementsByScope<T extends ScopedRequirement>(
   requirements: readonly T[],
   countryName: (code: string) => string,
+  locale: Locale,
 ): ChecklistSection<T>[] {
   const trip: ChecklistSection<T> = {
     key: 'trip',
     kind: 'trip',
-    label: TRIP_SECTION_LABEL,
+    label: null,
     countryCode: null,
     items: [],
   };
@@ -608,8 +620,10 @@ export function groupRequirementsByScope<T extends ScopedRequirement>(
     trip.items.push(requirement);
   }
 
+  // Só grupos e países chegam aqui, e os dois sempre têm `label` — a seção da
+  // viagem inteira (`label: null`) nunca entra nestas duas listas.
   const byLabel = (a: ChecklistSection<T>, b: ChecklistSection<T>) =>
-    a.label.localeCompare(b.label, 'pt-BR');
+    (a.label ?? '').localeCompare(b.label ?? '', locale);
 
   const sections = [
     ...(trip.items.length > 0 ? [trip] : []),
