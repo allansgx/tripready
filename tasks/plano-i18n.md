@@ -1737,15 +1737,55 @@ getCountryName(code))` nos três. Fica registrado porque é o tipo de erro que
 
 ### Fase 4 — Traduzir (en e es)
 
-17. Gerar `messages/en.ts` e `es.ts` a partir do pt-BR. A primeira versão pode
-    sair de ferramenta/IA, **como conteúdo estático revisável**: vira arquivo
-    versionado no repositório, revisado por pessoa, e nunca tradução em runtime.
-18. Migrations de carga de `en` e `es` do catálogo (arquivos novos, um por
-    idioma, para poder revisar e reverter separadamente).
+17. ✅ `messages/en.ts` e `es.ts` — já saíram completos durante a Fase 1: cada
+    sub-etapa traduziu pt-BR/en/es das telas extraídas no mesmo commit (ver
+    `git log -- src/i18n/messages/en.ts`), então quando a Fase 4 começou o
+    dicionário de UI já estava pronto e passando em
+    `i18n/tests/completeness.test.ts`. O que faltava era só o catálogo do
+    banco, que esse teste não cobre.
+18. ✅ Migrations de carga de `en` e `es` do catálogo — arquivos novos, um por
+    idioma.
 19. Revisão passando tela por tela nos três idiomas, com atenção a: texto que
     estoura o layout (o espanhol é ~15–20% mais longo que o português em botões),
     `numberOfLines`, `adjustsFontSizeToFit` no contador da Home, e rótulos de aba
-    no Android.
+    no Android. Verificação estática feita (ver log abaixo); verificação visual
+    no aparelho continua pendente — mesma limitação registrada desde a Fase 2.
+
+**Fase 4 (catálogo) concluída.** Duas migrations novas,
+`20260915150000_catalog_translations_en.sql` e
+`20260915160000_catalog_translations_es.sql`, cada uma inserindo em
+`requirement_template_translations` (24 templates), `destination_group_translations`
+(10 grupos) e `visa_rule_translations` (45 regras de visto, só `notes` —
+`source_name` fica para a Fase 5, §8.4). Tradução de uma pessoa fluente sobre o
+texto canônico pt-BR já vigente (pós `20260913120000_requirement_description_topics.sql`),
+não gerada em runtime; cada `INSERT` casa por `code` (templates/grupos) ou por
+`(passport_country_code, destination_country_code)` (vistos) em vez de UUID
+cru, no mesmo estilo dos seeds anteriores.
+
+- **Estrutura de tópicos preservada**: cada descrição manteve o mesmo número de
+  linhas do `concat_ws(E'\n', …)` pt-BR nos dois idiomas — a tela de detalhe
+  renderiza a primeira linha como parágrafo e as seguintes como marcador, então
+  divergir a contagem quebraria essa leitura.
+- **Apóstrofo evitado de propósito no inglês.** Contrações (`doesn't`,
+  `it's`, `you've`) forçariam escapar `''` em toda a migration; reescrevi para
+  a forma sem contração (`does not`, `it is`) em vez de arriscar um apóstrofo
+  solto quebrando a string SQL. Conferido com
+  `grep -noE "[a-zA-Z]'[a-zA-Z]"` nos dois arquivos antes de fechar — zero
+  ocorrências.
+- **`source_name` de `visa_rule_translations` ficou de fora**, como o §8.4
+  manda: só entra quando o órgão tiver descritivo a traduzir, na Fase 5.
+- `requirement_offers` não entrou porque a tabela está vazia — nada para
+  traduzir ainda.
+- Item 19 (revisão tela por tela): confirmado por código, não por captura de
+  tela — `next-trip-hero.tsx` já usa `numberOfLines`+`adjustsFontSizeToFit` no
+  contador (blindagem que já existia antes desta fase), e os três rótulos de
+  aba (`tabs.home/trips/profile`) são curtos nos três idiomas (`Home`/`Trips`/
+  `Profile`, `Inicio`/`Viajes`/`Perfil`). Sem Expo Go aqui, não dá para
+  confirmar visualmente overflow em botões menores.
+- `npm run check` limpo (214 testes, nenhum novo — a tradução é conteúdo de
+  banco, sem teste de app a escrever) e o diff `create table` × `enable row
+  level security` do AGENTS.md continua batendo (as duas migrations só fazem
+  `INSERT`, nenhuma tabela nova).
 
 ### Fase 5 — Legal e acabamento
 
