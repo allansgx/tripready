@@ -526,6 +526,46 @@ export const messages = {
     'Vamos avisar quando estiver chegando a hora de revisar os itens pendentes.',
   'reminder.optIn.enable': 'Ativar lembretes',
   'reminder.optIn.dismiss': 'Agora não',
+
+  'checklist.category.documents': 'Documentos',
+  'checklist.category.health': 'Saúde',
+  'checklist.category.money': 'Dinheiro',
+  'checklist.category.connectivity': 'Conectividade',
+  'checklist.category.luggage': 'Bagagem',
+  'checklist.priority.required': 'Obrigatório',
+  'checklist.priority.recommended': 'Recomendado',
+  'checklist.priority.informational': 'Informativo',
+
+  'travelTip.passportValidity':
+    'Confira a validade do seu passaporte. Alguns destinos exigem meses de validade além da data da viagem.',
+  'travelTip.documentCopies':
+    'Guarde uma cópia dos documentos importantes. Deixe-os acessíveis mesmo sem internet.',
+  'travelTip.backupPayment':
+    'Leve uma segunda forma de pagamento. Um cartão reserva pode ajudar se o principal não funcionar.',
+  'travelTip.offlineMaps':
+    'Baixe mapas e reservas antes de sair. Assim você consegue acessá-los mesmo sem internet.',
+  'travelTip.medication':
+    'Leve seus medicamentos de uso contínuo na bagagem de mão. Confira também se precisa levar receita ou documentação.',
+  'travelTip.powerPlug':
+    'Veja qual é o padrão de tomada do destino. Um adaptador pequeno pode resolver a chegada.',
+  'travelTip.carryOnClothes':
+    'Separe uma muda de roupa na bagagem de mão. Ajuda se a mala despachada demorar a aparecer.',
+  'travelTip.travelInsurance':
+    'Considere um seguro viagem. Alguns destinos pedem comprovação na entrada.',
+  'travelTip.vaccination':
+    'Confira se o destino pede comprovante de vacinação. Algumas doses precisam ser tomadas com antecedência.',
+  'travelTip.connectivity':
+    'Veja como vai se conectar no destino: roaming, chip local ou eSIM. Resolver antes evita correria na chegada.',
+  'travelTip.airportTiming':
+    'Confirme com a companhia aérea a antecedência recomendada para o embarque. Ela varia por aeroporto e tipo de voo.',
+  'travelTip.localCash':
+    'Pense em levar um pouco de dinheiro local. Nem todo lugar aceita cartão, principalmente em transporte e lojas pequenas.',
+  'travelTip.emergencyContacts':
+    'Anote os contatos da hospedagem e da representação do seu país no destino. Fica fácil de achar se você precisar.',
+  'travelTip.baggageAllowance':
+    'Confira o limite de bagagem da sua passagem antes de fazer as malas. Cada companhia tem a sua regra.',
+  'travelTip.weather':
+    'Veja a previsão do tempo perto da data da viagem. Ela ajuda a decidir o que levar.',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof messages;

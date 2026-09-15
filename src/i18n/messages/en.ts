@@ -516,4 +516,44 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'reminder.optIn.message': "We'll let you know when it's time to review the pending items.",
   'reminder.optIn.enable': 'Enable reminders',
   'reminder.optIn.dismiss': 'Not now',
+
+  'checklist.category.documents': 'Documents',
+  'checklist.category.health': 'Health',
+  'checklist.category.money': 'Money',
+  'checklist.category.connectivity': 'Connectivity',
+  'checklist.category.luggage': 'Luggage',
+  'checklist.priority.required': 'Required',
+  'checklist.priority.recommended': 'Recommended',
+  'checklist.priority.informational': 'Informational',
+
+  'travelTip.passportValidity':
+    'Check your passport validity. Some destinations require months of validity beyond the trip date.',
+  'travelTip.documentCopies':
+    'Keep a copy of important documents. Keep them accessible even without internet.',
+  'travelTip.backupPayment':
+    'Bring a second form of payment. A backup card can help if the main one stops working.',
+  'travelTip.offlineMaps':
+    'Download maps and bookings before you leave. That way you can access them even without internet.',
+  'travelTip.medication':
+    'Pack your regular medication in your carry-on. Also check if you need a prescription or documentation.',
+  'travelTip.powerPlug':
+    "Check the destination's plug type. A small adapter can solve it on arrival.",
+  'travelTip.carryOnClothes':
+    'Pack a change of clothes in your carry-on. It helps if your checked bag is delayed.',
+  'travelTip.travelInsurance':
+    'Consider travel insurance. Some destinations require proof of it at entry.',
+  'travelTip.vaccination':
+    'Check if the destination requires proof of vaccination. Some doses need to be taken in advance.',
+  'travelTip.connectivity':
+    "See how you'll connect at the destination: roaming, local SIM, or eSIM. Sorting it out beforehand avoids a scramble on arrival.",
+  'travelTip.airportTiming':
+    'Confirm the recommended arrival time with the airline. It varies by airport and flight type.',
+  'travelTip.localCash':
+    'Consider bringing some local cash. Not every place takes cards, especially transit and small shops.',
+  'travelTip.emergencyContacts':
+    "Write down the contacts for your lodging and your country's representation at the destination. Easy to find if you need it.",
+  'travelTip.baggageAllowance':
+    'Check your ticket’s baggage allowance before packing. Each airline has its own rule.',
+  'travelTip.weather':
+    'Check the forecast close to the trip date. It helps you decide what to pack.',
 };

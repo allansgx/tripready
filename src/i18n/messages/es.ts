@@ -524,4 +524,44 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'reminder.optIn.message': 'Te avisaremos cuando sea hora de revisar los elementos pendientes.',
   'reminder.optIn.enable': 'Activar recordatorios',
   'reminder.optIn.dismiss': 'Ahora no',
+
+  'checklist.category.documents': 'Documentos',
+  'checklist.category.health': 'Salud',
+  'checklist.category.money': 'Dinero',
+  'checklist.category.connectivity': 'Conectividad',
+  'checklist.category.luggage': 'Equipaje',
+  'checklist.priority.required': 'Obligatorio',
+  'checklist.priority.recommended': 'Recomendado',
+  'checklist.priority.informational': 'Informativo',
+
+  'travelTip.passportValidity':
+    'Verifica la vigencia de tu pasaporte. Algunos destinos exigen meses de vigencia más allá de la fecha del viaje.',
+  'travelTip.documentCopies':
+    'Guarda una copia de los documentos importantes. Mantenlos accesibles incluso sin internet.',
+  'travelTip.backupPayment':
+    'Lleva una segunda forma de pago. Una tarjeta de reserva puede ayudar si la principal falla.',
+  'travelTip.offlineMaps':
+    'Descarga mapas y reservas antes de salir. Así puedes acceder a ellos incluso sin internet.',
+  'travelTip.medication':
+    'Lleva tus medicamentos de uso continuo en el equipaje de mano. Verifica también si necesitas receta o documentación.',
+  'travelTip.powerPlug':
+    'Verifica el tipo de enchufe del destino. Un adaptador pequeño puede resolverlo a la llegada.',
+  'travelTip.carryOnClothes':
+    'Lleva una muda de ropa en el equipaje de mano. Ayuda si la maleta facturada tarda en aparecer.',
+  'travelTip.travelInsurance':
+    'Considera un seguro de viaje. Algunos destinos piden comprobante en la entrada.',
+  'travelTip.vaccination':
+    'Verifica si el destino pide comprobante de vacunación. Algunas dosis deben aplicarse con anticipación.',
+  'travelTip.connectivity':
+    'Piensa cómo te conectarás en el destino: roaming, chip local o eSIM. Resolverlo antes evita apuros a la llegada.',
+  'travelTip.airportTiming':
+    'Confirma con la aerolínea la anticipación recomendada para el embarque. Varía según el aeropuerto y el tipo de vuelo.',
+  'travelTip.localCash':
+    'Considera llevar algo de efectivo local. No todos los lugares aceptan tarjeta, sobre todo en transporte y tiendas pequeñas.',
+  'travelTip.emergencyContacts':
+    'Anota los contactos del alojamiento y de la representación de tu país en el destino. Fácil de encontrar si lo necesitas.',
+  'travelTip.baggageAllowance':
+    'Verifica el límite de equipaje de tu boleto antes de armar las maletas. Cada aerolínea tiene su propia regla.',
+  'travelTip.weather':
+    'Consulta el pronóstico cerca de la fecha del viaje. Te ayuda a decidir qué llevar.',
 };

@@ -75,7 +75,7 @@ export function TravelTipsCarousel() {
             <View style={styles.emojiTile}>
               <Text style={styles.emoji}>{tip.emoji}</Text>
             </View>
-            <Text style={styles.text}>{tip.text}</Text>
+            <Text style={styles.text}>{t(tip.textKey)}</Text>
           </View>
         ))}
       </ScrollView>

@@ -1327,7 +1327,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 6. ✅ `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
 7. ✅ `trip-new`, `trip-edit`, `trip-preparing`, `account-deleting`, `auth/callback`
 8. ✅ `features/notifications/*`
-9. `travel-tips.ts`, `checklist-catalog.ts`
+9. ✅ `travel-tips.ts`, `checklist-catalog.ts`
 
 Regra por arquivo: nenhuma string literal visível sobra; o comportamento é
 idêntico; `npm check` passa. Reversível a qualquer momento.
@@ -1619,6 +1619,40 @@ null` — `null` quando a véspera não tem nada específico a citar (ainda
   `t()` — é texto que a pessoa vê nos ajustes de notificação do sistema.
 - `reminder-permission.ts` e `use-notification-navigation.ts` não tinham
   texto de usuário (só booleanos e navegação) e ficaram sem alteração.
+- `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
+
+**Sub-etapa 9 concluída — Fase 1 fechada.** `travel-tips.ts` e
+`checklist-catalog.ts`.
+
+- **`travel-tips.ts` virou catálogo de chaves**, pela mesma razão de
+  `trip-reminders.ts` na sub-etapa 8: o comentário no topo do arquivo já
+  avisava que `travel-tips.test.ts` o carrega direto via import relativo
+  `.ts` sob `node --test`. `text: string` deu lugar a `textKey: MessageKey`,
+  e as duas telas que mostram a dica (`travel-tips-carousel.tsx`,
+  `next-trip-hero.tsx`) resolvem com `t(tip.textKey)`. O teste que checava
+  `tip.text.length <= 140` passou a importar o dicionário pt-BR (também puro,
+  sem `expo-localization`) e conferir o comprimento por lá.
+- **`checklist-catalog.ts` virou formatador de apresentação**, mesma
+  categoria de `trip-format.ts`: nenhum teste o carrega nem trava texto a
+  português, então `CATEGORY_LABELS`/`PRIORITY_LABELS` (que eram
+  `Record<..., string>`) viraram as funções `categoryLabel()`/
+  `priorityLabel()`, chamando `t()` direto. Os três pontos de chamada
+  (`trip-preparing.tsx`, `trips/[id].tsx`, `item/[requirementId].tsx`) foram
+  ajustados para a nova forma de função em vez de indexação de objeto.
+- **Achado fora do escopo das nove sub-etapas, corrigido nesta**: a
+  auditoria final da §18.1, rodada no fim desta sub-etapa por já ser o
+  fechamento da Fase 1, encontrou `(app)/_layout.web.tsx` — a variante web da
+  navegação por abas, um arquivo separado de `(app)/_layout.tsx` que a
+  sub-etapa 7 já tinha corrigido — ainda com `'Início'`/`'Viagens'`/`'Perfil'`
+  fixos. Reaproveitou as mesmas chaves `tabs.*` já criadas.
+- **O restante da varredura ampla confirma código já limpo por desenho**: os
+  literais em `services/*.ts` (`'Falha ao listar passaportes'` e afins) são o
+  `context` de `DataAccessError`, nunca renderizado — a doc do arquivo já diz
+  que "as telas não conhecem o formato do Supabase", e o item de auditoria
+  "nenhuma tela renderiza `error.message` de `DataAccessError`" existe
+  justamente para isso continuar valendo. `constants/countries.ts`/
+  `cities.ts` pertencem à Fase 2, e `legal-documents.ts` à Fase 5 — nenhum dos
+  dois é lacuna desta fase.
 - `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
 
 ### Fase 2 — Países e cidades

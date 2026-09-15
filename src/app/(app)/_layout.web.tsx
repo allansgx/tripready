@@ -4,6 +4,7 @@ import { Image, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/features/auth/auth-context';
 import { getAvatarUrl } from '@/features/auth/user-profile';
+import { t } from '@/i18n';
 import { colors, radius } from '@/theme/tokens';
 
 /**
@@ -35,7 +36,7 @@ export default function AppWebLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Início',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
@@ -45,7 +46,7 @@ export default function AppWebLayout() {
       <Tabs.Screen
         name="trips"
         options={{
-          title: 'Viagens',
+          title: t('tabs.trips'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'airplane' : 'airplane-outline'} size={size} color={color} />
           ),
@@ -55,7 +56,7 @@ export default function AppWebLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, size, focused }) =>
             avatarUrl ? (
               <Image

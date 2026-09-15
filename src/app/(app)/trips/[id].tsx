@@ -35,9 +35,9 @@ import {
 import { FlagRow } from '@/features/trips/components/flag-row';
 import {
   CATEGORY_ICONS,
-  CATEGORY_LABELS,
+  categoryLabel,
   CHECKLIST_CATEGORIES,
-  PRIORITY_LABELS,
+  priorityLabel,
 } from '@/features/trips/data/checklist-catalog';
 import {
   groupRequirementsByCategory,
@@ -545,7 +545,7 @@ export default function TripChecklistScreen() {
                   consumeScrollTarget(section.category);
                 }}>
                 <AccordionSection
-                  title={CATEGORY_LABELS[section.category]}
+                  title={categoryLabel(section.category)}
                   icon={
                     <Ionicons
                       name={CATEGORY_ICONS[section.category]}
@@ -658,7 +658,7 @@ function RequirementRow({
         <View style={styles.itemMeta}>
           <View style={[styles.dot, { backgroundColor: tone }]} />
           <Text style={[styles.priority, { color: tone }]}>
-            {PRIORITY_LABELS[requirement.priority]}
+            {priorityLabel(requirement.priority)}
           </Text>
           {requirement.country_code ? (
             <CountryFlag code={requirement.country_code} size={13} />

@@ -12,8 +12,8 @@ import { getCountryName } from '@/constants/countries';
 import { usePassports } from '@/features/passports/passports-context';
 import {
   CATEGORY_ICONS,
-  CATEGORY_LABELS,
-  PRIORITY_LABELS,
+  categoryLabel,
+  priorityLabel,
   type IoniconName,
 } from '@/features/trips/data/checklist-catalog';
 import { buildAffiliateClick } from '@/features/trips/domain/affiliate-click';
@@ -180,7 +180,7 @@ export default function RequirementDetailScreen() {
         <View style={[styles.badge, { backgroundColor: prioritySoftColors[requirement.priority] }]}>
           <View style={[styles.dot, { backgroundColor: tone }]} />
           <Text style={[styles.badgeLabel, { color: tone }]}>
-            {PRIORITY_LABELS[requirement.priority]}
+            {priorityLabel(requirement.priority)}
           </Text>
         </View>
 
@@ -188,7 +188,7 @@ export default function RequirementDetailScreen() {
 
         <View style={styles.context}>
           <Ionicons name={CATEGORY_ICONS[requirement.category]} size={14} color={colors.primary} />
-          <Text style={styles.contextText}>{CATEGORY_LABELS[requirement.category]}</Text>
+          <Text style={styles.contextText}>{categoryLabel(requirement.category)}</Text>
           <Text style={styles.contextSeparator}>·</Text>
           {scope.countryCode ? (
             <CountryFlag code={scope.countryCode} />

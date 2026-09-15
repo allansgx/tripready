@@ -353,7 +353,7 @@ export function NextTripHero({
 
         <View style={styles.tip}>
           <Text style={styles.tipLabel}>{t('trip.hero.tipLabel')}</Text>
-          <Text style={styles.tipText}>{tip.text}</Text>
+          <Text style={styles.tipText}>{t(tip.textKey)}</Text>
         </View>
       </View>
     </Animated.View>

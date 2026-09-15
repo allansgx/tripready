@@ -8,7 +8,7 @@ import { StepRow } from '@/components/ui/step-row';
 import { usePassports } from '@/features/passports/passports-context';
 import {
   CATEGORY_ICONS,
-  CATEGORY_LABELS,
+  categoryLabel,
   CHECKLIST_CATEGORIES,
 } from '@/features/trips/data/checklist-catalog';
 import { resolveChecklist } from '@/features/trips/data/trip-persistence';
@@ -110,7 +110,7 @@ export default function TripPreparingScreen() {
           {CHECKLIST_CATEGORIES.map((category, index) => (
             <StepRow
               key={category}
-              label={CATEGORY_LABELS[category]}
+              label={categoryLabel(category)}
               icon={CATEGORY_ICONS[category]}
               done={index < doneCount}
             />
