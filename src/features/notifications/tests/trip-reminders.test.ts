@@ -38,8 +38,7 @@ test('a 7 dias com obrigatório pendente gera o lembrete de aproximação', () =
   const approaching = find(reminders, 'approaching');
 
   assert.ok(approaching);
-  assert.equal(approaching.title, '✈️ Sua viagem está chegando');
-  assert.equal(approaching.body, 'Você ainda tem 2 itens obrigatórios para revisar.');
+  assert.deepEqual(approaching.pending, { kind: 'required', count: 2 });
   // Marco de D-7 às 9h locais do dia 11, que é o próprio dia de hoje às 8h.
   assert.equal(approaching.fireAt.getHours(), 9);
   assert.equal(approaching.fireAt.getDate(), 11);
@@ -54,7 +53,7 @@ test('a 7 dias sem obrigatório pendente usa a mensagem leve do recomendado', ()
 
   const approaching = find(reminders, 'approaching');
   assert.ok(approaching);
-  assert.equal(approaching.body, 'Você tem 1 item recomendado para dar uma olhada.');
+  assert.deepEqual(approaching.pending, { kind: 'recommended', count: 1 });
 });
 
 test('a 7 dias com tudo verificado não gera lembrete de aproximação', () => {
@@ -70,8 +69,7 @@ test('a véspera com pendências informa a quantidade de obrigatórios', () => {
   const eve = find(reminders, 'eve');
 
   assert.ok(eve);
-  assert.equal(eve.title, '✈️ Amanhã é o grande dia!');
-  assert.equal(eve.body, 'Você ainda tem 2 itens obrigatórios para revisar.');
+  assert.deepEqual(eve.pending, { kind: 'required', count: 2 });
 });
 
 test('a véspera sem pendências convida à revisão, sem número', () => {
@@ -79,14 +77,13 @@ test('a véspera sem pendências convida à revisão, sem número', () => {
   const eve = find(reminders, 'eve');
 
   assert.ok(eve);
-  assert.equal(eve.title, '✈️ Amanhã é o grande dia!');
-  assert.equal(eve.body, 'Faça uma última revisão da sua checklist antes de viajar.');
+  assert.equal(eve.pending, null);
 });
 
 test('um item pendente usa o singular', () => {
   const reminders = getTripNotificationCandidates(trip(IN_1_DAY), items(['required', false]), NOW);
 
-  assert.equal(find(reminders, 'eve')?.body, 'Você ainda tem 1 item obrigatório para revisar.');
+  assert.deepEqual(find(reminders, 'eve')?.pending, { kind: 'required', count: 1 });
 });
 
 test('viagem concluída não gera notificação nenhuma', () => {
@@ -121,10 +118,7 @@ test('informativo pendente não conta como pendência', () => {
   );
 
   assert.equal(find(reminders, 'approaching'), null);
-  assert.equal(
-    find(reminders, 'eve')?.body,
-    'Faça uma última revisão da sua checklist antes de viajar.',
-  );
+  assert.equal(find(reminders, 'eve')?.pending, null);
 });
 
 test('marco cuja hora já passou não é agendado', () => {

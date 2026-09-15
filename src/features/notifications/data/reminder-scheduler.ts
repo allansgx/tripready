@@ -6,11 +6,13 @@ import {
   diffReminders,
   getTripNotificationCandidates,
   selectTripsForReminders,
+  type ReminderKind,
   type ReminderTrip,
   type ScheduledReminder,
   type TripReminder,
 } from '@/features/notifications/domain/trip-reminders';
 import type { ProgressItem } from '@/features/trips/domain/trip-progress';
+import { t, type MessageKey } from '@/i18n';
 
 /**
  * A ponte entre os lembretes que o domínio calcula e o sistema operacional.
@@ -33,9 +35,28 @@ async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
 
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-    name: 'Lembretes de viagem',
+    name: t('reminder.channelName'),
     importance: Notifications.AndroidImportance.DEFAULT,
   });
+}
+
+const TITLE_KEY: Record<ReminderKind, MessageKey> = {
+  approaching: 'reminder.approaching.title',
+  eve: 'reminder.eve.title',
+};
+
+const PENDING_BODY_KEY: Record<'required' | 'recommended', MessageKey> = {
+  required: 'reminder.pending.required',
+  recommended: 'reminder.pending.recommended',
+};
+
+/** Resolve o conteúdo do lembrete no idioma ativo, a partir do descritor puro do domínio. */
+function resolveContent(reminder: TripReminder): { title: string; body: string } {
+  const body = reminder.pending
+    ? t(PENDING_BODY_KEY[reminder.pending.kind], { count: reminder.pending.count })
+    : t('reminder.eve.genericBody');
+
+  return { title: t(TITLE_KEY[reminder.kind]), body };
 }
 
 /** O que o toque precisa saber para navegar, e o diff para reconciliar. */
@@ -80,10 +101,12 @@ async function apply(
   if (toSchedule.length > 0) await ensureAndroidChannel();
 
   for (const reminder of toSchedule) {
+    const { title, body } = resolveContent(reminder);
+
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: reminder.title,
-        body: reminder.body,
+        title,
+        body,
         data: {
           tripId: reminder.tripId,
           kind: reminder.kind,
@@ -163,10 +186,12 @@ export async function scheduleReminderPreview(
   if (reminders.length > 0) await ensureAndroidChannel();
 
   for (const [index, reminder] of reminders.entries()) {
+    const { title, body } = resolveContent(reminder);
+
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: reminder.title,
-        body: reminder.body,
+        title,
+        body,
         data: { tripId: reminder.tripId, kind: reminder.kind },
       },
       trigger: {

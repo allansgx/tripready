@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { t } from '@/i18n';
 import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 /**
@@ -18,14 +19,17 @@ export function ReminderOptInCard({
 }) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Quer receber lembretes desta viagem?</Text>
-      <Text style={styles.message}>
-        Vamos avisar quando estiver chegando a hora de revisar os itens pendentes.
-      </Text>
+      <Text style={styles.title}>{t('reminder.optIn.title')}</Text>
+      <Text style={styles.message}>{t('reminder.optIn.message')}</Text>
 
       <View style={styles.actions}>
-        <Button label="Ativar lembretes" onPress={onEnable} loading={busy} />
-        <Button label="Agora não" variant="ghost" onPress={onDismiss} disabled={busy} />
+        <Button label={t('reminder.optIn.enable')} onPress={onEnable} loading={busy} />
+        <Button
+          label={t('reminder.optIn.dismiss')}
+          variant="ghost"
+          onPress={onDismiss}
+          disabled={busy}
+        />
       </View>
     </View>
   );

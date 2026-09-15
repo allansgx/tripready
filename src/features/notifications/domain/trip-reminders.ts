@@ -20,15 +20,21 @@ export type ReminderTrip = {
   end_date: string | null;
 };
 
+/**
+ * O que o lembrete tem a dizer sobre pendências, sem texto: `null` quando não
+ * há nada específico a citar — a véspera ainda mostra o lembrete, só que com a
+ * mensagem genérica de revisão. A tela resolve `t('reminder.pending.' + kind, ...)`.
+ */
+export type ReminderPending = { kind: 'required' | 'recommended'; count: number } | null;
+
 export type TripReminder = {
   /** `${tripId}:${kind}` — é o que torna a duplicata impossível. */
   key: string;
   tripId: string;
   kind: ReminderKind;
   fireAt: Date;
-  title: string;
-  body: string;
-  /** Muda quando o texto ou a data mudam, forçando o reagendamento. */
+  pending: ReminderPending;
+  /** Muda quando o conteúdo ou a data mudam, forçando o reagendamento. */
   signature: string;
 };
 
@@ -50,18 +56,12 @@ const REMINDER_WINDOW_DAYS = 90;
 /** O iOS guarda 64 notificações locais pendentes e descarta o excedente calado. */
 const MAX_TRIPS_WITH_REMINDERS = 5;
 
-type ReminderContent = { title: string; body: string };
-
 type ReminderMarker = {
   kind: ReminderKind;
   daysBefore: number;
-  /** `null` quando não há pendência que justifique o lembrete. */
-  build: (progress: TripProgress) => ReminderContent | null;
+  /** `undefined` quando não há pendência que justifique o lembrete. */
+  build: (progress: TripProgress) => ReminderPending | undefined;
 };
-
-function countLabel(count: number, word: 'obrigatório' | 'recomendado'): string {
-  return count === 1 ? `1 item ${word}` : `${count} itens ${word}s`;
-}
 
 /** Pendentes que contam para o progresso e não são obrigatórios. */
 function recommendedPending(progress: TripProgress): number {
@@ -74,33 +74,22 @@ const MARKERS: readonly ReminderMarker[] = [
     daysBefore: 7,
     build: (progress) => {
       if (progress.requiredPending > 0) {
-        return {
-          title: '✈️ Sua viagem está chegando',
-          body: `Você ainda tem ${countLabel(progress.requiredPending, 'obrigatório')} para revisar.`,
-        };
+        return { kind: 'required', count: progress.requiredPending };
       }
 
       const recommended = recommendedPending(progress);
       if (recommended > 0) {
-        return {
-          title: '✈️ Sua viagem está chegando',
-          body: `Você tem ${countLabel(recommended, 'recomendado')} para dar uma olhada.`,
-        };
+        return { kind: 'recommended', count: recommended };
       }
 
-      return null;
+      return undefined;
     },
   },
   {
     kind: 'eve',
     daysBefore: 1,
-    build: (progress) => ({
-      title: '✈️ Amanhã é o grande dia!',
-      body:
-        progress.requiredPending > 0
-          ? `Você ainda tem ${countLabel(progress.requiredPending, 'obrigatório')} para revisar.`
-          : 'Faça uma última revisão da sua checklist antes de viajar.',
-    }),
+    build: (progress) =>
+      progress.requiredPending > 0 ? { kind: 'required', count: progress.requiredPending } : null,
   },
 ];
 
@@ -138,17 +127,16 @@ export function getTripNotificationCandidates(
     const fireAt = markerDate(trip.start_date, marker.daysBefore);
     if (!fireAt || fireAt.getTime() <= now.getTime()) continue;
 
-    const content = marker.build(progress);
-    if (!content) continue;
+    const pending = marker.build(progress);
+    if (pending === undefined) continue;
 
     reminders.push({
       key: `${trip.id}:${marker.kind}`,
       tripId: trip.id,
       kind: marker.kind,
       fireAt,
-      title: content.title,
-      body: content.body,
-      signature: `${fireAt.toISOString()}|${content.title}|${content.body}`,
+      pending,
+      signature: `${fireAt.toISOString()}|${marker.kind}|${pending?.kind ?? 'none'}|${pending?.count ?? 0}`,
     });
   }
 

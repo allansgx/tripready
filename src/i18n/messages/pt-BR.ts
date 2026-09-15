@@ -507,6 +507,25 @@ export const messages = {
   'tabs.home': 'Início',
   'tabs.trips': 'Viagens',
   'tabs.profile': 'Perfil',
+
+  'reminder.approaching.title': '✈️ Sua viagem está chegando',
+  'reminder.eve.title': '✈️ Amanhã é o grande dia!',
+  'reminder.pending.required': {
+    one: 'Você ainda tem 1 item obrigatório para revisar.',
+    other: 'Você ainda tem {count} itens obrigatórios para revisar.',
+  },
+  'reminder.pending.recommended': {
+    one: 'Você tem 1 item recomendado para dar uma olhada.',
+    other: 'Você tem {count} itens recomendados para dar uma olhada.',
+  },
+  'reminder.eve.genericBody': 'Faça uma última revisão da sua checklist antes de viajar.',
+  'reminder.channelName': 'Lembretes de viagem',
+
+  'reminder.optIn.title': 'Quer receber lembretes desta viagem?',
+  'reminder.optIn.message':
+    'Vamos avisar quando estiver chegando a hora de revisar os itens pendentes.',
+  'reminder.optIn.enable': 'Ativar lembretes',
+  'reminder.optIn.dismiss': 'Agora não',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof messages;

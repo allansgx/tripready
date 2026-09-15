@@ -498,4 +498,22 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'tabs.home': 'Home',
   'tabs.trips': 'Trips',
   'tabs.profile': 'Profile',
+
+  'reminder.approaching.title': '✈️ Your trip is getting close',
+  'reminder.eve.title': '✈️ Tomorrow is the big day!',
+  'reminder.pending.required': {
+    one: 'You still have 1 required item to review.',
+    other: 'You still have {count} required items to review.',
+  },
+  'reminder.pending.recommended': {
+    one: 'You have 1 recommended item to check out.',
+    other: 'You have {count} recommended items to check out.',
+  },
+  'reminder.eve.genericBody': 'Do one last review of your checklist before you travel.',
+  'reminder.channelName': 'Trip reminders',
+
+  'reminder.optIn.title': 'Want reminders for this trip?',
+  'reminder.optIn.message': "We'll let you know when it's time to review the pending items.",
+  'reminder.optIn.enable': 'Enable reminders',
+  'reminder.optIn.dismiss': 'Not now',
 };

@@ -1326,7 +1326,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 5. ✅ `features/trips/components/*` + `trip-card` + `next-trip-hero`
 6. ✅ `app/(app)/index.tsx`, `trips/index.tsx`, `trips/[id].tsx`, `item/[...]`
 7. ✅ `trip-new`, `trip-edit`, `trip-preparing`, `account-deleting`, `auth/callback`
-8. `features/notifications/*`
+8. ✅ `features/notifications/*`
 9. `travel-tips.ts`, `checklist-catalog.ts`
 
 Regra por arquivo: nenhuma string literal visível sobra; o comportamento é
@@ -1592,6 +1592,33 @@ explicitamente; ficariam sem dono até o fim da Fase 1. ~70 chaves novas.
   `common.action.close`/`common.action.back`/`trips.action.create`.
   "Tentar de novo" ganhou `common.action.retry`, usada em `_layout.tsx` e em
   `account-deleting.tsx`.
+- `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
+
+**Sub-etapa 8 concluída.** Os cinco arquivos de `features/notifications/`.
+
+- **`trip-reminders.ts` virou descritor**, pela mesma dupla razão de
+  `trip-limits.ts`/`trip-status.ts` na sub-etapa 4: o próprio arquivo é
+  carregado direto por `trip-reminders.test.ts` via import relativo `.ts`
+  (comentário no topo do arquivo já avisava disso) e o teste travava
+  `.title`/`.body` a frases em português. `TripReminder.title`/`.body` deram
+  lugar a `pending: { kind: 'required' | 'recommended'; count: number } |
+null` — `null` quando a véspera não tem nada específico a citar (ainda
+  assim dispara, só que com a mensagem genérica), e a ausência do campo
+  inteiro (`undefined` no retorno do `build` do marco) é o que faz o marco de
+  aproximação ser pulado quando não há pendência nenhuma. A `signature`, que
+  antes derivava do texto para saber quando reagendar, passou a derivar do
+  próprio descritor (`kind`+`pending`), preservando a mesma garantia de
+  idempotência sem depender de string.
+- **`reminder-scheduler.ts` ganhou `resolveContent()`**, que resolve
+  `title`/`body` a partir do descritor só na hora de agendar de verdade — o
+  único lugar que toca `expo-notifications`, então o único que precisa
+  conhecer o idioma ativo. `scheduleReminderPreview` (o botão `__DEV__` de
+  `trips/[id].tsx`) passou a usar a mesma função, então os lembretes de teste
+  saem no idioma certo também.
+- Nome do canal do Android (`'Lembretes de viagem'`) também passou a vir de
+  `t()` — é texto que a pessoa vê nos ajustes de notificação do sistema.
+- `reminder-permission.ts` e `use-notification-navigation.ts` não tinham
+  texto de usuário (só booleanos e navegação) e ficaram sem alteração.
 - `npx tsc`, `expo lint`, `prettier --check` e os 203 testes passam.
 
 ### Fase 2 — Países e cidades

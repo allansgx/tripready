@@ -506,4 +506,22 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'tabs.home': 'Inicio',
   'tabs.trips': 'Viajes',
   'tabs.profile': 'Perfil',
+
+  'reminder.approaching.title': '✈️ Tu viaje se acerca',
+  'reminder.eve.title': '✈️ ¡Mañana es el gran día!',
+  'reminder.pending.required': {
+    one: 'Todavía tienes 1 elemento obligatorio por revisar.',
+    other: 'Todavía tienes {count} elementos obligatorios por revisar.',
+  },
+  'reminder.pending.recommended': {
+    one: 'Tienes 1 elemento recomendado para revisar.',
+    other: 'Tienes {count} elementos recomendados para revisar.',
+  },
+  'reminder.eve.genericBody': 'Haz una última revisión de tu lista antes de viajar.',
+  'reminder.channelName': 'Recordatorios de viaje',
+
+  'reminder.optIn.title': '¿Quieres recibir recordatorios de este viaje?',
+  'reminder.optIn.message': 'Te avisaremos cuando sea hora de revisar los elementos pendientes.',
+  'reminder.optIn.enable': 'Activar recordatorios',
+  'reminder.optIn.dismiss': 'Ahora no',
 };
