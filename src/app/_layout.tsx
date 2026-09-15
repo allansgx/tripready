@@ -2,7 +2,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { DialogHost } from '@/components/ui/dialog';
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
 import { PassportsProvider, usePassports } from '@/features/passports/passports-context';
 import { SplashOverlay } from '@/features/splash/components/splash-overlay';
+import { loadLocaleChoice, useLocale } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -24,6 +25,10 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  // Assinado no ponto mais alto da árvore: trocar de idioma redesenha o app
+  // inteiro de uma vez, sem cada tela precisar assinar por conta própria.
+  useLocale();
+
   return (
     <AuthProvider>
       <PassportsProvider>
@@ -50,8 +55,19 @@ function RootNavigator() {
     Fraunces_700Bold: require('@/assets/fonts/Fraunces_700Bold.ttf'),
   });
 
+  // Leitura local, dentro da espera que o splash já cobre: sem isso a primeira
+  // tela sairia no idioma do aparelho e trocaria na frente de quem escolheu
+  // outro. `loadLocaleChoice` não rejeita, então a espera sempre termina.
+  const [localeLoaded, setLocaleLoaded] = useState(false);
+  useEffect(() => {
+    void loadLocaleChoice().finally(() => setLocaleLoaded(true));
+  }, []);
+
   const isReady =
-    !isLoadingSession && !(session && isLoadingPassports) && (fontsLoaded || fontError !== null);
+    !isLoadingSession &&
+    !(session && isLoadingPassports) &&
+    (fontsLoaded || fontError !== null) &&
+    localeLoaded;
 
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashDone = useCallback(() => setSplashDone(true), []);

@@ -8,7 +8,9 @@ import {
   authService,
   createSessionFromUrl,
 } from '@/features/auth/auth-service';
+import { seedLocaleChoice } from '@/i18n';
 import { supabase } from '@/lib/supabase/client';
+import { profilesService } from '@/services';
 
 type AuthContextValue = {
   session: Session | null;
@@ -83,6 +85,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.subscription.unsubscribe();
     };
   }, []);
+
+  // O idioma escolhido acompanha a conta, e só serve a um aparelho que ainda
+  // não tem escolha própria. Em paralelo com os passaportes, que já são
+  // esperados aqui: nunca estende a entrada no app, e falhar não custa nada.
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (!userId) return;
+
+    let active = true;
+    profilesService
+      .getLocale(userId)
+      .then((locale) => {
+        if (active) return seedLocaleChoice(locale);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   // Deep link de retorno do OAuth quando o app é reaberto pelo link
   // (em vez de voltar pelo resultado do WebBrowser).

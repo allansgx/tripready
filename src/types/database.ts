@@ -39,16 +39,19 @@ export type Database = {
       profiles: {
         Row: {
           id: string;
+          locale: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
+          locale?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
+          locale?: string | null;
           created_at?: string;
           updated_at?: string;
         };

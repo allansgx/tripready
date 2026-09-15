@@ -13,6 +13,12 @@ type ListRowProps = {
   iconBackground?: string;
   /** Acessório à direita (badge, switch...). Padrão: chevron quando há onPress. */
   right?: ReactNode;
+  /**
+   * Marca a linha como uma opção entre outras. Além do visto, muda o papel de
+   * acessibilidade — sem isso a seleção seria só visual e um leitor de tela não
+   * diria qual está ativa.
+   */
+  selected?: boolean;
   onPress?: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -26,6 +32,7 @@ export function ListRow({
   icon,
   iconBackground = colors.primarySoft,
   right,
+  selected,
   onPress,
   disabled,
   loading,
@@ -37,14 +44,18 @@ export function ListRow({
     <ActivityIndicator size="small" color={colors.primary} />
   ) : right !== undefined ? (
     right
+  ) : selected !== undefined ? (
+    selected ? (
+      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+    ) : null
   ) : onPress ? (
     <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
   ) : null;
 
   return (
     <Pressable
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityState={{ disabled: !interactive && Boolean(onPress) }}
+      accessibilityRole={selected !== undefined ? 'radio' : onPress ? 'button' : undefined}
+      accessibilityState={{ disabled: !interactive && Boolean(onPress), checked: selected }}
       onPress={interactive ? onPress : undefined}
       style={({ pressed }) => [
         styles.row,

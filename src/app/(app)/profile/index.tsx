@@ -14,6 +14,9 @@ import { useAuth } from '@/features/auth/auth-context';
 import { DeleteAccountModal } from '@/features/auth/delete-account-modal';
 import { getAvatarInitial, getAvatarUrl, getDisplayName } from '@/features/auth/user-profile';
 import { PassportsSection } from '@/features/passports/passports-section';
+import { chooseLocale, getDeviceLocale, t, useLocaleChoice, type Locale } from '@/i18n';
+import { LANGUAGE_NAMES, SUPPORTED_LOCALES } from '@/i18n/locales';
+import { profilesService } from '@/services';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 export default function ProfileScreen() {
@@ -51,6 +54,8 @@ export default function ProfileScreen() {
         </View>
 
         <PassportsSection />
+
+        <LanguageSection />
 
         <View>
           <SectionLabel>Legal</SectionLabel>
@@ -101,6 +106,45 @@ export default function ProfileScreen() {
         onConfirm={startDeletion}
       />
     </SafeAreaView>
+  );
+}
+
+/**
+ * A troca vale na hora e é gravada depois: a escolha local é quem manda no que
+ * a tela desenha, e o perfil só a carrega para outro aparelho. "Padrão do
+ * dispositivo" apaga a escolha — é o único jeito de desfazê-la.
+ */
+function LanguageSection() {
+  const { user } = useAuth();
+  const choice = useLocaleChoice();
+
+  function select(next: Locale | null) {
+    if (next === choice) return;
+
+    chooseLocale(next);
+    if (user) void profilesService.setLocale(user.id, next).catch(() => {});
+  }
+
+  return (
+    <View>
+      <SectionLabel>{t('profile.language.title')}</SectionLabel>
+      <Card>
+        {SUPPORTED_LOCALES.map((locale) => (
+          <ListRow
+            key={locale}
+            label={LANGUAGE_NAMES[locale]}
+            selected={choice === locale}
+            onPress={() => select(locale)}
+          />
+        ))}
+        <ListRow
+          label={t('profile.language.system')}
+          description={LANGUAGE_NAMES[getDeviceLocale()]}
+          selected={choice === null}
+          onPress={() => select(null)}
+        />
+      </Card>
+    </View>
   );
 }
 
