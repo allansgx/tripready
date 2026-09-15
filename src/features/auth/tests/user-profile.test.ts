@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { getAccountProvider, getAvatarInitial, getStoredName } from '../user-profile.ts';
+import {
+  getAccountProvider,
+  getAvatarInitial,
+  getDisplayName,
+  getStoredName,
+} from '../user-profile.ts';
 
 import type { User, UserIdentity } from '@supabase/supabase-js';
 
@@ -84,4 +89,23 @@ test('getAvatarInitial: acento no início do nome', () => {
 
 test('getAvatarInitial: sem nome e sem e-mail é null', () => {
   assert.equal(getAvatarInitial(user({})), null);
+});
+
+test('getDisplayName: prioriza o nome sobre o e-mail e o fallback', () => {
+  assert.equal(
+    getDisplayName(
+      user({ user_metadata: { display_name: 'Bilas' }, email: 'bilas@gmail.com' }),
+      'Fallback',
+    ),
+    'Bilas',
+  );
+});
+
+test('getDisplayName: sem nome, cai no e-mail', () => {
+  assert.equal(getDisplayName(user({ email: 'bilas@gmail.com' }), 'Fallback'), 'bilas@gmail.com');
+});
+
+test('getDisplayName: sem nome e sem e-mail, usa o fallback do idioma ativo', () => {
+  assert.equal(getDisplayName(user({}), 'Fallback'), 'Fallback');
+  assert.equal(getDisplayName(null, 'Fallback'), 'Fallback');
 });

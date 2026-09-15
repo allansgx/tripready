@@ -33,20 +33,20 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-        <Text style={styles.title}>Perfil</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
 
         <View style={styles.identity}>
           <Avatar url={getAvatarUrl(user)} initial={getAvatarInitial(user)} size={56} />
           <View style={styles.identityTexts}>
             <Text style={styles.name} numberOfLines={1}>
-              {getDisplayName(user)}
+              {getDisplayName(user, t('auth.profile.defaultDisplayName'))}
             </Text>
             <Text style={styles.email} numberOfLines={1}>
               {user?.email ?? user?.id}
             </Text>
           </View>
           <Button
-            label="Editar"
+            label={t('profile.editButton')}
             variant="soft"
             size="sm"
             onPress={() => router.push('/profile/edit')}
@@ -61,12 +61,12 @@ export default function ProfileScreen() {
           <SectionLabel>{t('profile.section.legal')}</SectionLabel>
           <Card>
             <ListRow
-              label="Política de Privacidade"
+              label={t('profile.privacyPolicy')}
               icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />}
               onPress={() => router.push('/legal/privacidade')}
             />
             <ListRow
-              label="Termos de Uso"
+              label={t('profile.termsOfUse')}
               icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
               onPress={() => router.push('/legal/termos')}
             />
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
           <SectionLabel>{t('profile.section.account')}</SectionLabel>
           <Card>
             <ListRow
-              label="Sair"
+              label={t('profile.signOut')}
               icon={<Ionicons name="log-out-outline" size={18} color={colors.danger} />}
               iconBackground="#FDECEA"
               right={null}
@@ -90,7 +90,7 @@ export default function ProfileScreen() {
             outras da seção — é a saída definitiva. */}
         <View style={styles.dangerZone}>
           <Button
-            label="Excluir conta"
+            label={t('profile.deleteAccount')}
             variant="outline"
             tone="danger"
             onPress={() => setIsDeleteOpen(true)}

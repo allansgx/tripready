@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/ui/screen-header';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { toAuthMessage } from '@/features/auth/auth-errors';
+import { t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /**
@@ -24,7 +25,7 @@ export default function EmailLoginScreen() {
 
   async function submit() {
     if (!email.trim() || !password) {
-      setError('Preencha e-mail e senha.');
+      setError(t('auth.emailLogin.error.empty'));
       return;
     }
 
@@ -43,14 +44,14 @@ export default function EmailLoginScreen() {
 
   return (
     <FormLayout>
-      <ScreenHeader title="Entrar" subtitle="Use o e-mail e a senha da sua conta TripReady." />
+      <ScreenHeader title={t('auth.emailLogin.title')} subtitle={t('auth.emailLogin.subtitle')} />
 
       <View style={styles.form}>
         <TextField
-          label="E-mail"
+          label={t('common.field.email.label')}
           value={email}
           onChangeText={setEmail}
-          placeholder="voce@email.com"
+          placeholder={t('common.field.email.placeholder')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -59,7 +60,7 @@ export default function EmailLoginScreen() {
           returnKeyType="next"
         />
         <TextField
-          label="Senha"
+          label={t('common.field.password.label')}
           value={password}
           onChangeText={setPassword}
           placeholder="••••••••"
@@ -73,15 +74,15 @@ export default function EmailLoginScreen() {
 
         {error ? <FormMessage text={error} /> : null}
 
-        <Button label="Entrar" onPress={submit} loading={busy} />
+        <Button label={t('auth.emailLogin.submit')} onPress={submit} loading={busy} />
       </View>
 
       <View style={styles.links}>
         <Link href="/forgot-password" style={styles.link}>
-          Esqueci minha senha
+          {t('auth.emailLogin.forgotPassword')}
         </Link>
         <Link href="/sign-up" style={styles.link}>
-          Criar uma conta
+          {t('auth.emailLogin.createAccount')}
         </Link>
       </View>
     </FormLayout>

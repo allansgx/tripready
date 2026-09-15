@@ -9,19 +9,17 @@ export type PasswordRule = 'length' | 'uppercase' | 'lowercase' | 'digit' | 'sym
 
 export type PasswordStrength = 'weak' | 'medium' | 'strong';
 
-export const PASSWORD_RULES: readonly { id: PasswordRule; label: string }[] = [
-  { id: 'length', label: `Pelo menos ${MIN_PASSWORD_LENGTH} caracteres` },
-  { id: 'uppercase', label: 'Letra maiúscula' },
-  { id: 'lowercase', label: 'Letra minúscula' },
-  { id: 'digit', label: 'Número' },
-  { id: 'symbol', label: 'Símbolo' },
+/**
+ * Ordem de exibição dos requisitos. Só a estrutura mora aqui — o rótulo de
+ * cada um é resolvido pela tela, que é quem conhece o idioma ativo.
+ */
+export const PASSWORD_RULE_ORDER: readonly PasswordRule[] = [
+  'length',
+  'uppercase',
+  'lowercase',
+  'digit',
+  'symbol',
 ];
-
-export const PASSWORD_STRENGTH_LABELS: Record<PasswordStrength, string> = {
-  weak: 'Fraca',
-  medium: 'Média',
-  strong: 'Forte',
-};
 
 /** ASCII de propósito: o GoTrue não conta `Á` como maiúscula. */
 export function checkPassword(value: string): Record<PasswordRule, boolean> {

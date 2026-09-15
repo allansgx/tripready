@@ -5,10 +5,12 @@ import { TextField } from '@/components/ui/text-field';
 import {
   checkPassword,
   getPasswordStrength,
-  PASSWORD_RULES,
-  PASSWORD_STRENGTH_LABELS,
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_RULE_ORDER,
+  type PasswordRule,
   type PasswordStrength,
 } from '@/features/auth/password';
+import { t, type MessageKey } from '@/i18n';
 import {
   colors,
   priorityColors,
@@ -30,6 +32,20 @@ const SEGMENTS = [0, 1, 2];
 
 const MET_COLOR = tripMomentColors.upcoming.accent;
 
+const RULE_LABEL_KEYS: Record<PasswordRule, MessageKey> = {
+  length: 'auth.password.rule.length',
+  uppercase: 'auth.password.rule.uppercase',
+  lowercase: 'auth.password.rule.lowercase',
+  digit: 'auth.password.rule.digit',
+  symbol: 'auth.password.rule.symbol',
+};
+
+const STRENGTH_LABEL_KEYS: Record<PasswordStrength, MessageKey> = {
+  weak: 'auth.password.strength.weak',
+  medium: 'auth.password.strength.medium',
+  strong: 'auth.password.strength.strong',
+};
+
 type PasswordFieldProps = TextInputProps & {
   label: string;
   value: string;
@@ -42,7 +58,7 @@ export function PasswordField({ label, value, ...rest }: PasswordFieldProps) {
 
   const tone = STRENGTH_COLORS[strength];
   const filled = FILLED_SEGMENTS[strength];
-  const strengthLabel = PASSWORD_STRENGTH_LABELS[strength];
+  const strengthLabel = t(STRENGTH_LABEL_KEYS[strength]);
 
   return (
     <View style={styles.wrapper}>
@@ -53,7 +69,7 @@ export function PasswordField({ label, value, ...rest }: PasswordFieldProps) {
           <View
             style={styles.strength}
             accessible
-            accessibilityLabel={`Força da senha: ${strengthLabel}`}>
+            accessibilityLabel={t('a11y.password.strength', { strength: strengthLabel })}>
             <View style={styles.bar}>
               {SEGMENTS.map((index) => (
                 <View
@@ -67,21 +83,25 @@ export function PasswordField({ label, value, ...rest }: PasswordFieldProps) {
           </View>
 
           <View style={styles.rules}>
-            {PASSWORD_RULES.map((rule) => {
-              const met = rules[rule.id];
+            {PASSWORD_RULE_ORDER.map((rule) => {
+              const met = rules[rule];
+              const ruleLabel = t(RULE_LABEL_KEYS[rule], { min: MIN_PASSWORD_LENGTH });
+              const status = t(
+                met ? 'auth.password.rule.status.met' : 'auth.password.rule.status.pending',
+              );
 
               return (
                 <View
-                  key={rule.id}
+                  key={rule}
                   style={styles.rule}
                   accessible
-                  accessibilityLabel={`${rule.label}: ${met ? 'atendido' : 'pendente'}`}>
+                  accessibilityLabel={t('a11y.password.rule', { rule: ruleLabel, status })}>
                   <Ionicons
                     name={met ? 'checkmark-circle' : 'ellipse-outline'}
                     size={16}
                     color={met ? MET_COLOR : colors.textSecondary}
                   />
-                  <Text style={[styles.ruleLabel, met && styles.ruleLabelMet]}>{rule.label}</Text>
+                  <Text style={[styles.ruleLabel, met && styles.ruleLabelMet]}>{ruleLabel}</Text>
                 </View>
               );
             })}

@@ -57,20 +57,18 @@ export function getStoredName(user: User | null): string | null {
   ]);
 }
 
-/** Nome de exibição, com o e-mail e por fim "Usuário" como últimos recursos. */
-export function getDisplayName(user: User | null): string {
-  return getStoredName(user) ?? user?.email ?? 'Usuário';
+/**
+ * Nome de exibição, com o e-mail como segundo recurso. `fallback` é o texto do
+ * idioma ativo para quando não há nome nem e-mail — este módulo não conhece
+ * `t()`, então quem chama resolve a tradução.
+ */
+export function getDisplayName(user: User | null, fallback: string): string {
+  return getStoredName(user) ?? user?.email ?? fallback;
 }
 
 export type AccountProvider = 'email' | 'google' | 'apple';
 
 const KNOWN_PROVIDERS: readonly AccountProvider[] = ['google', 'apple'];
-
-/** Rótulo de exibição de cada provedor externo, para textos como "Gerenciado pela conta Google". */
-export const PROVIDER_LABELS: Record<Exclude<AccountProvider, 'email'>, string> = {
-  google: 'Google',
-  apple: 'Apple',
-};
 
 /**
  * `'email'` sempre que existir identidade de senha — é a única condição que

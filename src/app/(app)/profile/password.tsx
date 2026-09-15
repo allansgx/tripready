@@ -12,6 +12,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { toAuthMessage } from '@/features/auth/auth-errors';
 import { isPasswordValid } from '@/features/auth/password';
 import { PasswordField } from '@/features/auth/password-field';
+import { t } from '@/i18n';
 import { spacing } from '@/theme/tokens';
 
 export default function ChangePasswordScreen() {
@@ -29,15 +30,15 @@ export default function ChangePasswordScreen() {
 
   async function submit() {
     if (!currentPassword) {
-      setError('Informe sua senha atual.');
+      setError(t('auth.changePassword.error.missingCurrent'));
       return;
     }
     if (!isPasswordValid(newPassword)) {
-      setError('A nova senha ainda não cumpre todos os requisitos.');
+      setError(t('auth.changePassword.error.invalidNew'));
       return;
     }
     if (newPassword !== confirmation) {
-      setError('As senhas não coincidem.');
+      setError(t('auth.changePassword.error.mismatch'));
       return;
     }
 
@@ -45,7 +46,7 @@ export default function ChangePasswordScreen() {
     setBusy(true);
     try {
       await changePassword(currentPassword, newPassword);
-      showDialog('Senha alterada', 'Use a nova senha no próximo acesso.');
+      showDialog(t('auth.changePassword.successTitle'), t('auth.changePassword.successMessage'));
       router.back();
     } catch (err) {
       setError(toAuthMessage(err));
@@ -56,11 +57,11 @@ export default function ChangePasswordScreen() {
 
   return (
     <FormLayout>
-      <ScreenHeader title="Alterar senha" fallbackHref="/profile/edit" />
+      <ScreenHeader title={t('auth.changePassword.title')} fallbackHref="/profile/edit" />
 
       <View style={styles.form}>
         <TextField
-          label="Senha atual"
+          label={t('auth.changePassword.field.current.label')}
           value={currentPassword}
           onChangeText={setCurrentPassword}
           placeholder="••••••••"
@@ -71,19 +72,19 @@ export default function ChangePasswordScreen() {
           returnKeyType="next"
         />
         <PasswordField
-          label="Nova senha"
+          label={t('auth.changePassword.field.new.label')}
           value={newPassword}
-          placeholder="Digite a nova senha"
+          placeholder={t('auth.changePassword.field.new.placeholder')}
           onChangeText={setNewPassword}
           autoCapitalize="none"
           autoComplete="new-password"
           textContentType="newPassword"
         />
         <TextField
-          label="Confirmar nova senha"
+          label={t('auth.changePassword.field.confirmNew.label')}
           value={confirmation}
           onChangeText={setConfirmation}
-          placeholder="Repita a nova senha"
+          placeholder={t('auth.changePassword.field.confirmNew.placeholder')}
           secureTextEntry
           autoCapitalize="none"
           autoComplete="new-password"
@@ -94,7 +95,12 @@ export default function ChangePasswordScreen() {
 
         {error ? <FormMessage text={error} /> : null}
 
-        <Button label="Alterar senha" onPress={submit} loading={busy} disabled={!canSubmit} />
+        <Button
+          label={t('auth.changePassword.submit')}
+          onPress={submit}
+          loading={busy}
+          disabled={!canSubmit}
+        />
       </View>
     </FormLayout>
   );

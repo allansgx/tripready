@@ -9,11 +9,19 @@ import { ScreenHeader } from '@/components/ui/screen-header';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { toAuthMessage } from '@/features/auth/auth-errors';
-import { normalizeEmail, validateEmail } from '@/features/auth/email';
+import { normalizeEmail, validateEmail, type EmailIssue } from '@/features/auth/email';
 import { isPasswordValid, MIN_PASSWORD_LENGTH } from '@/features/auth/password';
 import { PasswordField } from '@/features/auth/password-field';
 import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
+import { t } from '@/i18n';
 import { spacing } from '@/theme/tokens';
+
+/** Traduz o descritivo de `validateEmail` no idioma ativo. */
+function emailIssueMessage(issue: EmailIssue | null): string | null {
+  if (!issue) return null;
+  if (issue.kind === 'typo') return t('auth.email.error.typo', { suggestion: issue.suggestion });
+  return t(issue.kind === 'empty' ? 'auth.email.error.empty' : 'auth.email.error.invalid');
+}
 
 /** TEMPORÁRIO — cadastro por e-mail/senha para testes no Expo Go. */
 export default function SignUpScreen() {
@@ -39,23 +47,23 @@ export default function SignUpScreen() {
 
   async function submit() {
     if (!name.trim()) {
-      setError('Informe seu nome.');
+      setError(t('auth.signUp.error.missingName'));
       return;
     }
 
     const emailProblem = validateEmail(email);
     if (emailProblem) {
       setError(null);
-      setEmailError(emailProblem);
+      setEmailError(emailIssueMessage(emailProblem));
       return;
     }
 
     if (!isPasswordValid(password)) {
-      setError('A senha ainda não cumpre todos os requisitos.');
+      setError(t('auth.signUp.error.invalidPassword'));
       return;
     }
     if (password !== confirmation) {
-      setError('As senhas não coincidem.');
+      setError(t('auth.signUp.error.passwordMismatch'));
       return;
     }
 
@@ -79,36 +87,39 @@ export default function SignUpScreen() {
     return (
       <FormLayout>
         <ScreenHeader
-          title="Confirme seu e-mail"
-          subtitle={`Enviamos um link de confirmação para ${sentTo}. Abra o link e volte para entrar.`}
+          title={t('auth.signUp.confirmEmail.title')}
+          subtitle={t('auth.signUp.confirmEmail.subtitle', { email: sentTo })}
         />
-        <Button label="Voltar para o login" onPress={() => router.replace('/email-login')} />
+        <Button
+          label={t('auth.signUp.confirmEmail.backToLogin')}
+          onPress={() => router.replace('/email-login')}
+        />
       </FormLayout>
     );
   }
 
   return (
     <FormLayout>
-      <ScreenHeader title="Criar conta" subtitle="Cadastre-se com e-mail e senha." />
+      <ScreenHeader title={t('auth.signUp.title')} subtitle={t('auth.signUp.subtitle')} />
 
       <View style={styles.form}>
         <TextField
-          label="Nome"
+          label={t('common.field.name.label')}
           value={name}
           onChangeText={setName}
-          placeholder="Como você quer ser chamado"
+          placeholder={t('common.field.name.placeholder')}
           autoCapitalize="words"
           autoComplete="name"
           textContentType="name"
           returnKeyType="next"
         />
         <TextField
-          label="E-mail"
+          label={t('common.field.email.label')}
           value={email}
           onChangeText={changeEmail}
-          onBlur={() => setEmailError(validateEmail(email))}
+          onBlur={() => setEmailError(emailIssueMessage(validateEmail(email)))}
           error={emailError}
-          placeholder="voce@email.com"
+          placeholder={t('common.field.email.placeholder')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -117,19 +128,19 @@ export default function SignUpScreen() {
           returnKeyType="next"
         />
         <PasswordField
-          label="Senha"
+          label={t('common.field.password.label')}
           value={password}
           onChangeText={setPassword}
-          placeholder={`Mínimo de ${MIN_PASSWORD_LENGTH} caracteres`}
+          placeholder={t('auth.password.placeholder.minLength', { min: MIN_PASSWORD_LENGTH })}
           autoCapitalize="none"
           autoComplete="new-password"
           textContentType="newPassword"
         />
         <TextField
-          label="Confirmar senha"
+          label={t('auth.signUp.field.confirmPassword.label')}
           value={confirmation}
           onChangeText={setConfirmation}
-          placeholder="Repita a senha"
+          placeholder={t('auth.signUp.field.confirmPassword.placeholder')}
           secureTextEntry
           autoCapitalize="none"
           autoComplete="new-password"
@@ -140,9 +151,14 @@ export default function SignUpScreen() {
 
         {error ? <FormMessage text={error} /> : null}
 
-        <Button label="Criar conta" onPress={submit} loading={busy} disabled={!canSubmit} />
+        <Button
+          label={t('auth.signUp.submit')}
+          onPress={submit}
+          loading={busy}
+          disabled={!canSubmit}
+        />
 
-        <LegalConsentNotice lead="Ao criar sua conta" />
+        <LegalConsentNotice variant="createAccount" />
       </View>
     </FormLayout>
   );

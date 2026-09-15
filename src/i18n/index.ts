@@ -8,7 +8,7 @@ import { messages as es } from './messages/es.ts';
 import { messages as ptBR, type MessageKey } from './messages/pt-BR.ts';
 import { readLocaleChoice, writeLocaleChoice } from './storage.ts';
 
-export type { Locale, MessageKey };
+export type { Locale, MessageKey, MessageParams };
 
 const DICTIONARIES: Record<Locale, Messages> = { 'pt-BR': ptBR, en, es };
 

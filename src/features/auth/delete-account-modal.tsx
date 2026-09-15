@@ -13,8 +13,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { renderInlineBold } from '@/components/ui/inline-markup';
 import { TextField } from '@/components/ui/text-field';
-import { DELETE_CONFIRMATION_WORD, isDeleteConfirmed } from '@/features/auth/delete-account';
+import { getDeleteConfirmationWord, isDeleteConfirmed } from '@/features/auth/delete-account';
+import { t, useLocale } from '@/i18n';
 import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 type DeleteAccountModalProps = {
@@ -30,9 +32,11 @@ type DeleteAccountModalProps = {
  */
 export function DeleteAccountModal({ visible, onClose, onConfirm }: DeleteAccountModalProps) {
   const insets = useSafeAreaInsets();
+  const locale = useLocale();
   const [confirmation, setConfirmation] = useState('');
 
-  const confirmed = isDeleteConfirmed(confirmation);
+  const confirmationWord = getDeleteConfirmationWord(locale);
+  const confirmed = isDeleteConfirmed(confirmation, locale);
 
   /** Fechar é só fechar: nada é excluído por sair daqui. */
   function handleClose() {
@@ -57,7 +61,7 @@ export function DeleteAccountModal({ visible, onClose, onConfirm }: DeleteAccoun
       <View style={styles.root}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Fechar"
+          accessibilityLabel={t('common.action.close')}
           style={StyleSheet.absoluteFill}
           onPress={handleClose}>
           <View style={styles.backdrop} />
@@ -78,35 +82,36 @@ export function DeleteAccountModal({ visible, onClose, onConfirm }: DeleteAccoun
                   <Ionicons name="trash-outline" size={26} color={colors.danger} />
                 </View>
 
-                <Text style={styles.title}>Excluir conta</Text>
+                <Text style={styles.title}>{t('auth.deleteAccount.title')}</Text>
 
                 <Text style={styles.warning}>
-                  Esta ação é <Text style={styles.warningStrong}>permanente e irreversível</Text>.
-                  Todos os seus dados, viagens e documentos serão apagados.
+                  {renderInlineBold(t('auth.deleteAccount.warning'), styles.warningStrong)}
                 </Text>
               </View>
 
               <TextField
-                label={`Digite ${DELETE_CONFIRMATION_WORD} para confirmar`}
+                label={t('auth.deleteAccount.field.label', { word: confirmationWord })}
                 value={confirmation}
                 onChangeText={setConfirmation}
-                placeholder={DELETE_CONFIRMATION_WORD}
+                placeholder={confirmationWord}
                 autoCapitalize="none"
                 autoCorrect={false}
                 spellCheck={false}
                 returnKeyType="done"
-                accessibilityLabel={`Digite ${DELETE_CONFIRMATION_WORD} para confirmar a exclusão da conta`}
+                accessibilityLabel={t('auth.deleteAccount.field.a11yLabel', {
+                  word: confirmationWord,
+                })}
                 onSubmitEditing={handleConfirm}
               />
 
               <View style={styles.actions}>
                 <Button
-                  label="Excluir minha conta"
+                  label={t('auth.deleteAccount.confirmButton')}
                   tone="danger"
                   onPress={handleConfirm}
                   disabled={!confirmed}
                 />
-                <Button label="Cancelar" variant="outline" onPress={handleClose} />
+                <Button label={t('common.action.cancel')} variant="outline" onPress={handleClose} />
               </View>
             </ScrollView>
           </View>

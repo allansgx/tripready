@@ -1319,7 +1319,7 @@ preferência já grava, lê e sincroniza, mas ainda não há o que traduzir.
 Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 
 1. ✅ `components/ui/*` (8 arquivos, poucas strings)
-2. `features/auth/*` + telas `(auth)/*` + `profile/*`
+2. ✅ `features/auth/*` + telas `(auth)/*` + `profile/*`
 3. `features/passports/*` + `passport-picker` + `onboarding`
 4. `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
    em vez de frase. Os testes correspondentes são reescritos junto.
@@ -1361,6 +1361,56 @@ tinham texto de idioma. O que ficou diferente do previsto:
 - Nenhuma das 7 outras alterações mudou texto visível em pt-BR: `npx tsc`,
   `expo lint`, `prettier --check` e os 195 testes passam sem diferença de
   comportamento.
+
+**Sub-etapa 2 concluída.** `features/auth/*`, as 4 telas de `(auth)/`, `profile/*`
+(4 telas) e `legal-consent-notice.tsx` — este último por acoplamento, pelo
+mesmo motivo do `SectionLabel` na sub-etapa 1. Cerca de 110 chaves novas.
+Achados que mudaram o previsto:
+
+- **Duas mensagens de erro que a auditoria original classificou como
+  "diagnóstico, não exibidas" na verdade chegam à tela.** `createSessionFromUrl`
+  e `signInWithApple`, em `auth-service.ts`, lançam `Error`s cujo `.message` cai
+  em `toAuthMessage` e, sem correspondência no mapa de mensagens do GoTrue, saía
+  cru para a tela de login — em português, em qualquer idioma. Criei
+  `AuthUiError` (chave + parâmetros, sem texto) para que a tradução aconteça em
+  `toAuthMessage`, no momento de exibir, e não no momento do `throw` — evita que
+  um erro lançado em um idioma seja mostrado congelado nele se o idioma mudar
+  antes de a tela renderizar. `AuthCancelledError` continua com mensagem em
+  português: confirmei que seu `.message` nunca é lido, só o `instanceof`.
+- **O fallback de `toAuthMessage` deixou de devolver `error.message` cru.**
+  Antes, qualquer erro do GoTrue sem mapeamento aparecia em inglês para o
+  usuário. Agora cai em `auth.error.unexpected`, traduzido — a mudança que a
+  §7 item 5 do plano já previa e que só ficou concreta ao implementar.
+- **`isDeleteConfirmed` mudou de comparação exata para comparação sem acento e
+  sem caixa, e passou a aceitar a palavra de dois idiomas** (o ativo e o
+  pt-BR), como a §7 item 4 definia. Isso teve um efeito colateral correto:
+  `'Excluír'` (só com acento errado) agora confirma, porque normaliza para o
+  mesmo texto de `'Excluir'` — não é afrouxamento da regra, é a mesma palavra
+  com um erro de teclado. `delete-account.test.ts` foi reescrito para cobrir
+  isso e o cruzamento de idiomas explicitamente.
+- **`delete-account.ts` só pôde ganhar o idioma da confirmação porque lê
+  direto dos módulos puros de `i18n`** (`locales.ts`, `messages/*.ts`), nunca
+  de `src/i18n/index.ts` — confirmado por teste manual sob `node --test`, já
+  que aquele módulo carrega `expo-localization` e quebraria o `npm test`.
+- **`LegalConsentNotice` tinha um defeito de composição anterior ao i18n**:
+  montava a frase por concatenação (`{lead}, você concorda com os Termos...`),
+  o que produziria ordem de palavras errada em inglês e espanhol. Trocado por
+  `variant` (`'continue' | 'createAccount'`) e uma chave com a frase inteira,
+  com `{terms}`/`{privacy}` substituídos por nós React (os links) — o mesmo
+  princípio do `renderInlineBold` novo, criado para o **negrito** do aviso de
+  exclusão de conta e reaproveitável nos documentos legais na Fase 5.
+- **`getDisplayName` ganhou um parâmetro `fallback`** em vez de importar
+  `t()`: o módulo continua sem depender de idioma, e quem chama (a única tela,
+  `profile/index.tsx`) fornece o texto resolvido.
+- **`PROVIDER_LABELS` e `PASSWORD_RULES`/`PASSWORD_STRENGTH_LABELS` saíram do
+  domínio.** Viraram `PASSWORD_RULE_ORDER` (só a ordem, sem texto) e mapas
+  `chave → MessageKey` nas telas que os consomem — a mesma mudança de forma
+  que a §5.2 pedia para `trip-limits.ts` etc., aplicada aqui primeiro porque
+  `auth/` veio antes na ordem da Fase 1.
+- Dois placeholders de senha (`'••••••••'`) ficaram fora do i18n de propósito:
+  são glifos decorativos, não idioma — o mesmo raciocínio já usado para `%`
+  na sub-etapa 1.
+- `npx tsc`, `expo lint`, `prettier --check` e os 201 testes passam.
 
 ### Fase 2 — Países e cidades
 
