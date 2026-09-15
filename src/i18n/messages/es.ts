@@ -158,4 +158,42 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'profile.edit.submit': 'Guardar cambios',
   'profile.security.passwordRow.label': 'Contraseña',
   'profile.security.passwordRow.description': 'Cambia tu contraseña de acceso',
+
+  'passports.addPassport': 'Agregar pasaporte',
+  'passports.section.primaryTag': 'Principal',
+  'passports.error.connection': 'Tu conexión falló. Inténtalo de nuevo.',
+  'passports.error.loginRequired': 'Inicia sesión para agregar un pasaporte.',
+  'passports.error.onlyOne':
+    'Este es tu único pasaporte. Agrega otro y defínelo como principal para poder eliminar este.',
+  'passports.error.mustPromoteFirst':
+    'Este es tu pasaporte principal. Define otro como principal antes de eliminarlo.',
+
+  'passports.dialog.cannotComplete': 'No se pudo completar',
+  'passports.dialog.onlyPrimary.message':
+    'Este es tu único pasaporte y está definido como principal. Para eliminarlo, agrega otro pasaporte y defínelo como principal.',
+  'passports.dialog.primary.message':
+    'Pasaporte principal. Para eliminarlo, define otro pasaporte como principal antes.',
+  'passports.dialog.setPrimary': 'Definir como principal',
+  'passports.dialog.remove': 'Eliminar pasaporte',
+  'passports.dialog.removeConfirm.title': '¿Eliminar {name}?',
+  'passports.dialog.removeConfirm.message': 'Puedes agregarlo de nuevo cuando quieras.',
+  'passports.dialog.removeConfirm.confirm': 'Eliminar',
+
+  'passports.picker.search.byCity': 'Buscar país o ciudad...',
+  'passports.picker.search.byCountry': 'Buscar país...',
+  'passports.picker.empty.byCity': 'No se encontró ningún destino para “{query}”.',
+  'passports.picker.empty.byCountry': 'No se encontró ningún país para “{query}”.',
+  'passports.picker.title': 'Agregar pasaporte',
+  'passports.picker.addFailed.title': 'No se pudo agregar',
+  'passports.picker.addFailed.fallback': 'Inténtalo de nuevo.',
+
+  'a11y.passport.primary': '{name}, pasaporte principal',
+  'a11y.passport.openOptions': 'Abre las opciones del pasaporte',
+  'a11y.countryRow.withCity': '{country}, {city}',
+  'a11y.countryRow.alreadyAdded': 'Ya agregado',
+
+  'onboarding.saveFailed.title': 'No se pudo guardar',
+  'onboarding.title': '¿Con qué pasaporte viajas?',
+  'onboarding.subtitle':
+    'Usamos esta información para encontrar los requisitos de cada destino. Puedes agregar otros pasaportes más adelante, en tu perfil.',
 };

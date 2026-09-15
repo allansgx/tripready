@@ -1320,7 +1320,7 @@ Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 
 1. ✅ `components/ui/*` (8 arquivos, poucas strings)
 2. ✅ `features/auth/*` + telas `(auth)/*` + `profile/*`
-3. `features/passports/*` + `passport-picker` + `onboarding`
+3. ✅ `features/passports/*` + `passport-picker` + `onboarding`
 4. `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
    em vez de frase. Os testes correspondentes são reescritos junto.
 5. `features/trips/components/*` + `trip-card` + `next-trip-hero`
@@ -1411,6 +1411,28 @@ Achados que mudaram o previsto:
   são glifos decorativos, não idioma — o mesmo raciocínio já usado para `%`
   na sub-etapa 1.
 - `npx tsc`, `expo lint`, `prettier --check` e os 201 testes passam.
+
+**Sub-etapa 3 concluída.** `features/passports/*` (4 arquivos), `passport-picker.tsx`
+e `onboarding.tsx`. ~34 chaves novas. Sem testes nesta pasta — nenhuma restrição
+de `node --test` a considerar. Pontos que valem registrar:
+
+- **`passports-context.tsx` importa `@/i18n` diretamente.** É um contexto React
+  fundo na árvore, sem uso fora do app — diferente de `delete-account.ts` na
+  sub-etapa 2, não precisou dos módulos puros.
+- **Nome de país continua em pt-BR nesta sub-etapa, de propósito.**
+  `getCountryName(code)` só localiza na Fase 2; os textos que o envolvem — a11y
+  do passaporte principal (`{name}, passaporte principal`), o título do diálogo
+  de remoção (`Remover {name}?`) — já usam chave com `{name}` interpolado, então
+  quando a Fase 2 trocar `getCountryName`, o texto ao redor já acompanha sem
+  tocar de novo nestes arquivos.
+- **Um esquecimento pego pela própria varredura final**: a `accessibilityHint`
+  "Abre as opções do passaporte" de `PassportRow` não tinha entrado no primeiro
+  lote de chaves — a auditoria da §18.1 (grep de literais) não pega
+  `accessibilityHint` dinâmico atribuído fora de uma prop de string direta, só o
+  `grep` de props com aspas literais pegou porque a linha ainda tinha o texto
+  cru no momento da varredura. Adicionado como `a11y.passport.openOptions`.
+- `npx tsc`, `expo lint`, `prettier --check` passam; nenhum teste a rodar além
+  da suíte completa (201, inalterada).
 
 ### Fase 2 — Países e cidades
 

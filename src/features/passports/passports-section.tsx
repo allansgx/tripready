@@ -32,7 +32,7 @@ export function PassportsSection() {
     try {
       await action();
     } catch (error) {
-      showDialog('Não foi possível concluir', toPassportMessage(error));
+      showDialog(t('passports.dialog.cannotComplete'), toPassportMessage(error));
     } finally {
       setBusyId(null);
     }
@@ -48,41 +48,43 @@ export function PassportsSection() {
 
       showDialog(
         name,
-        isOnly
-          ? 'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.'
-          : 'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+        t(isOnly ? 'passports.dialog.onlyPrimary.message' : 'passports.dialog.primary.message'),
         isOnly
           ? [
               {
-                text: 'Adicionar passaporte',
+                text: t('passports.addPassport'),
                 onPress: () => router.push('/passport-picker'),
               },
-              { text: 'Fechar', style: 'cancel' },
+              { text: t('common.action.close'), style: 'cancel' },
             ]
-          : [{ text: 'Fechar', style: 'cancel' }],
+          : [{ text: t('common.action.close'), style: 'cancel' }],
       );
       return;
     }
 
     const buttons: AlertButton[] = [
       {
-        text: 'Definir como principal',
+        text: t('passports.dialog.setPrimary'),
         onPress: () => void run(passport.id, () => setPrimary(passport.id)),
       },
       {
-        text: 'Remover passaporte',
+        text: t('passports.dialog.remove'),
         style: 'destructive',
         onPress: () =>
-          showDialog(`Remover ${name}?`, 'Você pode adicioná-lo de novo quando quiser.', [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Remover',
-              style: 'destructive',
-              onPress: () => void run(passport.id, () => removePassport(passport.id)),
-            },
-          ]),
+          showDialog(
+            t('passports.dialog.removeConfirm.title', { name }),
+            t('passports.dialog.removeConfirm.message'),
+            [
+              { text: t('common.action.cancel'), style: 'cancel' },
+              {
+                text: t('passports.dialog.removeConfirm.confirm'),
+                style: 'destructive',
+                onPress: () => void run(passport.id, () => removePassport(passport.id)),
+              },
+            ],
+          ),
       },
-      { text: 'Cancelar', style: 'cancel' },
+      { text: t('common.action.cancel'), style: 'cancel' },
     ];
 
     showDialog(name, undefined, buttons);
@@ -110,13 +112,13 @@ export function PassportsSection() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Adicionar passaporte"
+          accessibilityLabel={t('passports.addPassport')}
           onPress={() => router.push('/passport-picker')}
           style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
           <View style={styles.addIcon}>
             <Ionicons name="add" size={18} color={colors.primary} />
           </View>
-          <Text style={styles.addLabel}>Adicionar passaporte</Text>
+          <Text style={styles.addLabel}>{t('passports.addPassport')}</Text>
         </Pressable>
       </Card>
     </View>
@@ -137,8 +139,8 @@ function PassportRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={passport.is_primary ? `${name}, passaporte principal` : name}
-      accessibilityHint="Abre as opções do passaporte"
+      accessibilityLabel={passport.is_primary ? t('a11y.passport.primary', { name }) : name}
+      accessibilityHint={t('a11y.passport.openOptions')}
       onPress={busy ? undefined : onPress}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
       <CountryFlag code={passport.country_code} />
@@ -147,7 +149,9 @@ function PassportRow({
         <Text style={styles.name} numberOfLines={1}>
           {name}
         </Text>
-        {passport.is_primary ? <Text style={styles.primaryTag}>Principal</Text> : null}
+        {passport.is_primary ? (
+          <Text style={styles.primaryTag}>{t('passports.section.primaryTag')}</Text>
+        ) : null}
       </View>
 
       {busy ? (

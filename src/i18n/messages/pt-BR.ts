@@ -161,6 +161,44 @@ export const messages = {
   'profile.edit.submit': 'Salvar alterações',
   'profile.security.passwordRow.label': 'Senha',
   'profile.security.passwordRow.description': 'Altere sua senha de acesso',
+
+  'passports.addPassport': 'Adicionar passaporte',
+  'passports.section.primaryTag': 'Principal',
+  'passports.error.connection': 'Sua conexão oscilou. Tente de novo.',
+  'passports.error.loginRequired': 'Faça login para adicionar um passaporte.',
+  'passports.error.onlyOne':
+    'Este é o seu único passaporte. Adicione outro e defina-o como principal para poder remover este.',
+  'passports.error.mustPromoteFirst':
+    'Este é o seu passaporte principal. Defina outro como principal antes de removê-lo.',
+
+  'passports.dialog.cannotComplete': 'Não foi possível concluir',
+  'passports.dialog.onlyPrimary.message':
+    'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.',
+  'passports.dialog.primary.message':
+    'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+  'passports.dialog.setPrimary': 'Definir como principal',
+  'passports.dialog.remove': 'Remover passaporte',
+  'passports.dialog.removeConfirm.title': 'Remover {name}?',
+  'passports.dialog.removeConfirm.message': 'Você pode adicioná-lo de novo quando quiser.',
+  'passports.dialog.removeConfirm.confirm': 'Remover',
+
+  'passports.picker.search.byCity': 'Buscar país ou cidade...',
+  'passports.picker.search.byCountry': 'Buscar país...',
+  'passports.picker.empty.byCity': 'Nenhum destino encontrado para “{query}”.',
+  'passports.picker.empty.byCountry': 'Nenhum país encontrado para “{query}”.',
+  'passports.picker.title': 'Adicionar passaporte',
+  'passports.picker.addFailed.title': 'Não foi possível adicionar',
+  'passports.picker.addFailed.fallback': 'Tente novamente.',
+
+  'a11y.passport.primary': '{name}, passaporte principal',
+  'a11y.passport.openOptions': 'Abre as opções do passaporte',
+  'a11y.countryRow.withCity': '{country}, {city}',
+  'a11y.countryRow.alreadyAdded': 'Já adicionado',
+
+  'onboarding.saveFailed.title': 'Não foi possível salvar',
+  'onboarding.title': 'Qual passaporte você usa para viajar?',
+  'onboarding.subtitle':
+    'Usamos essa informação para descobrir os requisitos de cada destino. Você pode adicionar outros passaportes depois, no seu perfil.',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof messages;

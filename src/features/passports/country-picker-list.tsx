@@ -14,6 +14,7 @@ import { CountryFlag } from '@/components/ui/country-flag';
 import { SearchField } from '@/components/ui/search-field';
 import { searchCountries, type Country } from '@/constants/countries';
 import { searchDestinations, type DestinationMatch } from '@/constants/destinations';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type CountryPickerListProps = {
@@ -84,7 +85,9 @@ export function CountryPickerList({
           {header}
           <SearchField
             ref={inputRef}
-            placeholder={searchByCity ? 'Buscar país ou cidade...' : 'Buscar país...'}
+            placeholder={t(
+              searchByCity ? 'passports.picker.search.byCity' : 'passports.picker.search.byCountry',
+            )}
             value={query}
             onChangeText={setQuery}
           />
@@ -92,7 +95,9 @@ export function CountryPickerList({
       }
       ListEmptyComponent={
         <Text style={styles.empty}>
-          {searchByCity ? 'Nenhum destino encontrado' : 'Nenhum país encontrado'} para “{query}”.
+          {t(searchByCity ? 'passports.picker.empty.byCity' : 'passports.picker.empty.byCountry', {
+            query,
+          })}
         </Text>
       }
       renderItem={({ item }) => (
@@ -127,9 +132,11 @@ function CountryRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={city ? `${country.name}, ${city}` : country.name}
+      accessibilityLabel={
+        city ? t('a11y.countryRow.withCity', { country: country.name, city }) : country.name
+      }
       accessibilityState={{ disabled: blocked, selected }}
-      accessibilityHint={disabled ? 'Já adicionado' : undefined}
+      accessibilityHint={disabled ? t('a11y.countryRow.alreadyAdded') : undefined}
       onPress={blocked ? undefined : onPress}
       style={({ pressed }) => [
         styles.row,

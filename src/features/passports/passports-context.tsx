@@ -10,6 +10,7 @@ import {
 
 import { useAuth } from '@/features/auth/auth-context';
 import { rebuildChecklistsForPassport } from '@/features/trips/data/trip-persistence';
+import { t } from '@/i18n';
 import { passportsService } from '@/services';
 import type { Passport } from '@/types/models';
 
@@ -100,7 +101,7 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
 
       async addPassport(countryCode) {
         if (!userId) {
-          throw new PassportRuleError('Faça login para adicionar um passaporte.');
+          throw new PassportRuleError(t('passports.error.loginRequired'));
         }
 
         const created = await passportsService.create({
@@ -137,9 +138,11 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
 
         if (target?.is_primary) {
           throw new PassportRuleError(
-            passports.length === 1
-              ? 'Este é o seu único passaporte. Adicione outro e defina-o como principal para poder remover este.'
-              : 'Este é o seu passaporte principal. Defina outro como principal antes de removê-lo.',
+            t(
+              passports.length === 1
+                ? 'passports.error.onlyOne'
+                : 'passports.error.mustPromoteFirst',
+            ),
           );
         }
 

@@ -157,4 +157,42 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'profile.edit.submit': 'Save changes',
   'profile.security.passwordRow.label': 'Password',
   'profile.security.passwordRow.description': 'Change your sign-in password',
+
+  'passports.addPassport': 'Add passport',
+  'passports.section.primaryTag': 'Primary',
+  'passports.error.connection': 'Your connection dropped. Try again.',
+  'passports.error.loginRequired': 'Sign in to add a passport.',
+  'passports.error.onlyOne':
+    'This is your only passport. Add another and set it as primary before you can remove this one.',
+  'passports.error.mustPromoteFirst':
+    'This is your primary passport. Set another as primary before removing it.',
+
+  'passports.dialog.cannotComplete': 'Could not complete',
+  'passports.dialog.onlyPrimary.message':
+    'This is your only passport and it is set as primary. To remove it, add another passport and set it as primary.',
+  'passports.dialog.primary.message':
+    'Primary passport. To remove it, set another passport as primary first.',
+  'passports.dialog.setPrimary': 'Set as primary',
+  'passports.dialog.remove': 'Remove passport',
+  'passports.dialog.removeConfirm.title': 'Remove {name}?',
+  'passports.dialog.removeConfirm.message': 'You can add it again whenever you want.',
+  'passports.dialog.removeConfirm.confirm': 'Remove',
+
+  'passports.picker.search.byCity': 'Search country or city...',
+  'passports.picker.search.byCountry': 'Search country...',
+  'passports.picker.empty.byCity': 'No destination found for “{query}”.',
+  'passports.picker.empty.byCountry': 'No country found for “{query}”.',
+  'passports.picker.title': 'Add passport',
+  'passports.picker.addFailed.title': 'Could not add it',
+  'passports.picker.addFailed.fallback': 'Try again.',
+
+  'a11y.passport.primary': '{name}, primary passport',
+  'a11y.passport.openOptions': 'Opens passport options',
+  'a11y.countryRow.withCity': '{country}, {city}',
+  'a11y.countryRow.alreadyAdded': 'Already added',
+
+  'onboarding.saveFailed.title': 'Could not save it',
+  'onboarding.title': 'Which passport do you travel with?',
+  'onboarding.subtitle':
+    'We use this to find the requirements for each destination. You can add other passports later, in your profile.',
 };
