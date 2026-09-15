@@ -25,10 +25,6 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  // Assinado no ponto mais alto da árvore: trocar de idioma redesenha o app
-  // inteiro de uma vez, sem cada tela precisar assinar por conta própria.
-  useLocale();
-
   return (
     <AuthProvider>
       <PassportsProvider>
@@ -101,6 +97,13 @@ function AppContent() {
   const { session } = useAuth();
   const { hasPassport, hasLoadError: passportsFailed, refresh: refreshPassports } = usePassports();
 
+  // React Navigation embrulha cada tela em `StaticContainer`, que ignora
+  // re-renderizações do pai quando só os `children` mudam — por isso trocar de
+  // idioma não redesenhava as telas já montadas, só quem assinava por conta
+  // própria (como o seletor de idioma). A `key` força o `Stack` inteiro a
+  // remontar na troca, o mesmo efeito do reload manual que o problema exigia.
+  const locale = useLocale();
+
   // Chutar "não tem passaporte" mandaria para o cadastro alguém que já tem.
   if (session && passportsFailed) {
     return (
@@ -113,6 +116,7 @@ function AppContent() {
 
   return (
     <Stack
+      key={locale}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
