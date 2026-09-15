@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type ScreenHeaderProps = {
@@ -19,7 +20,7 @@ export function ScreenHeader({ title, subtitle, fallbackHref = '/login' }: Scree
     <View style={styles.header}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Voltar"
+        accessibilityLabel={t('common.action.back')}
         hitSlop={12}
         onPress={() => (router.canGoBack() ? router.back() : router.replace(fallbackHref))}
         style={({ pressed }) => [styles.back, pressed && styles.backPressed]}>

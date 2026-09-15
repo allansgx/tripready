@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { t } from '@/i18n';
 import { colors, radius } from '@/theme/tokens';
 
 type AvatarProps = {
@@ -36,7 +37,7 @@ export function Avatar({ url, initial, size = 56, badge }: AvatarProps) {
             style={styles.image}
             contentFit="cover"
             transition={150}
-            accessibilityLabel="Foto do perfil"
+            accessibilityLabel={t('a11y.avatar.profilePhoto')}
             onError={() => setImageFailed(true)}
           />
         ) : initial ? (

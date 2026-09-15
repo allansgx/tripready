@@ -37,6 +37,7 @@ import {
   TRIP_LIMIT_MESSAGES,
 } from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
+import { t } from '@/i18n';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
@@ -242,7 +243,7 @@ export default function EditTripScreen() {
           ) : null}
 
           <View style={styles.section}>
-            <SectionLabel>Nome</SectionLabel>
+            <SectionLabel>{t('trip.edit.section.name')}</SectionLabel>
             <TextField
               label="Nome da viagem"
               value={draft.name}
@@ -255,7 +256,7 @@ export default function EditTripScreen() {
           </View>
 
           <View style={styles.section}>
-            <SectionLabel>Países</SectionLabel>
+            <SectionLabel>{t('trip.edit.section.countries')}</SectionLabel>
             <View style={styles.countryList}>
               {draft.countryCodes.map((code) => (
                 <View key={code} style={styles.countryRow}>
@@ -283,7 +284,7 @@ export default function EditTripScreen() {
 
           {draft.countryCodes.length > 0 ? (
             <View style={styles.section}>
-              <SectionLabel>Cidades</SectionLabel>
+              <SectionLabel>{t('trip.edit.section.cities')}</SectionLabel>
               <CityStep
                 countryCodes={draft.countryCodes}
                 selected={draft.cities}
@@ -294,7 +295,7 @@ export default function EditTripScreen() {
           ) : null}
 
           <View style={styles.section}>
-            <SectionLabel>Datas</SectionLabel>
+            <SectionLabel>{t('trip.edit.section.dates')}</SectionLabel>
             <DateRangePicker
               value={draft.range}
               onChange={setRange}

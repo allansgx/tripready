@@ -18,6 +18,7 @@ import {
 } from '@/features/trips/data/checklist-catalog';
 import { buildAffiliateClick } from '@/features/trips/domain/affiliate-click';
 import { describeRequirementScope } from '@/features/trips/domain/requirement-matching';
+import { t } from '@/i18n';
 import {
   affiliateClicksService,
   requirementOffersService,
@@ -208,7 +209,7 @@ export default function RequirementDetailScreen() {
 
         {requirement.description ? (
           <View>
-            <SectionLabel>O que verificar</SectionLabel>
+            <SectionLabel>{t('requirement.section.whatToCheck')}</SectionLabel>
             <View style={styles.card}>
               <RequirementDescription text={requirement.description} />
             </View>
@@ -217,7 +218,7 @@ export default function RequirementDetailScreen() {
 
         {offers.length > 0 ? (
           <View>
-            <SectionLabel>Opções para contratar</SectionLabel>
+            <SectionLabel>{t('requirement.section.offers')}</SectionLabel>
             <View style={styles.offers}>
               {offers.map((offer) => (
                 <OfferRow key={offer.id} offer={offer} tripId={requirement.trip_id} />
@@ -229,7 +230,7 @@ export default function RequirementDetailScreen() {
 
         {sourceName && sourceUrl ? (
           <View>
-            <SectionLabel>Fonte oficial</SectionLabel>
+            <SectionLabel>{t('requirement.section.source')}</SectionLabel>
             <Pressable
               accessibilityRole="link"
               accessibilityLabel={`Abrir a fonte oficial: ${sourceName}`}

@@ -1318,7 +1318,7 @@ preferência já grava, lê e sincroniza, mas ainda não há o que traduzir.
 
 Ordem sugerida, das folhas para a raiz, para cada tela ser testável sozinha:
 
-1. `components/ui/*` (8 arquivos, poucas strings)
+1. ✅ `components/ui/*` (8 arquivos, poucas strings)
 2. `features/auth/*` + telas `(auth)/*` + `profile/*`
 3. `features/passports/*` + `passport-picker` + `onboarding`
 4. `features/trips/domain/*` — **esta é a etapa que muda assinatura**: descritor
@@ -1333,6 +1333,34 @@ Regra por arquivo: nenhuma string literal visível sobra; o comportamento é
 idêntico; `npm check` passa. Reversível a qualquer momento.
 
 Critério de saída: a auditoria da §18.1 não encontra nada.
+
+**Sub-etapa 1 concluída.** Os 15 arquivos de `components/ui/` foram lidos; 8
+tinham texto de idioma. O que ficou diferente do previsto:
+
+- **`src/i18n/format.ts` nasceu aqui**, um passo adiante do previsto (a §17 já
+  reservava o caminho, mas o plano só chegava a ele na Fase 2). `date-range-picker.tsx`
+  precisava dos nomes de mês e das iniciais de dia por idioma para não misturar
+  português com uma tabela ainda fixa, e essa tabela — consultada por posição,
+  não por frase — fica fora de `messages/*` de propósito: misturar as duas
+  coisas tornaria `completeness.test.ts` cego a uma chave de frase esquecida.
+  A tabela mensal completa de `trip-format.ts` (abreviada, três letras) é
+  diferente desta e continua para a sub-etapa 4.
+- **`SectionLabel` perdeu o `toUpperCase()`**, como a §5.4 exige — mas isso
+  quebraria as 9 telas que ainda chamam `<SectionLabel>texto solto</SectionLabel>`.
+  Em vez de adiar a mudança, os 9 pontos de chamada (em `profile/edit.tsx`,
+  `profile/index.tsx`, `[requirementId].tsx` ×3, `login.tsx`, `trip-edit.tsx`
+  ×4, `passports-section.tsx`, `travel-tips-carousel.tsx`) ganharam a chave já
+  em caixa alta no mesmo commit — só essa linha em cada arquivo, sem tocar no
+  resto do texto pt-BR que ainda pertence à sub-etapa daquele arquivo. Sem
+  isso, o app rodaria com um regressão visível (rótulos de seção em minúsculas)
+  até essas telas chegarem na ordem.
+- **`showDialog`'s `DEFAULT_BUTTONS`** deixou de ser uma constante de módulo e
+  passou a avaliar `t('common.action.ok')` por chamada, no valor padrão do
+  parâmetro — a constante de módulo teria congelado "OK" no idioma de quando o
+  arquivo foi importado, e não no idioma ativo no momento do diálogo.
+- Nenhuma das 7 outras alterações mudou texto visível em pt-BR: `npx tsc`,
+  `expo lint`, `prettier --check` e os 195 testes passam sem diferença de
+  comportamento.
 
 ### Fase 2 — Países e cidades
 

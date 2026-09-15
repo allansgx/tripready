@@ -2,23 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { t, useLocale } from '@/i18n';
+import { monthNames, weekdayInitials } from '@/i18n/format';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
-
-const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const;
-const MONTH_NAMES = [
-  'janeiro',
-  'fevereiro',
-  'março',
-  'abril',
-  'maio',
-  'junho',
-  'julho',
-  'agosto',
-  'setembro',
-  'outubro',
-  'novembro',
-  'dezembro',
-] as const;
 
 export type DateRange = { start: string | null; end: string | null };
 
@@ -59,6 +45,10 @@ export function DateRangePicker({
   /** Duração máxima, contando ida e volta: o que passa disso fica apagado. */
   maxDurationDays?: number;
 }) {
+  const locale = useLocale();
+  const months = monthNames(locale);
+  const weekdays = weekdayInitials(locale);
+
   const today = new Date();
   const todayISO = toISO(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -125,7 +115,7 @@ export function DateRangePicker({
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Ano anterior"
+            accessibilityLabel={t('date.picker.previousYear')}
             accessibilityState={{ disabled: !canGoBackYear }}
             hitSlop={10}
             onPress={canGoBackYear ? () => setPickerYear((year) => year - 1) : undefined}
@@ -139,7 +129,7 @@ export function DateRangePicker({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Voltar ao calendário"
+            accessibilityLabel={t('date.picker.backToCalendar')}
             hitSlop={10}
             onPress={() => setPickingMonth(false)}>
             <Text style={styles.monthLabel}>{pickerYear}</Text>
@@ -147,7 +137,7 @@ export function DateRangePicker({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Próximo ano"
+            accessibilityLabel={t('date.picker.nextYear')}
             hitSlop={10}
             onPress={() => setPickerYear((year) => year + 1)}
             style={styles.monthButton}>
@@ -156,7 +146,7 @@ export function DateRangePicker({
         </View>
 
         <View style={styles.monthGrid}>
-          {MONTH_NAMES.map((name, index) => {
+          {months.map((name, index) => {
             const blocked = monthKey({ year: pickerYear, month: index }) < monthKey(floor);
             const isCurrent = cursor.year === pickerYear && cursor.month === index;
 
@@ -194,7 +184,7 @@ export function DateRangePicker({
       <View style={styles.monthRow}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Mês anterior"
+          accessibilityLabel={t('date.picker.previousMonth')}
           accessibilityState={{ disabled: !canGoBack }}
           hitSlop={10}
           onPress={canGoBack ? () => shiftMonth(-1) : undefined}
@@ -204,7 +194,10 @@ export function DateRangePicker({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${MONTH_NAMES[cursor.month]} de ${cursor.year}. Escolher outro mês`}
+          accessibilityLabel={t('date.picker.monthYear.label', {
+            month: months[cursor.month],
+            year: cursor.year,
+          })}
           hitSlop={10}
           onPress={() => {
             setPickerYear(cursor.year);
@@ -212,14 +205,14 @@ export function DateRangePicker({
           }}
           style={styles.monthLabelRow}>
           <Text style={styles.monthLabel}>
-            {MONTH_NAMES[cursor.month]} de {cursor.year}
+            {t('date.picker.monthYear.display', { month: months[cursor.month], year: cursor.year })}
           </Text>
           <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Próximo mês"
+          accessibilityLabel={t('date.picker.nextMonth')}
           hitSlop={10}
           onPress={() => shiftMonth(1)}
           style={styles.monthButton}>
@@ -228,7 +221,7 @@ export function DateRangePicker({
       </View>
 
       <View style={styles.weekRow}>
-        {WEEKDAYS.map((weekday, index) => (
+        {weekdays.map((weekday, index) => (
           <Text key={`${weekday}-${index}`} style={styles.weekday}>
             {weekday}
           </Text>
@@ -259,7 +252,7 @@ export function DateRangePicker({
             <Pressable
               key={iso}
               accessibilityRole="button"
-              accessibilityLabel={`${day} de ${MONTH_NAMES[cursor.month]}`}
+              accessibilityLabel={t('date.picker.day.label', { day, month: months[cursor.month] })}
               accessibilityState={{ disabled: blocked, selected: isStart || isEnd }}
               onPress={blocked ? undefined : () => handlePress(day)}
               style={[styles.cell, inRange && styles.cellInRange, blocked && styles.cellBlocked]}>

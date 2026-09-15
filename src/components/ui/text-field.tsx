@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { FormMessage } from '@/components/ui/form-message';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type TextFieldProps = TextInputProps & {
@@ -58,7 +59,9 @@ export function TextField({
         ) : isPassword ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={revealed ? 'Ocultar senha' : 'Mostrar senha'}
+            accessibilityLabel={
+              revealed ? t('a11y.textField.hidePassword') : t('a11y.textField.showPassword')
+            }
             hitSlop={8}
             onPress={() => setRevealed((current) => !current)}
             style={styles.accessoryIcon}>

@@ -58,7 +58,7 @@ export default function ProfileScreen() {
         <LanguageSection />
 
         <View>
-          <SectionLabel>Legal</SectionLabel>
+          <SectionLabel>{t('profile.section.legal')}</SectionLabel>
           <Card>
             <ListRow
               label="Política de Privacidade"
@@ -74,7 +74,7 @@ export default function ProfileScreen() {
         </View>
 
         <View>
-          <SectionLabel>Conta</SectionLabel>
+          <SectionLabel>{t('profile.section.account')}</SectionLabel>
           <Card>
             <ListRow
               label="Sair"

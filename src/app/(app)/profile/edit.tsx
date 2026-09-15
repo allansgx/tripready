@@ -21,6 +21,7 @@ import {
   getStoredName,
   PROVIDER_LABELS,
 } from '@/features/auth/user-profile';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 const NAME_MAX_LENGTH = 60;
@@ -96,7 +97,7 @@ export default function EditProfileScreen() {
 
         {isEmailAccount ? (
           <View>
-            <SectionLabel>Segurança</SectionLabel>
+            <SectionLabel>{t('profile.section.security')}</SectionLabel>
             <Card>
               <ListRow
                 label="Senha"

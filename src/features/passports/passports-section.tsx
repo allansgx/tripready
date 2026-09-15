@@ -17,8 +17,9 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
 import { toPassportMessage } from '@/features/passports/passport-messages';
 import { usePassports } from '@/features/passports/passports-context';
-import type { Passport } from '@/types/models';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+import type { Passport } from '@/types/models';
 
 /** Seção "Passaportes" do Perfil: lista, principal, adicionar e remover. */
 export function PassportsSection() {
@@ -89,7 +90,7 @@ export function PassportsSection() {
 
   return (
     <View>
-      <SectionLabel>Passaportes</SectionLabel>
+      <SectionLabel>{t('passports.section.title')}</SectionLabel>
 
       <Card>
         {isLoading && passports.length === 0 ? (

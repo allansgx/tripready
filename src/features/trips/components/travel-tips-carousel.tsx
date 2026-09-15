@@ -11,6 +11,7 @@ import {
 
 import { SectionLabel } from '@/components/ui/section-label';
 import { pickTravelTips } from '@/features/trips/data/travel-tips';
+import { t } from '@/i18n';
 import { useReduceMotion } from '@/lib/animation';
 import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
@@ -54,7 +55,7 @@ export function TravelTipsCarousel() {
   return (
     <View style={styles.container}>
       <View style={styles.label}>
-        <SectionLabel>Dica para sua próxima viagem</SectionLabel>
+        <SectionLabel>{t('trips.tips.sectionTitle')}</SectionLabel>
       </View>
 
       <ScrollView

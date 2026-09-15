@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ui/progress-bar';
+import { t } from '@/i18n';
 import { layoutTransition, useReduceMotion } from '@/lib/animation';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
@@ -54,7 +55,13 @@ export function AccordionSection({
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         accessibilityLabel={
-          hasProgress ? `${title}, ${progress.done} de ${progress.total} verificados` : title
+          hasProgress
+            ? t('a11y.accordion.sectionProgress', {
+                title,
+                done: progress.done,
+                total: progress.total,
+              })
+            : title
         }
         onPress={toggle}
         style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}>

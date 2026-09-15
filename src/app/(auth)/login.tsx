@@ -10,6 +10,7 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
 import { getRedirectDiagnostics } from '@/features/auth/auth-redirect';
 import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 export default function LoginScreen() {
@@ -44,7 +45,7 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionLabel>Entrar</SectionLabel>
+          <SectionLabel>{t('auth.login.section.signIn')}</SectionLabel>
           <Card>
             <ListRow
               label="Continuar com Google"
