@@ -10,6 +10,7 @@ import { CountryFlag } from '@/components/ui/country-flag';
 import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
 import { usePassports } from '@/features/passports/passports-context';
+import { catalogCache } from '@/features/trips/data/catalog-cache';
 import {
   CATEGORY_ICONS,
   categoryLabel,
@@ -17,10 +18,14 @@ import {
   type IoniconName,
 } from '@/features/trips/data/checklist-catalog';
 import { buildAffiliateClick } from '@/features/trips/domain/affiliate-click';
-import { describeRequirementScope } from '@/features/trips/domain/requirement-matching';
-import { t } from '@/i18n';
+import {
+  describeRequirementScope,
+  resolveRequirementText,
+} from '@/features/trips/domain/requirement-matching';
+import { getLocale, t } from '@/i18n';
 import {
   affiliateClicksService,
+  requirementCatalogService,
   requirementOffersService,
   tripDestinationsService,
   tripRequirementsService,
@@ -43,6 +48,43 @@ import type { RequirementOffer } from '@/types/models';
  * esta espera a linha destravaria com a tela ainda em transição.
  */
 const OFFER_PRESS_COOLDOWN_MS = 1000;
+
+/**
+ * Título, descrição e nome do grupo no idioma ativo, resolvidos por cima do
+ * que já veio gravado (sempre pt-BR). Falha de rede com cache frio não
+ * derruba a tela: o item continua com o texto gravado (§8.3/§12 do plano de
+ * i18n).
+ */
+async function resolveDisplayText(
+  item: TripRequirementWithGroup,
+): Promise<TripRequirementWithGroup> {
+  try {
+    const locale = getLocale();
+    const [catalog, visaRuleNotes] = await Promise.all([
+      catalogCache.get(locale),
+      requirementCatalogService.loadVisaRuleNotes(
+        item.visa_rule_id ? [item.visa_rule_id] : [],
+        locale,
+      ),
+    ]);
+
+    const templates = new Map(catalog.templates.map((template) => [template.id, template]));
+    const groups = new Map(catalog.groups.map((group) => [group.id, group]));
+
+    const translatedGroup = item.group_id ? groups.get(item.group_id) : undefined;
+
+    return {
+      ...item,
+      ...resolveRequirementText(item, { templates, visaRuleNotes }, getCountryName),
+      destination_groups:
+        translatedGroup && item.destination_groups
+          ? { ...item.destination_groups, name: translatedGroup.name }
+          : item.destination_groups,
+    };
+  } catch {
+    return item;
+  }
+}
 
 export default function RequirementDetailScreen() {
   const { requirementId, tripId } = useLocalSearchParams<{
@@ -76,7 +118,8 @@ export default function RequirementDetailScreen() {
 
     async function load() {
       try {
-        const item = await tripRequirementsService.getById(requirementId);
+        const loaded = await tripRequirementsService.getById(requirementId);
+        const item = loaded ? await resolveDisplayText(loaded) : loaded;
         if (!active) return;
         setRequirement(item);
 

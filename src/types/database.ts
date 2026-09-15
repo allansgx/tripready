@@ -209,6 +209,7 @@ export type Database = {
           completed: boolean;
           template_id: string | null;
           group_id: string | null;
+          visa_rule_id: string | null;
           source_name: string | null;
           source_url: string | null;
           created_at: string;
@@ -225,6 +226,7 @@ export type Database = {
           completed?: boolean;
           template_id?: string | null;
           group_id?: string | null;
+          visa_rule_id?: string | null;
           source_name?: string | null;
           source_url?: string | null;
           created_at?: string;
@@ -241,6 +243,7 @@ export type Database = {
           completed?: boolean;
           template_id?: string | null;
           group_id?: string | null;
+          visa_rule_id?: string | null;
           source_name?: string | null;
           source_url?: string | null;
           created_at?: string;
@@ -273,6 +276,13 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'destination_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trip_requirements_visa_rule_id_fkey';
+            columns: ['visa_rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'visa_rules';
             referencedColumns: ['id'];
           },
         ];
@@ -322,6 +332,35 @@ export type Database = {
         };
         Relationships: [];
       };
+      visa_rule_translations: {
+        Row: {
+          visa_rule_id: string;
+          locale: string;
+          notes: string | null;
+          source_name: string | null;
+        };
+        Insert: {
+          visa_rule_id: string;
+          locale: string;
+          notes?: string | null;
+          source_name?: string | null;
+        };
+        Update: {
+          visa_rule_id?: string;
+          locale?: string;
+          notes?: string | null;
+          source_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visa_rule_translations_visa_rule_id_fkey';
+            columns: ['visa_rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'visa_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       destination_groups: {
         Row: {
           id: string;
@@ -354,6 +393,35 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      destination_group_translations: {
+        Row: {
+          destination_group_id: string;
+          locale: string;
+          name: string;
+          description: string | null;
+        };
+        Insert: {
+          destination_group_id: string;
+          locale: string;
+          name: string;
+          description?: string | null;
+        };
+        Update: {
+          destination_group_id?: string;
+          locale?: string;
+          name?: string;
+          description?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'destination_group_translations_destination_group_id_fkey';
+            columns: ['destination_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'destination_groups';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       destination_group_members: {
         Row: {
@@ -449,6 +517,35 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      requirement_template_translations: {
+        Row: {
+          requirement_template_id: string;
+          locale: string;
+          title: string;
+          description: string | null;
+        };
+        Insert: {
+          requirement_template_id: string;
+          locale: string;
+          title: string;
+          description?: string | null;
+        };
+        Update: {
+          requirement_template_id?: string;
+          locale?: string;
+          title?: string;
+          description?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'requirement_template_translations_requirement_template_id_fkey';
+            columns: ['requirement_template_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       requirement_template_groups: {
         Row: {
@@ -564,6 +661,35 @@ export type Database = {
             columns: ['requirement_template_id'];
             isOneToOne: false;
             referencedRelation: 'requirement_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      requirement_offer_translations: {
+        Row: {
+          requirement_offer_id: string;
+          locale: string;
+          name: string;
+          description: string | null;
+        };
+        Insert: {
+          requirement_offer_id: string;
+          locale: string;
+          name: string;
+          description?: string | null;
+        };
+        Update: {
+          requirement_offer_id?: string;
+          locale?: string;
+          name?: string;
+          description?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'requirement_offer_translations_requirement_offer_id_fkey';
+            columns: ['requirement_offer_id'];
+            isOneToOne: false;
+            referencedRelation: 'requirement_offers';
             referencedColumns: ['id'];
           },
         ];

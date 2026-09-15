@@ -159,6 +159,7 @@ export type CatalogTemplate = {
 
 /** Exigência de visto para um par (passaporte, destino), com fonte e vigência. */
 export type VisaRule = {
+  id: string;
   passportCountryCode: string;
   destinationCountryCode: string;
   requirementType: VisaRequirementType;
@@ -198,6 +199,8 @@ export type ResolvedRequirement = {
   template_id: string;
   group_id: string | null;
   country_code: string | null;
+  /** Regra de visto que originou o item; nula nos demais escopos. */
+  visa_rule_id: string | null;
   title: string;
   description: string | null;
   priority: RequirementPriority;
@@ -368,14 +371,15 @@ function matchesSeason(template: CatalogTemplate, target: Target, trip: TripCont
   );
 }
 
-function renderTitle(
-  template: CatalogTemplate,
+/** Troca o marcador `{country}` pelo nome do país no idioma ativo. */
+export function renderTitle(
+  title: string,
   countryCode: string | null,
   countryName: (code: string) => string,
 ): string {
-  if (!template.title.includes(MARKER_COUNTRY)) return template.title;
-  if (!countryCode) return template.title.replace(MARKER_COUNTRY, '').trim();
-  return template.title.replace(MARKER_COUNTRY, countryName(countryCode));
+  if (!title.includes(MARKER_COUNTRY)) return title;
+  if (!countryCode) return title.replace(MARKER_COUNTRY, '').trim();
+  return title.replace(MARKER_COUNTRY, countryName(countryCode));
 }
 
 /** Requisitos aplicáveis a uma viagem, no máximo um item por regra e país. */
@@ -415,7 +419,8 @@ export function resolveTripRequirements(
         template_id: template.id,
         group_id: target.group?.id ?? null,
         country_code: target.countryCode,
-        title: renderTitle(template, target.countryCode, options.countryName),
+        visa_rule_id: target.rule?.id ?? null,
+        title: renderTitle(template.title, target.countryCode, options.countryName),
         // A observação oficial da regra é mais específica que o texto do template.
         description: target.rule?.notes ?? template.description,
         priority: template.priority,
@@ -682,6 +687,51 @@ export function groupRequirementsByCategory<T extends CategorizedRequirement>(
   }
 
   return sections;
+}
+
+/** Título e descrição de um template, já no idioma pedido (com reserva em pt-BR). */
+export type TranslatedTemplate = { title: string; description: string | null };
+
+/**
+ * O catálogo traduzido de que a leitura precisa: só o que a tela já carregou —
+ * nunca dispara requisição por conta própria (§5.5 do plano de i18n).
+ */
+export type DisplayCatalog = {
+  templates: ReadonlyMap<string, TranslatedTemplate>;
+  /** Observação de `visa_rules`, já no idioma pedido. Ausente quando não buscada. */
+  visaRuleNotes: ReadonlyMap<string, string | null>;
+};
+
+/** O que a leitura de um item precisa, antes da tradução do catálogo. */
+export type DisplayableRequirement = {
+  template_id: string | null;
+  visa_rule_id: string | null;
+  country_code: string | null;
+  title: string;
+  description: string | null;
+};
+
+/**
+ * Texto do item no idioma ativo (§8.3 do plano de i18n): observação de visto
+ * traduzida, senão o template traduzido, senão o que ficou gravado em
+ * `trip_requirements` — que nunca falta, porque a gravação sempre grava pt-BR.
+ * Item sem `template_id` (criado à mão) ou fora do catálogo em cache usa
+ * sempre o texto gravado.
+ */
+export function resolveRequirementText(
+  item: DisplayableRequirement,
+  catalog: DisplayCatalog,
+  countryName: (code: string) => string,
+): { title: string; description: string | null } {
+  const template = item.template_id ? catalog.templates.get(item.template_id) : undefined;
+  if (!template) return { title: item.title, description: item.description };
+
+  const notes = item.visa_rule_id ? catalog.visaRuleNotes.get(item.visa_rule_id) : undefined;
+
+  return {
+    title: renderTitle(template.title, item.country_code, countryName),
+    description: notes ?? template.description ?? item.description,
+  };
 }
 
 /** Seção sem nada por verificar — informativos incluídos. */

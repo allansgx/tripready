@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { getCountryName } from '@/constants/countries';
 import { ReminderOptInCard } from '@/features/notifications/components/reminder-opt-in-card';
 import {
   canAskForReminders,
@@ -33,6 +34,7 @@ import {
   type Celebration,
 } from '@/features/trips/components/celebration-overlay';
 import { FlagRow } from '@/features/trips/components/flag-row';
+import { catalogCache } from '@/features/trips/data/catalog-cache';
 import {
   CATEGORY_ICONS,
   categoryLabel,
@@ -43,14 +45,20 @@ import {
   groupRequirementsByCategory,
   isSectionComplete,
   nextPendingCategory,
+  resolveRequirementText,
   tripSeasons,
 } from '@/features/trips/domain/requirement-matching';
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
 import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
 import { getTripStatus } from '@/features/trips/domain/trip-status';
-import { t } from '@/i18n';
+import { getLocale, t } from '@/i18n';
 import { layoutTransition, SECTION_TOGGLE_MS, useReduceMotion } from '@/lib/animation';
-import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
+import {
+  requirementCatalogService,
+  tripRequirementsService,
+  tripsService,
+  type TripRequirementWithGroup,
+} from '@/services';
 import {
   colors,
   priorityColors,
@@ -71,6 +79,38 @@ const COMPLETION_BEAT_MS = 360;
 
 function wait(duration: number) {
   return new Promise((resolve) => setTimeout(resolve, duration));
+}
+
+/**
+ * Título e descrição no idioma ativo, resolvidos por cima do que já veio
+ * gravado (sempre pt-BR). Falha de rede com cache frio não derruba a tela: os
+ * itens continuam com o texto gravado, em pt-BR (§8.3/§12 do plano de i18n).
+ */
+async function resolveDisplayText(
+  requirements: readonly TripRequirementWithGroup[],
+): Promise<TripRequirementWithGroup[]> {
+  if (requirements.length === 0) return [...requirements];
+
+  try {
+    const locale = getLocale();
+    const visaRuleIds = requirements.flatMap((item) =>
+      item.visa_rule_id ? [item.visa_rule_id] : [],
+    );
+
+    const [catalog, visaRuleNotes] = await Promise.all([
+      catalogCache.get(locale),
+      requirementCatalogService.loadVisaRuleNotes(visaRuleIds, locale),
+    ]);
+
+    const templates = new Map(catalog.templates.map((template) => [template.id, template]));
+
+    return requirements.map((requirement) => ({
+      ...requirement,
+      ...resolveRequirementText(requirement, { templates, visaRuleNotes }, getCountryName),
+    }));
+  } catch {
+    return [...requirements];
+  }
 }
 
 /** "8 de 11 itens verificados", sempre no mesmo formato. */
@@ -222,15 +262,14 @@ export default function TripChecklistScreen() {
       setRange({ start: detail.start_date, end: detail.end_date });
       setCountries(detail.trip_countries ?? []);
       setCities(detail.trip_cities ?? []);
-      setRequirements(detail.trip_requirements ?? []);
+
+      const resolved = await resolveDisplayText(detail.trip_requirements ?? []);
+      setRequirements(resolved);
 
       if (!didExpandRef.current) {
         didExpandRef.current = true;
 
-        const first = groupRequirementsByCategory(
-          detail.trip_requirements ?? [],
-          CHECKLIST_CATEGORIES,
-        ).find((section) =>
+        const first = groupRequirementsByCategory(resolved, CHECKLIST_CATEGORIES).find((section) =>
           section.items.some((item) => item.priority === 'required' && !item.completed),
         );
 

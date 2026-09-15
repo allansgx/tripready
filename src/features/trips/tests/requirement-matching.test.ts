@@ -76,6 +76,7 @@ function visaRule(
     Pick<VisaRule, 'passportCountryCode' | 'destinationCountryCode' | 'requirementType'>,
 ): VisaRule {
   return {
+    id: 'visa-rule-1',
     sourceName: 'Órgão oficial',
     sourceUrl: 'https://exemplo.gov/vistos',
     notes: null,

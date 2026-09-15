@@ -5,6 +5,7 @@ import type {
   RequirementCatalog,
   VisaRule,
 } from '@/features/trips/domain/requirement-matching';
+import type { Locale } from '@/i18n/locales';
 import { supabase } from '@/lib/supabase/client';
 import { unwrapRequired } from '@/services/errors';
 import type {
@@ -49,6 +50,7 @@ type TemplateRow = {
 
 /** Linha de `visa_rules`. */
 type VisaRuleRow = {
+  id: string;
   passport_country_code: string;
   destination_country_code: string;
   requirement_type: VisaRequirementType;
@@ -143,7 +145,7 @@ async function loadVisaRules(
     await supabase
       .from('visa_rules')
       .select(
-        'passport_country_code, destination_country_code, requirement_type, source_name, source_url, notes, valid_from, valid_until',
+        'id, passport_country_code, destination_country_code, requirement_type, source_name, source_url, notes, valid_from, valid_until',
       )
       .eq('passport_country_code', passportCountryCode.toUpperCase())
       .in('destination_country_code', [...countryCodes]),
@@ -151,6 +153,7 @@ async function loadVisaRules(
   ) as unknown as VisaRuleRow[];
 
   return rows.map((row) => ({
+    id: row.id,
     passportCountryCode: row.passport_country_code,
     destinationCountryCode: row.destination_country_code,
     requirementType: row.requirement_type,
@@ -160,6 +163,117 @@ async function loadVisaRules(
     validFrom: row.valid_from,
     validUntil: row.valid_until,
   }));
+}
+
+export type TranslatedTemplate = { id: string; title: string; description: string | null };
+export type TranslatedGroup = { id: string; name: string; description: string | null };
+
+/** Catálogo com texto já resolvido para a leitura — nunca usado na geração, que grava sempre pt-BR (§8.3 do plano de i18n). */
+export type TranslatedCatalog = {
+  templates: TranslatedTemplate[];
+  groups: TranslatedGroup[];
+};
+
+type LocalizedRow = { locale: string };
+
+/** A linha do idioma pedido; na ausência, a linha pt-BR — nunca a coluna original, porque quem chama já decidiu que quer texto traduzido. */
+function pickTranslation<T extends LocalizedRow>(
+  rows: readonly T[] | undefined,
+  locale: Locale,
+): T | undefined {
+  return rows?.find((row) => row.locale === locale) ?? rows?.find((row) => row.locale === 'pt-BR');
+}
+
+type TemplateTranslationRow = { locale: string; title: string; description: string | null };
+type TemplateWithTranslationsRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  requirement_template_translations: TemplateTranslationRow[];
+};
+
+async function loadTranslatedTemplates(locale: Locale): Promise<TranslatedTemplate[]> {
+  const rows = unwrapRequired(
+    await supabase
+      .from('requirement_templates')
+      .select(
+        'id, title, description, requirement_template_translations(locale, title, description)',
+      )
+      .eq('active', true)
+      .in('requirement_template_translations.locale', [locale, 'pt-BR']),
+    FAILURE_MESSAGE,
+  ) as unknown as TemplateWithTranslationsRow[];
+
+  return rows.map((row) => {
+    const translation = pickTranslation(row.requirement_template_translations, locale);
+    return {
+      id: row.id,
+      title: translation?.title ?? row.title,
+      description: translation?.description ?? row.description,
+    };
+  });
+}
+
+type GroupTranslationRow = { locale: string; name: string; description: string | null };
+type GroupWithTranslationsRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  destination_group_translations: GroupTranslationRow[];
+};
+
+async function loadTranslatedGroups(locale: Locale): Promise<TranslatedGroup[]> {
+  const rows = unwrapRequired(
+    await supabase
+      .from('destination_groups')
+      .select('id, name, description, destination_group_translations(locale, name, description)')
+      .in('destination_group_translations.locale', [locale, 'pt-BR']),
+    FAILURE_MESSAGE,
+  ) as unknown as GroupWithTranslationsRow[];
+
+  return rows.map((row) => {
+    const translation = pickTranslation(row.destination_group_translations, locale);
+    return {
+      id: row.id,
+      name: translation?.name ?? row.name,
+      description: translation?.description ?? row.description,
+    };
+  });
+}
+
+type VisaRuleNotesRow = {
+  id: string;
+  notes: string | null;
+  visa_rule_translations: { locale: string; notes: string | null }[];
+};
+
+/**
+ * Observação de visto traduzida, só para as regras pedidas — fora do cache,
+ * porque depende do par (passaporte, destino) da viagem aberta (§11 do plano
+ * de i18n).
+ */
+async function loadVisaRuleNotes(
+  visaRuleIds: readonly string[],
+  locale: Locale,
+): Promise<Map<string, string | null>> {
+  const ids = [...new Set(visaRuleIds)];
+  if (ids.length === 0) return new Map();
+
+  const rows = unwrapRequired(
+    await supabase
+      .from('visa_rules')
+      .select('id, notes, visa_rule_translations(locale, notes)')
+      .in('id', ids)
+      .in('visa_rule_translations.locale', [locale, 'pt-BR']),
+    FAILURE_MESSAGE,
+  ) as unknown as VisaRuleNotesRow[];
+
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      pickTranslation(row.visa_rule_translations, locale)?.notes ?? row.notes,
+    ]),
+  );
 }
 
 /**
@@ -181,4 +295,16 @@ export const requirementCatalogService = {
 
     return { groups, templates, visaRules };
   },
+
+  /** Catálogo traduzido para o idioma ativo, pronto para a leitura da checklist. */
+  async loadTranslatedCatalog(locale: Locale): Promise<TranslatedCatalog> {
+    const [templates, groups] = await Promise.all([
+      loadTranslatedTemplates(locale),
+      loadTranslatedGroups(locale),
+    ]);
+
+    return { templates, groups };
+  },
+
+  loadVisaRuleNotes,
 };
