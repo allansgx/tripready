@@ -1784,15 +1784,86 @@ cru, no mesmo estilo dos seeds anteriores.
   confirmar visualmente overflow em botões menores.
 - `npm run check` limpo (214 testes, nenhum novo — a tradução é conteúdo de
   banco, sem teste de app a escrever) e o diff `create table` × `enable row
-  level security` do AGENTS.md continua batendo (as duas migrations só fazem
+level security` do AGENTS.md continua batendo (as duas migrations só fazem
   `INSERT`, nenhuma tabela nova).
 
 ### Fase 5 — Legal e acabamento
 
-20. `en.ts` e `es.ts` dos documentos legais + testes de versão e de estrutura.
-21. `build-legal-site.mjs` nos três idiomas, com `hreflang`.
-22. `source_name` traduzido (opcional, §8.4).
-23. Atualizar o AGENTS.md (§20).
+20. ✅ `en.ts` e `es.ts` dos documentos legais + testes de versão e de estrutura.
+21. ✅ `build-legal-site.mjs` nos três idiomas, com `hreflang`.
+22. ✅ `source_name` traduzido (opcional, §8.4) — só o Espaço Schengen, o único
+    caso com nome oficial confirmável nos três idiomas sem inventar.
+23. ✅ Atualizar o AGENTS.md (§20).
+
+**Fase 5 concluída — plano inteiro implementado.**
+
+- **Reestruturação de `src/features/legal/data/`**, exatamente como o §15.2
+  desenhou: `identity.ts` (compartilhado), `types.ts` (`LegalBlock`,
+  `LegalDocument`, e o novo `TranslatedLegalDocument` com `sourceVersion`),
+  `pt-BR.ts` (conteúdo movido sem tocar em nenhum texto), `en.ts`/`es.ts`
+  (tradução nova) e `index.ts` com `getLegalDocuments(locale)` via `require()`
+  tardio — os ~84 KB de texto jurídico dos três idiomas só são avaliados
+  quando a tela é aberta. `legal-documents.ts` (o arquivo antigo) foi
+  removido; `privacidade.tsx`/`termos.tsx` chamam `getLegalDocuments(getLocale())`
+  em vez de importar `privacyPolicy`/`termsOfUse` fixos, e o "Versão X · em
+  vigor desde Y" do cabeçalho e do rodapé virou `t('legal.document.subtitle'/
+'legal.document.footer', ...)` nos três idiomas — não fazia sentido acertar
+  a tradução do corpo do documento e deixar essas duas linhas hardcoded.
+- **Tradução completa da Política de Privacidade (14 seções) e dos Termos de
+  Uso (17 seções)** para inglês e espanhol — rascunho de uma pessoa fluente
+  sobre o texto canônico pt-BR, **sem valor jurídico até revisão humana**,
+  como o §15.2 exige explicitamente. O foro continua brasileiro nas três
+  versões (`Governing law and venue` / `Ley aplicable y jurisdicción` seguem
+  dizendo que a lei aplicável é a brasileira), e a LGPD/ANPD aparecem
+  nomeadas por extenso em inglês/espanhol na primeira menção, com a sigla
+  brasileira entre parênteses — nada de trocar por GDPR ou outra lei local,
+  que mudaria o que o documento afirma.
+- **`legal-version.test.ts`** (novo): `sourceVersion` de `en`/`es` bate com
+  `version` do pt-BR vigente — muda a versão do pt-BR sem atualizar a
+  tradução, e o teste fica vermelho até alguém mexer de propósito.
+  **`legal-structure.test.ts`** (novo): mesma sequência de `kind` de bloco e
+  mesmo tamanho de cada lista nos três idiomas, e nenhum bloco de texto vazio
+  — não garante que a tradução esteja certa, pega seção ou item esquecido.
+- **`build-legal-site.mjs` reescrito** para as 3×5 páginas (pt-BR na raiz,
+  `en/` e `es/`, URLs atuais preservadas), com `<html lang>` por página e
+  `<link rel="alternate" hreflang="…">` cruzado entre as três versões mais
+  `x-default` apontando para a raiz — e uma barra de troca de idioma no rodapé
+  de cada página. `privacyPolicy`/`termsOfUse` vêm de `pt-BR.ts`/`en.ts`/
+  `es.ts`, a mesma fonte do app.
+- **Desvio consciente do §15.3**: o texto das três páginas que não são
+  documento legal (`index`, `suporte`, `exclusão de conta`) ficou traduzido e
+  versionado **dentro do próprio `build-legal-site.mjs`** — um objeto por
+  idioma —, e não em `src/features/legal/data/<locale>.ts` como o plano
+  original sugeria. Motivo: essas páginas têm link (`mailto:`, link cruzado
+  para "Excluir minha conta"), e `LegalBlock` não tem um tipo de bloco para
+  link — encaixar isso no mesmo formato dos documentos legais pediria um tipo
+  novo só para três páginas de marketing/suporte. O objetivo do §15.3
+  (nenhum texto solto, tudo revisável em arquivo versionado) está cumprido;
+  só a localização do arquivo mudou.
+- **Item 22, com escopo reduzido de propósito**: dos 45 `source_name` do
+  catálogo, só o do Espaço Schengen (20 linhas, mesmo texto) tem descritivo em
+  português sobre um nome próprio confirmável nos três idiomas sem inventar —
+  "European Commission"/"Comisión Europea" e a citação "(EU) 2018/1806" são o
+  nome e a numeração que o próprio órgão usa. Os demais 25 já são o nome em
+  inglês da fonte (`GOV.UK`, `U.S. Department of State`...) ou misturam sigla
+  com um pedaço de português que eu não tenho como validar contra o nome
+  oficial sem arriscar inventar (`MOFA Japão`, `UAE MOFA — Embaixada em
+Brasília, vistos`) — ficam de fora, e entram um a um quando o nome oficial
+  for confirmado na fonte, sem bloquear o resto.
+- **AGENTS.md** ganhou a seção "Idiomas" completa do §20, o item 5 em
+  "Antes de implementar" e o item 5 em "Migrations" — os três textos exatos
+  que o plano já tinha redigido, sem edição.
+- `npm run check` limpo: 220 testes (6 novos: 3 de `legal-version.test.ts` +
+  `legal-structure.test.ts`, mais as duas chaves `legal.document.subtitle`/
+  `footer` cobertas pelo `completeness.test.ts` existente). Checklist de RLS
+  do AGENTS.md continua batendo (a migration do item 22 só faz `UPDATE`).
+- **O que ainda não está feito, e é trabalho humano, não técnico**: os seis
+  marcadores `{{...}}` de `LEGAL_IDENTITY` (razão social, CNPJ, e-mail,
+  domínio, foro, data de vigência) seguem pendentes — `build-legal-site.mjs`
+  já avisa isso no fim da execução, nos três idiomas. E a revisão jurídica de
+  `en.ts`/`es.ts` continua obrigatória antes de qualquer domínio público
+  apontar para `site/en/`ou `site/es/`, exatamente como o §15.2 pede desde o
+  início: o que existe agora é um rascunho revisável, nunca uma publicação.
 
 ### 18.1 Checklist de auditoria — "não sobrou texto hardcoded"
 

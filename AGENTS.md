@@ -48,6 +48,7 @@ está escrito acima dele ainda é verdade.
 2. Reutilizar o que existe em vez de duplicar.
 3. Fazer a menor alteração necessária para resolver o problema.
 4. Não alterar funcionalidades existentes sem necessidade.
+5. Se a alteração acrescenta texto visível, conferir a seção "Idiomas".
 
 ## Qualidade
 
@@ -85,6 +86,8 @@ Toda migration que cria tabela precisa, no mesmo arquivo:
 3. `grant` só do que a tabela precisa e `revoke` do que ela não deve aceitar —
    tabela de catálogo é somente leitura para o cliente.
 4. Nada para `anon`: o app não tem dado público.
+5. Se a tabela guarda texto que o usuário lê, a tradução entra no mesmo
+   arquivo — para os três idiomas.
 
 `using (true)` só vale em SELECT de tabela de catálogo. Nunca em dado de usuário.
 
@@ -126,6 +129,54 @@ Prioridades: `required`, `recommended`, `informational`.
 - `informational` não contribui para o progresso.
 
 Manter essa lógica centralizada e reutilizável.
+
+## Idiomas
+
+O app fala pt-BR, inglês e espanhol. **pt-BR é o idioma canônico e o fallback
+oficial**: é nele que o texto é escrito primeiro e é para ele que qualquer
+ausência cai.
+
+Todo texto que o usuário lê vem de `t()`. Nenhuma string de interface é escrita
+dentro de um componente — nem rótulo, nem placeholder, nem `accessibilityLabel`,
+nem título de diálogo. Uma tela ou componente novo só está pronto quando as três
+traduções existem; uma chave sem `en` e `es` quebra o `npm check`.
+
+Texto com número, data ou nome variável usa interpolação e as formas de plural
+do dicionário. Nunca concatenar: `"Você tem " + n + " itens"` erra em pelo menos
+um dos três idiomas. Caixa alta é escrita no dicionário, nunca produzida por
+`toUpperCase()` ou `textTransform`.
+
+A camada de domínio não produz texto. Ela devolve o que aconteceu — um `kind`,
+um `issue`, um `tone`, uma contagem — e a apresentação decide como dizer. É o
+que garante que o idioma nunca altere a regra de negócio: nenhuma decisão pode
+depender de uma string traduzida, e nenhuma comparação, validação ou consulta
+pode usar texto de interface como chave.
+
+Dado estrutural não se traduz: `country_code`, `priority`, `category`, `scope`,
+`visa_requirement_type`, datas, ids e códigos continuam como estão, em qualquer
+idioma. Conteúdo criado pelo usuário também não: o nome que alguém deu à viagem
+é dele, e trocar o idioma da interface não reescreve nada que a pessoa digitou.
+O mesmo vale para o que ela escolheu de uma lista e ficou gravado como texto —
+a cidade de uma viagem foi gravada no idioma em que a escolha aconteceu e
+continua assim; quem é localizada é a lista de sugestões, não a linha já salva.
+
+O texto do catálogo mora no banco, em tabelas `*_translations`, e é lido em
+lote — uma requisição trazendo o idioma ativo e o pt-BR juntos, com cache local.
+Nunca uma consulta por item, por componente ou por render, e nunca tradução em
+tempo de execução por serviço externo. Toda migration que insere linha de
+catálogo insere as três traduções no mesmo arquivo.
+
+O servidor devolve código, o cliente traduz: uma Edge Function responde
+`{ error: 'invalid_session' }`, nunca uma frase pronta. Por isso o idioma só
+precisa viajar para o servidor onde ele produz texto — hoje, a consulta do
+catálogo, e lá ele é valor de filtro. Idioma não é claim de token: o token é
+identidade, dura uma hora e não acompanha a troca instantânea que a pessoa faz
+no Perfil.
+
+A preferência de idioma fica em dois lugares com papéis diferentes: o valor
+local manda no que a tela desenha, e `profiles.locale` acompanha a conta.
+`null` nessa coluna significa "segue o aparelho" e não deve ser preenchido por
+detecção — só por escolha da pessoa.
 
 ## UX
 
