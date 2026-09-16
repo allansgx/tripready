@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Termos de Uso · TripReady</title>
+    <link rel="alternate" hreflang="pt-BR" href="/termos.html" />
+    <link rel="alternate" hreflang="en" href="/en/terms.html" />
+    <link rel="alternate" hreflang="es" href="/es/terminos.html" />
+    <link rel="alternate" hreflang="x-default" href="/termos.html" />
     <style>
       :root {
         color-scheme: light;
@@ -93,6 +97,14 @@
         font-size: 18px;
         font-weight: 600;
       }
+      .langs {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 8px 0 0;
+      }
+      .langs a {
+        margin-right: 12px;
+      }
       @media (prefers-color-scheme: dark) {
         :root {
           color-scheme: dark;
@@ -107,7 +119,7 @@
   </head>
   <body>
     <div class="wrap">
-      <header><a href="/">← TripReady</a></header>
+      <header><a href="/index.html">← TripReady</a></header>
       <main>
         <h1>Termos de Uso</h1>
         <p class="meta">Versão 1.0 · em vigor desde {{DATA_VIGENCIA}}</p>
@@ -346,6 +358,7 @@
         <p>Serviço oferecido por <strong>{{RAZAO_SOCIAL}}</strong>, CNPJ {{CNPJ}}.</p>
         <p class="footer">Versão 1.0 — {{DATA_VIGENCIA}}</p>
       </main>
+      <p class="langs"><a href="/en/terms.html">en</a><a href="/es/terminos.html">es</a></p>
     </div>
   </body>
 </html>
