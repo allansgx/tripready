@@ -55,6 +55,8 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'legal.consent.createAccount': 'Al crear tu cuenta, aceptas los {terms} y la {privacy}.',
   'legal.termsOfUse.linkLabel': 'Términos de uso',
   'legal.privacyPolicy.linkLabel': 'Política de privacidad',
+  'legal.document.subtitle': 'Versión {version} · vigente desde {date}',
+  'legal.document.footer': 'Versión {version} — {date}',
 
   'auth.error.unexpected': 'Error inesperado en la autenticación.',
   'auth.error.invalidCredentials': 'Correo electrónico o contraseña incorrectos.',

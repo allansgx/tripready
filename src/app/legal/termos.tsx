@@ -4,11 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { useAuth } from '@/features/auth/auth-context';
 import { LegalDocumentView } from '@/features/legal/components/legal-document-view';
-import { termsOfUse } from '@/features/legal/data/legal-documents';
+import { getLegalDocuments } from '@/features/legal/data';
+import { getLocale, t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 export default function TermsOfUseScreen() {
   const { session } = useAuth();
+  const { termsOfUse } = getLegalDocuments(getLocale());
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -18,7 +20,10 @@ export default function TermsOfUseScreen() {
         showsVerticalScrollIndicator={false}>
         <ScreenHeader
           title={termsOfUse.title}
-          subtitle={`Versão ${termsOfUse.version} · em vigor desde ${termsOfUse.effectiveDate}`}
+          subtitle={t('legal.document.subtitle', {
+            version: termsOfUse.version,
+            date: termsOfUse.effectiveDate,
+          })}
           fallbackHref={session ? '/profile' : '/login'}
         />
 
@@ -26,7 +31,10 @@ export default function TermsOfUseScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Versão {termsOfUse.version} — {termsOfUse.effectiveDate}
+            {t('legal.document.footer', {
+              version: termsOfUse.version,
+              date: termsOfUse.effectiveDate,
+            })}
           </Text>
         </View>
       </ScrollView>

@@ -60,6 +60,8 @@ export const messages = {
     'Ao criar sua conta, você concorda com os {terms} e com a {privacy}.',
   'legal.termsOfUse.linkLabel': 'Termos de uso',
   'legal.privacyPolicy.linkLabel': 'Política de privacidade',
+  'legal.document.subtitle': 'Versão {version} · em vigor desde {date}',
+  'legal.document.footer': 'Versão {version} — {date}',
 
   'auth.error.unexpected': 'Erro inesperado na autenticação.',
   'auth.error.invalidCredentials': 'E-mail ou senha incorretos.',

@@ -1,29 +1,7 @@
-/**
- * Identidade do responsável. Os valores entre chaves duplas ainda não foram
- * definidos, e nenhum pode ir para a loja com o marcador.
- */
-export const LEGAL_IDENTITY = {
-  companyName: '{{RAZAO_SOCIAL}}',
-  cnpj: '{{CNPJ}}',
-  contactEmail: '{{EMAIL_CONTATO}}',
-  website: '{{DOMINIO}}',
-  jurisdiction: '{{FORO}}',
-  effectiveDate: '{{DATA_VIGENCIA}}',
-} as const;
-
-/** Trechos entre `**` saem em negrito. */
-export type LegalBlock =
-  | { kind: 'heading'; text: string }
-  | { kind: 'subheading'; text: string }
-  | { kind: 'paragraph'; text: string }
-  | { kind: 'list'; items: readonly string[] };
-
-export type LegalDocument = {
-  title: string;
-  version: string;
-  effectiveDate: string;
-  blocks: readonly LegalBlock[];
-};
+// Caminho relativo, e não o alias `@/`: este módulo é carregado tanto pelo
+// Metro (app) quanto pelo Node puro (`npm run site`), que não conhece alias.
+import { LEGAL_IDENTITY } from './identity.ts';
+import type { LegalDocument } from './types.ts';
 
 export const privacyPolicy: LegalDocument = {
   title: 'Política de Privacidade',

@@ -4,11 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { useAuth } from '@/features/auth/auth-context';
 import { LegalDocumentView } from '@/features/legal/components/legal-document-view';
-import { privacyPolicy } from '@/features/legal/data/legal-documents';
+import { getLegalDocuments } from '@/features/legal/data';
+import { getLocale, t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 export default function PrivacyPolicyScreen() {
   const { session } = useAuth();
+  const { privacyPolicy } = getLegalDocuments(getLocale());
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -18,7 +20,10 @@ export default function PrivacyPolicyScreen() {
         showsVerticalScrollIndicator={false}>
         <ScreenHeader
           title={privacyPolicy.title}
-          subtitle={`Versão ${privacyPolicy.version} · em vigor desde ${privacyPolicy.effectiveDate}`}
+          subtitle={t('legal.document.subtitle', {
+            version: privacyPolicy.version,
+            date: privacyPolicy.effectiveDate,
+          })}
           fallbackHref={session ? '/profile' : '/login'}
         />
 
@@ -26,7 +31,10 @@ export default function PrivacyPolicyScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Versão {privacyPolicy.version} — {privacyPolicy.effectiveDate}
+            {t('legal.document.footer', {
+              version: privacyPolicy.version,
+              date: privacyPolicy.effectiveDate,
+            })}
           </Text>
         </View>
       </ScrollView>

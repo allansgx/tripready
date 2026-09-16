@@ -4,7 +4,7 @@ import { Text, type StyleProp, type TextStyle } from 'react-native';
 /**
  * Divide um texto traduzido nos trechos entre `**`, para o negrito não
  * depender de HTML nem de quebrar a frase em várias chaves — a mesma
- * convenção que `legal-documents.ts` já usa para os documentos legais.
+ * convenção que `features/legal/data/pt-BR.ts` já usa para os documentos legais.
  */
 export function renderInlineBold(text: string, boldStyle: StyleProp<TextStyle>): ReactNode {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
