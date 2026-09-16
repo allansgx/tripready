@@ -13,21 +13,57 @@ import { useSharedValue } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { getCountryName } from '@/constants/countries';
 import { useAuth } from '@/features/auth/auth-context';
 import { syncAllTripReminders } from '@/features/notifications/data/reminder-scheduler';
 import { NextTripHero } from '@/features/trips/components/next-trip-hero';
 import type { FieldPointer } from '@/features/trips/components/season-field';
 import { SeasonalBackdrop } from '@/features/trips/components/seasonal-backdrop';
 import { TravelTipsCarousel } from '@/features/trips/components/travel-tips-carousel';
-import { tripSeasons } from '@/features/trips/domain/requirement-matching';
+import { catalogCache } from '@/features/trips/data/catalog-cache';
+import { resolveRequirementText, tripSeasons } from '@/features/trips/domain/requirement-matching';
 import {
   buildTripSummaries,
   splitTripSections,
   type TripSummary,
 } from '@/features/trips/domain/trip-summary';
-import { t } from '@/i18n';
-import { tripsService } from '@/services';
+import { getLocale, t } from '@/i18n';
+import { requirementCatalogService, tripsService, type TripWithRelations } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+
+/**
+ * Título e descrição no idioma ativo, resolvidos por cima do que já veio
+ * gravado (sempre pt-BR). Falha de rede com cache frio não derruba a tela: os
+ * itens continuam com o texto gravado, em pt-BR (§8.3/§12 do plano de i18n).
+ */
+async function resolveDisplayText(rows: TripWithRelations[]): Promise<TripWithRelations[]> {
+  const allRequirements = rows.flatMap((row) => row.trip_requirements ?? []);
+  if (allRequirements.length === 0) return rows;
+
+  try {
+    const locale = getLocale();
+    const visaRuleIds = allRequirements.flatMap((item) =>
+      item.visa_rule_id ? [item.visa_rule_id] : [],
+    );
+
+    const [catalog, visaRuleNotes] = await Promise.all([
+      catalogCache.get(locale),
+      requirementCatalogService.loadVisaRuleNotes(visaRuleIds, locale),
+    ]);
+
+    const templates = new Map(catalog.templates.map((template) => [template.id, template]));
+
+    return rows.map((row) => ({
+      ...row,
+      trip_requirements: (row.trip_requirements ?? []).map((item) => ({
+        ...item,
+        ...resolveRequirementText(item, { templates, visaRuleNotes }, getCountryName),
+      })),
+    }));
+  } catch {
+    return rows;
+  }
+}
 
 /** Início: a próxima viagem e o ambiente dela. A lista fica na aba Viagens. */
 export default function HomeScreen() {
@@ -57,8 +93,9 @@ export default function HomeScreen() {
     setNeedsRetry(false);
     try {
       const rows = await tripsService.listWithRelations(user.id);
+      const resolved = await resolveDisplayText(rows);
       // `buildTripSummaries` já ordena por relevância.
-      const { active } = splitTripSections(buildTripSummaries(rows));
+      const { active } = splitTripSections(buildTripSummaries(resolved));
       setNextTrip(active[0] ?? null);
 
       // Sem espera e sem `catch` visível: falha de agendamento não pode

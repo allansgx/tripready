@@ -17,9 +17,13 @@ export type TripWithDestinations = Trip & {
 export type TripRequirementBrief = {
   id: string;
   title: string;
+  description: string | null;
   priority: RequirementPriority;
   completed: boolean;
   created_at: string;
+  template_id: string | null;
+  visa_rule_id: string | null;
+  country_code: string | null;
 };
 
 /** Viagem com o mínimo necessário para montar o card da listagem. */
@@ -79,7 +83,7 @@ export const tripsService = {
     let query = supabase
       .from('trips')
       .select(
-        '*, trip_countries(country_code), trip_requirements(id, title, priority, completed, created_at)',
+        '*, trip_countries(country_code), trip_requirements(id, title, description, priority, completed, created_at, template_id, visa_rule_id, country_code)',
       )
       .eq('user_id', userId)
       .order('start_date', { ascending: true, nullsFirst: false });

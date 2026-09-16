@@ -9,4 +9,9 @@ export type { OfferContext } from '@/services/requirement-offers';
 export { tripDestinationsService } from '@/services/trip-destinations';
 export { tripRequirementsService } from '@/services/trip-requirements';
 export { tripsService } from '@/services/trips';
-export type { TripDetail, TripRequirementWithGroup, TripWithDestinations } from '@/services/trips';
+export type {
+  TripDetail,
+  TripRequirementWithGroup,
+  TripWithDestinations,
+  TripWithRelations,
+} from '@/services/trips';
