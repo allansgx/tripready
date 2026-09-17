@@ -1,5 +1,5 @@
 /**
- * Gera os PNGs da marca a partir do avião de `plane-art.ts`, para o splash
+ * Gera os PNGs da marca a partir do carimbo de `brand-art.ts`, para o splash
  * nativo e o primeiro quadro da animação saírem do mesmo traço. Roda sob
  * demanda (`npm run brand`); os PNGs são versionados.
  */
@@ -10,10 +10,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  PLANE_PARTS,
-  PLANE_VIEWBOX,
+  ICON_MARK_SCALE,
+  MARK_PARTS,
+  MARK_VIEWBOX,
   SPLASH_COLORS,
-} from '../src/features/splash/domain/plane-art.ts';
+} from '../src/features/splash/domain/brand-art.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,7 +26,7 @@ const SUBSAMPLES = 5;
 // --- Caminhos SVG -----------------------------------------------------------
 
 /**
- * Lê o subconjunto de comandos usado em `plane-art.ts`: M, L, C, Q e Z, sempre
+ * Lê o subconjunto de comandos usado em `brand-art.ts`: M, L, C, Q e Z, sempre
  * absolutos. Não é um parser de SVG — é o que basta para aquele arquivo, e
  * qualquer comando fora da lista estoura na hora em vez de sair torto no PNG.
  */
@@ -278,31 +279,30 @@ function encodePng(canvas, size) {
 // --- Assets -----------------------------------------------------------------
 
 const PALETTES = {
-  onSky: SPLASH_COLORS.plane.onSky,
-  onBrand: SPLASH_COLORS.plane.onBrand,
-  mono: { body: '#000000', accent: '#000000' },
+  onSky: SPLASH_COLORS.mark.onSky,
+  onBrand: SPLASH_COLORS.mark.onBrand,
+  mono: { ink: '#000000', check: '#000000' },
 };
 
 /**
- * `planeScale` é a fração da largura do PNG ocupada pelo `viewBox` do avião. No
+ * `markScale` é a fração da largura do PNG ocupada pelo `viewBox` da marca. No
  * splash nativo vale 1, que é o que mantém a costura com o SVG invisível.
  */
 const ASSETS = [
-  { file: 'splash-icon.png', size: 512, background: null, palette: 'onSky', planeScale: 1 },
+  { file: 'splash-icon.png', size: 512, background: null, palette: 'onSky', markScale: 1 },
   {
     file: 'icon.png',
     size: 1024,
     background: SPLASH_COLORS.brand,
     palette: 'onBrand',
-    planeScale: 0.6,
+    markScale: 0.72,
   },
   {
     file: 'android-icon-foreground.png',
     size: 1024,
     background: null,
     palette: 'onBrand',
-    // O recorte adaptativo do Android come as bordas: o avião fica na área segura.
-    planeScale: 0.46,
+    markScale: ICON_MARK_SCALE,
   },
   {
     file: 'android-icon-background.png',
@@ -315,26 +315,26 @@ const ASSETS = [
     size: 1024,
     background: null,
     palette: 'mono',
-    planeScale: 0.46,
+    markScale: ICON_MARK_SCALE,
   },
   {
     file: 'favicon.png',
     size: 96,
     background: SPLASH_COLORS.brand,
     palette: 'onBrand',
-    planeScale: 0.6,
+    markScale: 0.72,
   },
 ];
 
-function buildAsset({ file, size, background, palette, planeScale }) {
+function buildAsset({ file, size, background, palette, markScale }) {
   const canvas = createCanvas(size, background);
 
   if (palette) {
-    const scale = (size * planeScale) / PLANE_VIEWBOX;
-    const offset = (size - size * planeScale) / 2;
+    const scale = (size * markScale) / MARK_VIEWBOX;
+    const offset = (size - size * markScale) / 2;
     const colors = PALETTES[palette];
 
-    for (const part of PLANE_PARTS) {
+    for (const part of MARK_PARTS) {
       const polylines = flattenPath(part.d).map((points) =>
         points.map(([x, y]) => [x * scale + offset, y * scale + offset]),
       );

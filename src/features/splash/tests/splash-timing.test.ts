@@ -1,81 +1,43 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { BASE_DECK_HEIGHT, BASE_DECK_ID, CLOUD_DECKS } from '../domain/cloud-decks.ts';
 import {
-  SPLASH_BEATS,
-  SPLASH_EXIT_MS,
-  STATUS_BAR_FLIP_AT,
+  SPLASH_EXIT_SCALE,
+  WAITING_NOTE_AFTER_HOLD_MS,
   canLeaveSplash,
   splashSchedule,
 } from '../domain/splash-timing.ts';
 
 /** A abertura é cobrada toda vez que o app abre: o orçamento é curto de propósito. */
 
-test('a abertura inteira cabe em 1,5s', () => {
-  const total = splashSchedule(false).holdAt + SPLASH_EXIT_MS;
+test('a abertura inteira cabe em 1s', () => {
+  const { holdAt, exitMs } = splashSchedule(false);
 
-  assert.ok(total <= 1500, `abertura longa demais: ${total}ms`);
-  assert.ok(total >= 1000, `abertura curta demais para o voo caber: ${total}ms`);
+  assert.ok(holdAt + exitMs <= 1000, `abertura longa demais: ${holdAt + exitMs}ms`);
 });
 
-test('a entrega ao app acontece depois de o avião sair da tela', () => {
-  const { takeoff } = SPLASH_BEATS;
-  assert.ok(splashSchedule(false).holdAt >= takeoff.at + takeoff.duration);
+test('a marca fica em quadro tempo suficiente para ser lida', () => {
+  assert.ok(splashSchedule(false).holdAt >= 300);
 });
 
-test('sem movimento a abertura é mais curta', () => {
-  assert.ok(splashSchedule(true).holdAt < splashSchedule(false).holdAt);
+test('sem movimento a abertura é mais curta dos dois lados', () => {
+  const cheia = splashSchedule(false);
+  const reduzida = splashSchedule(true);
+
+  assert.ok(reduzida.holdAt < cheia.holdAt);
+  assert.ok(reduzida.exitMs < cheia.exitMs);
 });
 
-test('o céu termina de mudar de altitude antes da entrega', () => {
-  const { climb } = SPLASH_BEATS;
-  assert.ok(climb.at + climb.duration <= splashSchedule(false).holdAt);
+test('o crescimento da saída é um respiro, não um salto', () => {
+  assert.ok(SPLASH_EXIT_SCALE > 1);
+  assert.ok(SPLASH_EXIT_SCALE <= 1.15);
 });
 
-test('a barra de status troca antes de o roxo chegar ao topo', () => {
-  const { climb } = SPLASH_BEATS;
-  assert.ok(STATUS_BAR_FLIP_AT > climb.at);
-  assert.ok(STATUS_BAR_FLIP_AT < climb.at + climb.duration);
-});
+test('a mensagem de espera só aparece depois de a abertura ter falhado em entregar', () => {
+  const { holdAt, exitMs } = splashSchedule(false);
 
-test('nenhuma camada de nuvem continua entrando depois da entrega', () => {
-  const { holdAt } = splashSchedule(false);
-
-  for (const deck of CLOUD_DECKS) {
-    assert.ok(deck.at + deck.duration <= holdAt, `camada "${deck.id}" termina tarde demais`);
-  }
-});
-
-test('as camadas de cima entram depois da de baixo, descendo e menores', () => {
-  const base = CLOUD_DECKS.find((deck) => deck.id === BASE_DECK_ID);
-  assert.ok(base, 'o banco de base sumiu da lista');
-  assert.ok(base.from > 0, 'o banco de base sobe para o lugar');
-
-  for (const deck of CLOUD_DECKS.filter((item) => item.id !== BASE_DECK_ID)) {
-    assert.ok(deck.at > base.at, `camada "${deck.id}" não espera a de baixo`);
-    assert.ok(deck.from < 0, `camada "${deck.id}" deveria descer`);
-    assert.ok(deck.scale < 1, `camada "${deck.id}" deveria ser menor que a de base`);
-    // Mais alta na tela é o que faz a camada parecer mais distante.
-    assert.ok(deck.top < base.top, `camada "${deck.id}" deveria ficar mais alta`);
-  }
-});
-
-test('o banco de base fica exatamente onde sempre esteve', () => {
-  const base = CLOUD_DECKS.find((deck) => deck.id === BASE_DECK_ID);
-  assert.ok(base);
-  // Topo + altura do desenho = o rodapé da tela, sem folga nem sobra.
-  assert.equal(Number((base.top + BASE_DECK_HEIGHT).toFixed(4)), 1);
-  assert.equal(base.scale, 1);
-});
-
-test('as camadas estão ordenadas da mais distante para a mais próxima', () => {
-  // A ordem da lista é a de desenho: a mais próxima cobre as de trás.
-  const scales = CLOUD_DECKS.map((deck) => deck.scale);
-  assert.deepEqual(
-    scales,
-    [...scales].sort((a, b) => a - b),
-  );
+  assert.ok(WAITING_NOTE_AFTER_HOLD_MS > exitMs, 'a mensagem apareceria numa abertura normal');
+  assert.ok(holdAt + WAITING_NOTE_AFTER_HOLD_MS >= 2000);
 });
 
 test('a saída exige animação pronta e app pronto', () => {
