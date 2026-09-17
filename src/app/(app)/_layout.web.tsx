@@ -1,11 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { useAuth } from '@/features/auth/auth-context';
-import { getAvatarUrl } from '@/features/auth/user-profile';
 import { t } from '@/i18n';
-import { colors, radius } from '@/theme/tokens';
+import { colors } from '@/theme/tokens';
 
 /**
  * Navegação inferior na web: o `NativeTabs` vira uma pílula no topo, sem
@@ -13,9 +11,6 @@ import { colors, radius } from '@/theme/tokens';
  * mudar uma aba aqui pede mudar no `_layout.tsx`.
  */
 export default function AppWebLayout() {
-  const { user } = useAuth();
-  const avatarUrl = getAvatarUrl(user);
-
   return (
     <Tabs
       screenOptions={{
@@ -57,19 +52,13 @@ export default function AppWebLayout() {
         name="profile"
         options={{
           title: t('tabs.profile'),
-          tabBarIcon: ({ color, size, focused }) =>
-            avatarUrl ? (
-              <Image
-                source={{ uri: avatarUrl }}
-                style={[styles.avatar, { width: size, height: size }]}
-              />
-            ) : (
-              <Ionicons
-                name={focused ? 'person-circle' : 'person-circle-outline'}
-                size={size}
-                color={color}
-              />
-            ),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'person-circle' : 'person-circle-outline'}
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>
@@ -84,8 +73,5 @@ const styles = StyleSheet.create({
   },
   scene: {
     backgroundColor: colors.background,
-  },
-  avatar: {
-    borderRadius: radius.pill,
   },
 });

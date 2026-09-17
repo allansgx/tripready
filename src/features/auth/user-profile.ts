@@ -30,21 +30,6 @@ export function getAvatarUrl(user: User | null): string | null {
 }
 
 /**
- * Foto como ícone de aba nativa: o `scale` é fixo porque a tab bar desenha a
- * imagem no tamanho declarado. Recebe a URL, e não o usuário, para o resultado
- * poder ser memoizado — identidade nova a cada render recarrega a imagem.
- */
-export function getAvatarIconSource(url: string | null, pixelSize = 96) {
-  if (!url) return null;
-
-  const sized = url.includes('googleusercontent.com')
-    ? `${url.replace(/=s\d+(-c)?$/, '')}=s${pixelSize}-c`
-    : url;
-
-  return { uri: sized, scale: 3 } as const;
-}
-
-/**
  * O nome cadastrado, ou `null`. Ao contrário de `getDisplayName`, não cai no
  * e-mail: é o valor certo para preencher um campo "Nome" editável.
  */

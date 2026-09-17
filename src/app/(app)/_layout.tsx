@@ -1,9 +1,6 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useMemo } from 'react';
 import { Platform } from 'react-native';
 
-import { useAuth } from '@/features/auth/auth-context';
-import { getAvatarIconSource, getAvatarUrl } from '@/features/auth/user-profile';
 import { useNotificationNavigation } from '@/features/notifications/hooks/use-notification-navigation';
 import { t } from '@/i18n';
 import { colors } from '@/theme/tokens';
@@ -23,15 +20,8 @@ const hideLabels = Platform.OS === 'ios';
 const tabContentStyle = { backgroundColor: colors.background } as const;
 
 export default function AppLayout() {
-  const { user } = useAuth();
-
   // Aqui, e não no layout raiz: as rotas de viagem só existem deste lado.
   useNotificationNavigation();
-
-  const avatarUrl = getAvatarUrl(user);
-  // Memoizado por uma string estável: o expo-router compara a identidade do
-  // objeto do ícone e reconfigura a aba a cada objeto novo.
-  const avatarIcon = useMemo(() => getAvatarIconSource(avatarUrl), [avatarUrl]);
 
   return (
     <NativeTabs tintColor={colors.primary}>
@@ -66,16 +56,10 @@ export default function AppLayout() {
         accessibilityLabel={t('tabs.profile')}
         contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label hidden={hideLabels}>{t('tabs.profile')}</NativeTabs.Trigger.Label>
-        {avatarIcon ? (
-          // `renderingMode="original"` impede o sistema de pintar a foto como
-          // máscara monocromática, que é o tratamento padrão de ícone de aba.
-          <NativeTabs.Trigger.Icon src={avatarIcon} renderingMode="original" />
-        ) : (
-          <NativeTabs.Trigger.Icon
-            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
-            md={{ default: 'account_circle', selected: 'account_circle' }}
-          />
-        )}
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+          md={{ default: 'account_circle', selected: 'account_circle' }}
+        />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
