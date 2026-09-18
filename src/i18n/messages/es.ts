@@ -181,6 +181,9 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
     'Este es tu único pasaporte y está definido como principal. Para eliminarlo, agrega otro pasaporte y defínelo como principal.',
   'passports.dialog.primary.message':
     'Pasaporte principal. Para eliminarlo, define otro pasaporte como principal antes.',
+  'passports.section.pendingRulesTag': 'Reglas en preparación',
+  'passports.dialog.pendingRules.message':
+    'Todavía no tenemos las reglas de entrada para este pasaporte. Tu lista sigue con los documentos y el paso de revisar los requisitos de cada destino.',
   'passports.dialog.setPrimary': 'Definir como principal',
   'passports.dialog.remove': 'Eliminar pasaporte',
   'passports.dialog.removeConfirm.title': '¿Eliminar {name}?',
@@ -200,6 +203,10 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.countryRow.withCity': '{country}, {city}',
   'a11y.countryRow.alreadyAdded': 'Ya agregado',
 
+  'onboarding.pendingRules.title': 'Reglas en preparación',
+  'onboarding.pendingRules.message':
+    'Las reglas de entrada para el pasaporte de {country} todavía están en preparación. Ya puedes armar tu viaje: la lista trae los documentos y el paso de revisar los requisitos de cada destino.',
+  'onboarding.pendingRules.confirm': 'Continuar',
   'onboarding.saveFailed.title': 'No se pudo guardar',
   'onboarding.title': '¿Con qué pasaporte viajas?',
   'onboarding.subtitle':
@@ -410,6 +417,8 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trips.checklist.empty': 'Tu lista aparece aquí en cuanto esté lista.',
   'trips.checklist.itemCount': { one: '{count} elemento', other: '{count} elementos' },
   'trips.checklist.refresh': 'Actualizar lista',
+  'trips.checklist.unverifiedDestinations':
+    'Para {countries}, revisa los requisitos de entrada en la fuente oficial: todavía no tenemos la regla verificada de esos destinos.',
   'trips.checklist.allRequiredDone': '✓ ¡Todo listo con los elementos obligatorios!',
 
   'trips.celebration.allDone.title': '¡Todo listo! 🎉',

@@ -180,6 +180,9 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
     'This is your only passport and it is set as primary. To remove it, add another passport and set it as primary.',
   'passports.dialog.primary.message':
     'Primary passport. To remove it, set another passport as primary first.',
+  'passports.section.pendingRulesTag': 'Rules in preparation',
+  'passports.dialog.pendingRules.message':
+    'We do not have the entry rules for this passport yet. Your checklist still brings the documents and the step to check each destination requirements.',
   'passports.dialog.setPrimary': 'Set as primary',
   'passports.dialog.remove': 'Remove passport',
   'passports.dialog.removeConfirm.title': 'Remove {name}?',
@@ -199,6 +202,10 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.countryRow.withCity': '{country}, {city}',
   'a11y.countryRow.alreadyAdded': 'Already added',
 
+  'onboarding.pendingRules.title': 'Rules in preparation',
+  'onboarding.pendingRules.message':
+    'The entry rules for the {country} passport are still in preparation. You can plan your trip now: the checklist brings the documents and the step to check each destination requirements.',
+  'onboarding.pendingRules.confirm': 'Continue',
   'onboarding.saveFailed.title': 'Could not save it',
   'onboarding.title': 'Which passport do you travel with?',
   'onboarding.subtitle':
@@ -402,6 +409,8 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trips.checklist.empty': 'Your checklist shows up here as soon as it is ready.',
   'trips.checklist.itemCount': { one: '{count} item', other: '{count} items' },
   'trips.checklist.refresh': 'Refresh checklist',
+  'trips.checklist.unverifiedDestinations':
+    'For {countries}, check the entry requirements on the official source — we do not have a verified rule for these destinations yet.',
   'trips.checklist.allRequiredDone': "✓ You're all set with the required items!",
 
   'trips.celebration.allDone.title': 'All done! 🎉',

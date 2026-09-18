@@ -1,7 +1,7 @@
 # Coleta — regras de visto para o passaporte brasileiro
 
-Instrumento de trabalho da **Etapa 5** do
-[plano de regras de visto](plano-regras-de-visto-por-passaporte.md).
+Instrumento de trabalho da feature de regras de visto por passaporte, cujo plano
+já foi concluído e removido.
 
 Aqui se preenche, confere e valida o que depois vira uma migration de seed em
 `visa_rules`. **Este arquivo não é a migration**: nenhuma linha vai para o banco
@@ -226,6 +226,492 @@ passaporte, e isso entrou em `notes` porque é informação útil ao viajante.
 3. **ETIAS.** Ver o aviso na seção 4.2.
 4. **México mudou em fevereiro de 2026** (reativação da autorização eletrônica).
    É a linha mais volátil da lista depois da China; confirmar com atenção.
+
+#### Conferências pendentes — encerradas
+
+As duas que faltavam foram feitas e viraram linha de seed:
+
+- **Quênia** — a regra geral e a lista de isenções estão em
+  https://etakenya.go.ke/how-to-apply, que substituiu `am.afdb.org` como
+  `source_url`. O Brasil aparece na lista de isenções **apenas para passaporte
+  diplomático, oficial ou de serviço**; o passaporte comum precisa de eTA.
+- **Equador** — o Brasil não consta da lista de países que precisam de visto,
+  conferida na Cancillería.
+
+A **Venezuela** segue fora, por falta de fonte oficial venezuelana atualizada, e
+não bloqueia nada: a filiação dela ao MERCOSUL está encerrada desde 2016-12-01
+em `destination_group_members`.
+
+O seed está em `supabase/migrations/20260917120000_visa_rules_br_expansion.sql`.
+
+### 4.6 Segunda passada — ampliação para a cobertura mínima
+
+Consulta a fontes oficiais em **2026-09-17**, motivada pelo critério de cobertura
+mínima que está em `AGENTS.md`, na seção "Regras de negócio → Passaportes": o app
+passou de 46 para 81 destinos com sugestão de cidade, e as 45 regras do primeiro
+seed cobrem 56% deles.
+
+Vale aqui tudo o que a §1 diz: **`verified_at` continua em branco**. Esta passada
+abriu páginas oficiais e transcreveu o que elas dizem, mas quem assina a data é
+quem conferir.
+
+#### Confirmado nesta passada
+
+| Destino              | Código | Tipo        | Confiança | `notes` proposto                                                                                          |
+| -------------------- | ------ | ----------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| Bulgária             | `BG`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Chipre               | `CY`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Eslováquia           | `SK`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Eslovênia            | `SI`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Estônia              | `EE`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Letônia              | `LV`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Lituânia             | `LT`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Luxemburgo           | `LU`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Malta                | `MT`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180.                                                 |
+| Paraguai             | `PY`   | `visa_free` | Alta      | Entrada sem visto para turismo por até 90 dias; a carteira de identidade é aceita no lugar do passaporte. |
+| República Dominicana | `DO`   | `visa_free` | Alta      | Entrada sem visto para turismo por até 60 dias.                                                           |
+| Geórgia              | `GE`   | `visa_free` | Alta      | Entrada sem visto por até um ano.                                                                         |
+| Sérvia               | `RS`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 6 meses.                                             |
+| Sri Lanka            | `LK`   | `eta`       | Alta      | Autorização eletrônica (ETA) aprovada antes do embarque.                                                  |
+| Catar                | `QA`   | `visa_free` | **Média** | Entrada sem visto; o carimbo é dado na chegada.                                                           |
+
+Sobre o bloco europeu: o Anexo II do Regulamento (UE) 2018/1806 foi aberto no
+EUR-Lex e **o Brasil consta da lista**. O mesmo texto diz que o regulamento
+vincula todos os Estados-Membros exceto Irlanda e Reino Unido — por isso ele
+resolve também **Chipre**, que é da União mas não do Espaço Schengen. Nenhuma das
+nove linhas foi deduzida do bloco: todas saem do mesmo ato legal, que é o que
+determina a regra.
+
+O Catar ficou **Média** de propósito: a página oficial confirma que o brasileiro
+entra sem visto, mas não exibiu o prazo. O `notes` proposto, por isso, não promete
+número de dias.
+
+#### Não confirmado — não cadastrar
+
+| Destino        | Código | Motivo                                                                                                                                                   |
+| -------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bolívia        | `BO`   | **Divergência.** Uma fonte consular coloca o Brasil no Grupo II, que exige visto de turismo; outra indica flexibilização recente. A §2 bloqueia a linha. |
+| Equador        | `EC`   | O servidor do Ministério do Governo recusou a conexão                                                                                                    |
+| Venezuela      | `VE`   | Não pesquisado nesta passada                                                                                                                             |
+| Liechtenstein  | `LI`   | Não é da União, então o Anexo II não o alcança por si; `llv.li` respondeu 403                                                                            |
+| Costa Rica     | `CR`   | A diretriz de vistos vigente é um PDF que respondeu 403                                                                                                  |
+| Panamá         | `PA`   | A lista oficial de países isentos não foi localizada no site do SNM                                                                                      |
+| Filipinas      | `PH`   | Indício de 59 dias por acordo bilateral, mas as páginas do DFA responderam 403                                                                           |
+| Rússia         | `RU`   | O registro de acordos do Itamaraty devolveu página vazia                                                                                                 |
+| Marrocos       | `MA`   | Segue pendente desde a primeira passada                                                                                                                  |
+| Arábia Saudita | `SA`   | A página de opções de visto não expôs a lista de países                                                                                                  |
+| Quênia         | `KE`   | A página de elegibilidade do eTA não expôs o conteúdo                                                                                                    |
+| Nepal          | `NP`   | Certificado inválido no site de imigração                                                                                                                |
+| Cuba           | `CU`   | Não pesquisado: a natureza da _tarjeta del turista_ exige decisão de classificação antes da coleta                                                       |
+
+A Bolívia é o caso que mais pede conferência humana. Ela é membro do MERCOSUL, o
+que cria a expectativa de isenção, e é exatamente por isso que a §2 proíbe deduzir
+do bloco: se a regra mudou, deduzir produz o erro mais caro que esta coleta pode
+cometer.
+
+#### Fontes desta passada
+
+| Código                                       | `source_name`                                                    | `source_url`                                                                                                      |
+| -------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `BG` `CY` `EE` `LT` `LU` `LV` `MT` `SI` `SK` | Regulamento (UE) 2018/1806 — Anexo II                            | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32018R1806                                            |
+| `PY`                                         | Dirección General de Migraciones — Requerimientos migratorios    | https://migraciones.gov.py/entrada-y-salida-del-pais/requerimientos-migratorios-de-ingreso-y-salida-del-paraguay/ |
+| `DO`                                         | Consulado Geral da República Dominicana no Rio de Janeiro        | https://bra.mirex.gob.do/consular/rio-de-janeiro/no-necesitas-visa-para-visitar-republica-dominicana/             |
+| `GE`                                         | Legislative Herald of Georgia — lista de países isentos de visto | https://matsne.gov.ge/en/document/view/2867361                                                                    |
+| `RS`                                         | Ministry of Foreign Affairs of Serbia — Visa regime: Brazil      | https://www.mfa.gov.rs/en/citizens/travel-serbia/visa-regime/brazil                                               |
+| `LK`                                         | Sri Lanka Electronic Travel Authorization System                 | https://www.eta.gov.lk/slvisa/                                                                                    |
+| `QA`                                         | Visit Qatar — Visa details                                       | https://visitqatar.com/intl-en/plan-your-trip/visas/visa-details                                                  |
+
+O Anexo II é a mesma base legal das 20 linhas do Espaço Schengen já cadastradas,
+com uma diferença que vale registrar: naquela passada a fonte ficou **Média**
+porque o Anexo II não tinha sido aberto. Agora foi — e isso **eleva também a
+confiança das 20 linhas antigas**, que citam a página de política de vistos da
+Comissão. Vale trocar o `source_url` das vinte para o EUR-Lex na próxima
+atualização, já que é lá que o Brasil aparece nominalmente. Como manda a regra do
+projeto, essa troca é migration nova, nunca edição da que já foi aplicada.
+
+#### Onde isso deixa a cobertura
+
+Seis das quinze linhas confirmadas são de destinos que **não têm sugestão de
+cidade** no app (`EE`, `LT`, `LU`, `LV`, `SK`, `PY`) e por isso não contam para o
+piso, embora contem para a condição de grupo.
+
+| Momento                | Regras | Cobertura |
+| ---------------------- | ------ | --------- |
+| Antes desta passada    | 45     | 56%       |
+| Com as 15 confirmadas  | 54     | 67,5%     |
+| Piso exigido pela §3.4 | 60     | 75%       |
+
+**Faltam seis destinos com sugestão de cidade.** Eles não estão por descobrir:
+estão todos na tabela de não confirmados acima. O que travou não foi ausência de
+destino a coletar, foi ausência de fonte que abrisse.
+
+As duas condições de grupo também seguem abertas: `BO`, `EC` e `VE` seguram o
+MERCOSUL e a Comunidade Andina, e `LI` segura o Espaço Schengen.
+
+#### Conferência humana — 2026-09-17
+
+Seis dos destinos travados na passada automática foram abertos por uma pessoa.
+É o procedimento que a §1 descreve, e é o que destrava o que 403 e certificado
+inválido tinham impedido.
+
+| Destino   | Código | Tipo        | Confiança | `notes` proposto                                                                |
+| --------- | ------ | ----------- | --------- | ------------------------------------------------------------------------------- |
+| Bolívia   | `BO`   | `visa_free` | Alta      | Entrada sem visto para turismo.                                                 |
+| Filipinas | `PH`   | `visa_free` | Alta      | Entrada sem visto para turismo ou negócios por até 59 dias.                     |
+| Rússia    | `RU`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180, em viagem de turismo. |
+
+| Código | `source_name`                                     | `source_url`                                                                                                                                      |
+| ------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BO`   | MRE — Consulado-Geral em Santa Cruz de la Sierra  | https://www.gov.br/mre/pt-br/consulado-santa-cruz-de-la-sierra/conselho-aos-viajante/requisitos-para-entrada-na-bolivia                           |
+| `PH`   | MRE — Embaixada em Manila                         | https://www.gov.br/mre/pt-br/embaixada-manila/setor-consular/informacoes-a-viajantes-e-residentes-brasileiros/entrada-e-permanencia-nas-filipinas |
+| `RU`   | Embaixada da Rússia no Brasil — Entrada na Rússia | https://brazil.mid.ru/pt/consular-services/informacoes_gerais/entrada_na_r_ssia/                                                                  |
+
+A Bolívia resolve a divergência da passada anterior no sentido da isenção, e
+fecha o MERCOSUL junto com o Paraguai — faltam `VE` e, na Comunidade Andina,
+`EC`.
+
+**Desvio de fonte a registrar.** `BO` e `PH` saem do MRE, que a §2 classifica
+como fonte **corroborativa**, não primária. É desvio menor — é órgão oficial, e a
+página trata especificamente do brasileiro que viaja — mas continua sendo desvio,
+e fica anotado para que uma passada futura substitua pelo órgão do destino. A
+Rússia não tem esse problema: `brazil.mid.ru` é a representação oficial do
+próprio destino.
+
+##### Rússia — o registro eletrônico prévio está com vigência vencida
+
+A página oficial descreve, além da isenção, um **procedimento obrigatório de
+registro prévio** no sistema unificado de identificação para quem entra sem
+visto, com vigência declarada de **30/06/2025 a 30/06/2026**.
+
+Hoje é 17/09/2026: **a janela declarada já passou**. Ou o procedimento foi
+prorrogado e a página não reflete isso, ou ele terminou. As duas leituras levam a
+linhas diferentes, e nenhuma delas pode ser adivinhada:
+
+- se o registro continua valendo, o tipo honesto é `eta` — é exatamente a forma
+  de uma autorização eletrônica aprovada antes do embarque, como no K-ETA e no
+  NZeTA já cadastrados;
+- se terminou, o tipo é `visa_free` e o `notes` não menciona registro nenhum.
+
+Enquanto isso não for lido na fonte, a linha da Rússia **fica fora do seed**.
+Cadastrá-la como `visa_free` sem o registro é o erro que a §1 descreve: o
+viajante chega ao embarque sem um documento que precisava.
+
+> **Resolvido na rodada seguinte**, com o MFA russo: o acordo está em vigor desde
+> 2010 e nenhuma fonte posterior menciona o registro. A Rússia entra como
+> `visa_free`.
+
+#### Ainda sem fonte aceitável — Costa Rica, Malásia e Panamá
+
+Os três vieram de `mundialvistos.com.br`, ou sem fonte. A §2 proíbe agência de
+vistos e comparador, e a proibição não é formalidade: é uma página comercial, sem
+data de conferência e sem responsabilidade sobre a regra.
+
+O que as fontes oficiais responderam nesta rodada:
+
+| Destino    | Código | O que a fonte oficial mostrou                                                                                                                                                   |
+| ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Costa Rica | `CR`   | A diretriz geral de vistos vigente respondeu 403 nas duas versões tentadas (2023 e novembro de 2025). O Grupo 1 existe e dispensa visto; **falta ler o Brasil nele**.           |
+| Malásia    | `MY`   | A lista oficial de imigração tem 33 países que exigem visto e 50 isentos, e **o Brasil não está em nenhuma das duas**. O MDAC também não aparece nessa página.                  |
+| Panamá     | `PA`   | O SNM confirma os requisitos de turista — passaporte com 3 meses de validade, solvência de no mínimo B/. 500 e reserva de saída —, mas **não expõe a lista de países isentos**. |
+
+O Panamá é o caso mais próximo de fechar: o que falta é só a lista de países. Os
+requisitos que a fonte oficial confirma já são bons candidatos a `notes`, porque
+são o que o viajante precisa levar.
+
+A Malásia é o oposto — a ausência do Brasil nas duas listas oficiais é um sinal
+de que a página não é a fonte certa, não de que a regra seja ambígua. Vale
+procurar no portal de vistos (`malaysiavisa.imi.gov.my`) antes de concluir
+qualquer coisa.
+
+> **Resolvido na rodada seguinte:** a fonte certa era a embaixada da Malásia em
+> Brasília, e não a página de listas da imigração. A Malásia entra como
+> `visa_free`. Costa Rica e Panamá seguem abertos.
+
+#### Cobertura depois desta rodada
+
+| Momento                                   | Regras | Cobertura |
+| ----------------------------------------- | ------ | --------- |
+| Antes da segunda passada                  | 45     | 56%       |
+| Com as 15 da passada automática           | 54     | 67,5%     |
+| Com `PH` (a `BO` não tem cidade sugerida) | 55     | 68,75%    |
+| Se `CR`, `MY`, `PA` e `RU` entrarem       | 59     | 73,75%    |
+| Piso exigido pela §3.4                    | 60     | 75%       |
+
+**Mesmo confirmando todos os seis, falta um destino.** A conta não fecha por
+pouco: 59 de 80. O candidato mais barato é qualquer um dos que já estão nomeados
+como pendentes — Marrocos, Cuba, Arábia Saudita, Quênia, Jordânia, Nepal,
+Cazaquistão ou Tunísia.
+
+#### Malásia e Rússia — confirmados
+
+| Destino | Código | Tipo        | Confiança | `notes` proposto                                                                            |
+| ------- | ------ | ----------- | --------- | ------------------------------------------------------------------------------------------- |
+| Malásia | `MY`   | `visa_free` | Alta      | Entrada sem visto para visita social ou de negócios, por até 90 dias.                       |
+| Rússia  | `RU`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180, em viagem de turismo ou negócios. |
+
+| Código | `source_name`                                                          | `source_url`                                                                            |
+| ------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `MY`   | Embaixada da Malásia em Brasília — informações consulares (KLN)        | https://www.kln.gov.my/web/bra_brasilia/post/other-consular-information-3-1             |
+| `RU`   | MFA da Rússia — marco regulatório das relações consulares com o Brasil | https://www.kdmid.ru/docs/brazil/regulatory-framework-for-bilateral-consular-relations/ |
+
+Os dois saem do órgão do próprio destino, que é o que a §2 pede como fonte
+primária — sem o desvio anotado para `BO` e `PH`.
+
+##### Rússia — o registro eletrônico não se sustenta como exigência
+
+A dúvida levantada na rodada anterior era o procedimento de registro prévio com
+vigência declarada de 30/06/2025 a 30/06/2026, já vencida. Três fontes
+posteriores ou independentes falam da entrada sem visto e **nenhuma delas
+menciona o registro**: o Decreto nº 7.271/2010, que promulga o acordo; o aviso do
+MRE de maio de 2026; e a página do MFA russo, que confirma o acordo em vigor
+desde 7 de junho de 2010, com permanência de até 90 dias a cada 180.
+
+Por isso a linha entra como `visa_free`, sem mencionar registro. O caso fica
+anotado na §8 como candidato a reconferência: procedimento com janela vencida
+tende a voltar, e se voltar o tipo correto passa a ser `eta`.
+
+##### MDAC — é requisito, não é regra de visto
+
+O Malaysia Digital Arrival Card não pertence a `visa_rules`. A tabela responde
+"este passaporte precisa de visto para este destino"; o MDAC é obrigatório
+**independentemente** da dispensa, e por isso é um `requirement_template` com
+escopo de país, ligado a `MY` por `requirement_template_countries` — a mesma
+forma que já vale para qualquer exigência de entrada específica de um destino.
+
+Antes de virar linha, ele precisa do que todo template precisa:
+
+1. **fonte oficial própria**, no portal de imigração da Malásia — a página
+   consular da embaixada confirma a isenção de visto, e não o MDAC. A observação
+   de que o formulário é preenchido nos três dias anteriores à chegada é
+   justamente o tipo de detalhe operacional que não pode entrar sem ser lido na
+   fonte;
+2. **as três traduções** no mesmo arquivo de migration, como manda o AGENTS.md;
+3. prioridade `required`, porque sem ele o embarque é negado.
+
+##### Nota sobre o formato dos campos
+
+`visa_rules` não tem coluna de prazo nem de confiança. O prazo de permanência vai
+no texto de `notes` — é o que as 45 linhas do primeiro seed já fazem — e a
+confiança é um instrumento **deste documento**, que serve para decidir se a linha
+entra no arquivo, e não viaja para o banco. O que o banco guarda sobre a
+qualidade do dado é `verified_at`.
+
+#### Cobertura depois desta rodada
+
+| Momento                                 | Regras | Cobertura |
+| --------------------------------------- | ------ | --------- |
+| Com `BG CY MT SI DO GE RS LK QA` e `PH` | 55     | 68,75%    |
+| Com `MY` e `RU`                         | 57     | 71,25%    |
+| Piso exigido pela §3.4                  | 60     | 75%       |
+
+Faltam **três destinos com sugestão de cidade**. Costa Rica e Panamá já estão em
+andamento e resolvem dois; o terceiro pode ser qualquer um dos pendentes —
+Marrocos, Cuba, Arábia Saudita, Quênia, Jordânia, Nepal, Cazaquistão ou Tunísia.
+
+Fora do piso, seguem abertas as condições de grupo: `VE` no MERCOSUL, `EC` na
+Comunidade Andina e `LI` no Espaço Schengen.
+
+#### Marrocos, Cuba e Quênia
+
+| Destino  | Código | Tipo        | Confiança | `notes` proposto                                                                                                        |
+| -------- | ------ | ----------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Marrocos | `MA`   | `visa_free` | Alta      | Entrada sem visto para turismo por até 90 dias.                                                                         |
+| Cuba     | `CU`   | `evisa`     | Alta      | Tarjeta de Turista solicitada online antes da viagem; também vendida no balcão da companhia aérea. Permite até 90 dias. |
+| Quênia   | `KE`   | `eta`       | Alta      | Autorização eletrônica (eTA) aprovada antes do embarque, para estadas de até 90 dias.                                   |
+
+| Código | `source_name`                                       | `source_url`                                                                                               |
+| ------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `MA`   | MRE — Embaixada em Rabat, informações úteis         | https://www.gov.br/mre/pt-br/embaixada-rabat/rabat-arquivos/informacoes-uteis                              |
+| `CU`   | MRE — Embaixada em Havana, recomendações a turistas | https://www.gov.br/mre/pt-br/embaixada-havana/consular-1/recomendacoes-a-turistas-e-visitantes-brasileiros |
+| `KE`   | _(pendente — ver abaixo)_                           | https://www.etakenya.go.ke/                                                                                |
+
+**O Marrocos sai da pendência aberta na primeira passada**, onde estava desde
+2026-09-06 por o `consulat.ma` recusar as requisições. Entra com o mesmo desvio
+de fonte anotado para `BO` e `PH`: o MRE é corroborativo pela §2, não primário.
+
+##### Quênia — a fonte precisa trocar antes do seed
+
+A informação está certa e bate com o portal oficial, mas `am.afdb.org` é o site
+de um encontro do Banco Africano de Desenvolvimento. Não é o órgão que determina
+a regra, e a §6 é explícita: nenhum `source_url` em domínio não governamental.
+
+A troca é barata, porque o próprio Quênia publica a regra: `etakenya.go.ke` é o
+portal oficial do eTA, em domínio `.go.ke`. Ele não abriu para leitura
+automática — a página de elegibilidade devolveu só a navegação —, então falta
+alguém abri-lo e confirmar duas coisas: que a eTA vale para toda nacionalidade
+desde 1º de janeiro de 2024, e que a estada de turismo é de até 90 dias.
+
+Enquanto isso não acontecer, a linha fica pronta mas fora do arquivo.
+
+##### Cuba — por que `evisa` e não `visa_required`
+
+A Tarjeta de Turista é visto de turismo, e a pergunta é só qual dos tipos do
+vocabulário descreve melhor o que o viajante faz. `evisa` significa solicitado e
+emitido online antes da viagem, que é exatamente o caminho principal hoje. A
+venda no balcão da companhia aérea no check-in não muda isso e também não é
+`visa_on_arrival`, que descreve emissão no posto de fronteira, na chegada.
+
+`visa_required` também seria defensável e tem template. A diferença que o usuário
+vê é o texto do item: `evisa` manda solicitar online, `visa_required` manda
+providenciar o visto. **Escolhi `evisa` por ser mais específico**, e a alternativa
+fica registrada caso se prefira o texto mais genérico.
+
+##### Os requisitos que não são regra de visto
+
+Cuba e Quênia trouxeram exigências que, como o MDAC, não pertencem a
+`visa_rules` — são `requirement_template` com escopo de país:
+
+| Exigência                          | Destino   | Observação                                                      |
+| ---------------------------------- | --------- | --------------------------------------------------------------- |
+| Seguro viagem com cobertura médica | `CU`      | Obrigatório, e hoje o catálogo só tem o item genérico de seguro |
+| Certificado de vacinação (CIVP)    | `CU` `KE` | Febre amarela, exigido de quem parte do Brasil                  |
+| Formulário D'Viajeros              | `CU`      | Preenchido online nos dias anteriores ao voo                    |
+
+A vacina merece nota à parte. O catálogo tem hoje `Conferir as vacinas —
+{country}`, criado de propósito como `recommended` e com texto que **manda
+conferir em vez de afirmar**, porque não havia coleta com fonte. Agora há, para
+dois destinos. Isso permite um item `required` de febre amarela ligado a `CU` e
+`KE` — mas é decisão a tomar junto com a fonte de saúde de cada um, não junto
+com esta coleta de vistos.
+
+#### Cobertura — o piso é alcançado
+
+| Momento                                | Regras | Cobertura |
+| -------------------------------------- | ------ | --------- |
+| Antes da segunda passada               | 45     | 56%       |
+| Com `MY` e `RU`                        | 57     | 71,25%    |
+| Com `MA` e `CU`                        | 59     | 73,75%    |
+| **Com `KE`, depois da troca da fonte** | **60** | **75%**   |
+
+Os três destinos desta rodada têm sugestão de cidade, então os três contam. Com o
+Quênia confirmado no portal oficial, o Brasil **atinge exatamente o piso da
+§3.4** — 60 de 80.
+
+As condições restantes são as de grupo: `VE` no MERCOSUL, `EC` na Comunidade
+Andina e `LI` no Espaço Schengen. Nenhuma delas tem sugestão de cidade, então
+nenhuma mexe no piso — mas as três precisam entrar antes de o Brasil ser
+liberado, porque a §3.4 exige grupo inteiro.
+
+Costa Rica e Panamá deixaram de ser necessários para o piso. Continuam valendo a
+pena: são destinos com cidade sugerida, e cada um deles dá folga a um critério
+que hoje passa no limite.
+
+#### As três linhas de grupo — Liechtenstein resolvido
+
+| Destino       | Código | Tipo        | Confiança | `notes` proposto                                          |
+| ------------- | ------ | ----------- | --------- | --------------------------------------------------------- |
+| Liechtenstein | `LI`   | `visa_free` | Alta      | Entrada sem visto para estadas de até 90 dias a cada 180. |
+
+| Código | `source_name`                                                         | `source_url`                                                                                                       |
+| ------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `LI`   | SEM (Suíça) — Lista 1: documentos e vistos por nacionalidade, letra B | https://www.sem.admin.ch/sem/en/home/publiservice/weisungen-kreisschreiben/visa/liste1_staatsangehoerigkeit/b.html |
+
+O Liechtenstein não é da União, então o Anexo II não o alcançava por si — era
+essa a pendência. A saída não foi deduzir do Espaço Schengen, e sim achar quem
+responde pela regra: **a Suíça administra os vistos do principado**, e a SEM
+publica a lista oficial por nacionalidade. A entrada do Brasil diz "visto para
+estadas até 90 dias: **não**", e a lista vale para os dois países.
+
+Com essa linha, o **Espaço Schengen fica completo**: 29 de 29.
+
+##### Venezuela — a fonte não responde a pergunta
+
+O MPPRE publica os requisitos do visto de turismo — passaporte com seis meses,
+comprovante de residência, carta bancária, certificado médico —, mas **não diz
+quais nacionalidades estão dispensadas**, nem por quanto tempo. Uma página sobre
+como pedir o visto não responde se o brasileiro precisa dele.
+
+Falta: a lista de países isentos, ou uma página do SAIME/MPPRE que trate do caso
+brasileiro. Sem isso a linha não entra — é exatamente o cenário da §1, em que o
+silêncio não pode virar `visa_free`.
+
+##### Equador — a página existe, o servidor é que não abre
+
+A fonte certa está identificada: a Cancillería mantém **"Lista de países que deben
+presentar visa al ingresar al Ecuador"**, baseada no Acuerdo Ministerial 0000198,
+em https://www.cancilleria.gob.ec/2020/06/30/lista-de-paises-que-deben-presentar-visa-al-ingresar-al-ecuador/
+
+O host respondeu com certificado inválido, e o Ministerio de Gobierno recusou
+conexão nas duas tentativas. O que se sabe da listagem de busca é que ela reúne
+cerca de 46 países de regime especial — Afeganistão, Cuba, Índia, China, Nigéria,
+Venezuela e outros — e **o Brasil não está entre eles**.
+
+Falta: abrir a página e confirmar duas coisas — que o Brasil realmente não consta
+da lista, e qual o prazo de permanência do turista sul-americano, que a Lei de
+Mobilidade Humana trata em separado. Ausência de um país numa lista de exigência
+é evidência de isenção, mas precisa ser lida, não inferida de resumo de busca.
+
+#### Situação das condições da §3.4
+
+| Condição               | Situação                                                             |
+| ---------------------- | -------------------------------------------------------------------- |
+| Viagem doméstica       | Cumprida                                                             |
+| Espaço Schengen (29)   | **Completo**, com `LI`                                               |
+| MERCOSUL (5)           | Falta `VE`                                                           |
+| Comunidade Andina (4)  | Falta `EC`                                                           |
+| Trinta destinos comuns | Cumprida — o último pendente era o Marrocos                          |
+| Piso de 75%            | 60 de 80, atingido no limite, dependendo da troca da fonte do Quênia |
+
+#### Quênia e Equador — conferidos, e o critério fecha
+
+| Destino | Código | Tipo        | Confiança | `notes` proposto                                                                                        |
+| ------- | ------ | ----------- | --------- | ------------------------------------------------------------------------------------------------------- |
+| Quênia  | `KE`   | `eta`       | Alta      | Autorização eletrônica (eTA) aprovada antes do embarque; o processamento leva cerca de três dias úteis. |
+| Equador | `EC`   | `visa_free` | Alta      | Entrada sem visto para turismo.                                                                         |
+
+| Código | `source_name`                                                      | `source_url`                                                                                               |
+| ------ | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `KE`   | Kenya eTA — Citizenship and Immigration (Amendment) Rules, 2025    | https://etakenya.go.ke/how-to-apply                                                                        |
+| `EC`   | Cancillería del Ecuador — Lista de países que deben presentar visa | https://www.cancilleria.gob.ec/2020/06/30/lista-de-paises-que-deben-presentar-visa-al-ingresar-al-ecuador/ |
+
+##### O Quênia confirma por contraste, que é o melhor tipo de confirmação
+
+A página lista o Brasil entre os isentos **apenas para passaporte diplomático,
+oficial ou de serviço**, por até 90 dias. Como esta coleta é de **passaporte
+comum** (§3), a leitura é direta: o brasileiro comum não está isento, e vale a
+regra geral — "todos os visitantes, incluindo bebês e crianças, devem possuir uma
+eTA aprovada antes do início da viagem".
+
+É mais forte do que achar o Brasil numa lista de exigência: aqui o país aparece
+nominalmente, e aparece numa exceção que não alcança o viajante do app.
+
+O `notes` não menciona os 90 dias justamente por isso — os 90 dias da página são
+os do passaporte diplomático. O prazo do turista comum não foi lido.
+
+##### Equador
+
+O Brasil não consta da lista de países que precisam de visto. O `notes` fica em
+"Entrada sem visto para turismo", sem prazo, porque a lista responde quem precisa
+de visto e não por quanto tempo o turista fica — mesma forma já usada na linha da
+Argentina.
+
+##### Venezuela permanece fora
+
+A pesquisa indica isenção de 90 dias para passaporte comum, mas **sem fonte
+venezuelana oficial atualizada**. A §1 é clara: na dúvida, não cadastre. E não
+custa nada deixar fora, porque a filiação da Venezuela ao MERCOSUL está encerrada
+desde 2016-12-01 em `destination_group_members` — ela não entra na conta de
+nenhuma condição.
+
+#### O passaporte brasileiro passa no critério da §3.4
+
+| Condição                    | Situação                                                          |
+| --------------------------- | ----------------------------------------------------------------- |
+| Viagem doméstica            | **Cumprida** — `domestic-photo-id`                                |
+| Espaço Schengen (29)        | **Completo**, com `LI` pela lista da SEM                          |
+| MERCOSUL (membros vigentes) | **Completo** — `AR` `PY` `UY` `BO`; `VE` está suspensa desde 2016 |
+| Comunidade Andina (4)       | **Completo** — `BO` `CO` `EC` `PE`                                |
+| Trinta destinos comuns      | **Cumprida** — o último pendente era o Marrocos                   |
+| Piso de 75%                 | **60 de 80**, atingido no limite                                  |
+
+O piso passa exatamente no limite, e vale saber de quem ele depende: **se a linha
+do Catar sair, a cobertura cai para 59 e o critério deixa de fechar.** O Catar
+está como Média porque a página oficial confirma a isenção para brasileiros mas
+não exibiu o prazo — e é por isso que o `notes` dele não promete dias. Se a
+preferência for segurar o Catar, Costa Rica e Panamá voltam a ser necessários.
+
+Folga é o que não há. Costa Rica, Panamá e Venezuela continuam valendo a pena
+como próxima leva, por isso mesmo.
 
 ## 5. Forma da migration
 

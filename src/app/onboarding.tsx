@@ -15,10 +15,10 @@ import { colors, spacing, typography } from '@/theme/tokens';
  * nacionalidade é sempre escolhida aqui, nunca inferida do provedor de login.
  */
 export default function OnboardingScreen() {
-  const { addPassport } = usePassports();
+  const { addPassport, hasPendingRules } = usePassports();
   const [busyCode, setBusyCode] = useState<string | null>(null);
 
-  async function handleSelect(country: Country) {
+  async function save(country: Country) {
     setBusyCode(country.code);
     try {
       await addPassport(country.code);
@@ -26,6 +26,25 @@ export default function OnboardingScreen() {
       showDialog(t('onboarding.saveFailed.title'), toPassportMessage(error));
       setBusyCode(null);
     }
+  }
+
+  // Passaporte sem regras entra do mesmo jeito: guardar o país real é o que
+  // mantém a viagem doméstica correta e o que deixa a checklist melhorar quando
+  // as regras chegarem. O que muda é o app avisar antes, e não depois.
+  function handleSelect(country: Country) {
+    if (!hasPendingRules(country.code)) {
+      void save(country);
+      return;
+    }
+
+    showDialog(
+      t('onboarding.pendingRules.title'),
+      t('onboarding.pendingRules.message', { country: country.name }),
+      [
+        { text: t('common.action.cancel'), style: 'cancel' },
+        { text: t('onboarding.pendingRules.confirm'), onPress: () => void save(country) },
+      ],
+    );
   }
 
   return (

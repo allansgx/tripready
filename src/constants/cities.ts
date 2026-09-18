@@ -10,9 +10,8 @@ import type { Locale } from '../i18n/locales.ts';
  * Sugestões de cidades por país — um atalho, não um limite: a tela aceita
  * qualquer cidade digitada. Cada lista vai da mais visitada para a menos, em
  * pt-BR; `getCitySuggestions` aplica a exceção do idioma ativo por cima,
- * preservando a ordem. Trade-off (α) do plano: o nome escolhido nesta lista é
- * o que grava em `trip_cities.city_name`, e o que já está gravado nunca muda
- * de idioma — ver `tasks/plano-i18n.md`, §9.2.
+ * preservando a ordem. O nome escolhido nesta lista é o que grava em
+ * `trip_cities.city_name`, e o que já está gravado nunca muda de idioma.
  */
 export const CITY_SUGGESTIONS: Record<string, readonly string[]> = {
   AE: ['Dubai', 'Abu Dhabi', 'Sharjah'],

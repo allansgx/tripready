@@ -33,6 +33,17 @@ type PassportsContextValue = {
   primary: Passport | null;
   /** Códigos já cadastrados, para o seletor não oferecer repetidos. */
   usedCountryCodes: string[];
+  /**
+   * As regras de entrada deste país ainda não cobrem o critério mínimo. Nunca
+   * restringe a escolha: decide só o que a interface informa.
+   *
+   * Responde `false` enquanto a lista carrega e também quando a consulta falha.
+   * É deliberado — anunciar "ainda não temos regras" por causa de uma oscilação
+   * de rede seria pior do que não dizer nada.
+   */
+  hasPendingRules: (countryCode: string) => boolean;
+  /** `false` também quando não há passaporte principal. */
+  primaryHasPendingRules: boolean;
   addPassport: (countryCode: string) => Promise<Passport>;
   setPrimary: (passportId: string) => Promise<void>;
   removePassport: (passportId: string) => Promise<void>;
@@ -64,9 +75,30 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
   const isLoading = userId !== null && !isCurrent;
   const hasLoadError = isCurrent && loadedRows === null;
 
+  const [supported, setSupported] = useState<string[]>([]);
+
   const refresh = useCallback(async () => {
     if (!userId) return;
     setState({ userId, rows: await passportsService.listByUser(userId) });
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    let active = true;
+
+    passportsService
+      .listSupportedCountryCodes()
+      .then((codes) => {
+        if (active) setSupported(codes);
+      })
+      .catch(() => {
+        // Sem aviso é melhor que aviso errado: a lista segue vazia.
+      });
+
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   useEffect(() => {
@@ -90,6 +122,9 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<PassportsContextValue>(() => {
     const primary = passports.find((passport) => passport.is_primary) ?? null;
+    const supportedSet = new Set(supported);
+    const hasPendingRules = (countryCode: string) =>
+      supportedSet.size > 0 && !supportedSet.has(countryCode.toUpperCase());
 
     return {
       passports,
@@ -98,6 +133,8 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
       hasPassport: passports.length > 0,
       primary,
       usedCountryCodes: passports.map((passport) => passport.country_code),
+      hasPendingRules,
+      primaryHasPendingRules: primary ? hasPendingRules(primary.country_code) : false,
 
       async addPassport(countryCode) {
         if (!userId) {
@@ -152,7 +189,7 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
 
       refresh,
     };
-  }, [passports, isLoading, hasLoadError, userId, refresh]);
+  }, [passports, isLoading, hasLoadError, userId, refresh, supported]);
 
   return <PassportsContext.Provider value={value}>{children}</PassportsContext.Provider>;
 }

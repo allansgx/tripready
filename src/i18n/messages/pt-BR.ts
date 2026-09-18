@@ -184,6 +184,9 @@ export const messages = {
     'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.',
   'passports.dialog.primary.message':
     'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+  'passports.section.pendingRulesTag': 'Regras em preparação',
+  'passports.dialog.pendingRules.message':
+    'Ainda não temos as regras de entrada para este passaporte. Sua checklist segue com os documentos e o passo de conferir as exigências de cada destino.',
   'passports.dialog.setPrimary': 'Definir como principal',
   'passports.dialog.remove': 'Remover passaporte',
   'passports.dialog.removeConfirm.title': 'Remover {name}?',
@@ -203,6 +206,10 @@ export const messages = {
   'a11y.countryRow.withCity': '{country}, {city}',
   'a11y.countryRow.alreadyAdded': 'Já adicionado',
 
+  'onboarding.pendingRules.title': 'Regras em preparação',
+  'onboarding.pendingRules.message':
+    'As regras de entrada para o passaporte de {country} ainda estão em preparação. Você já pode montar sua viagem: a checklist traz os documentos e o passo de conferir as exigências de cada destino.',
+  'onboarding.pendingRules.confirm': 'Continuar',
   'onboarding.saveFailed.title': 'Não foi possível salvar',
   'onboarding.title': 'Qual passaporte você usa para viajar?',
   'onboarding.subtitle':
@@ -410,6 +417,8 @@ export const messages = {
   'trips.checklist.empty': 'Sua checklist aparece aqui assim que ficar pronta.',
   'trips.checklist.itemCount': { one: '{count} item', other: '{count} itens' },
   'trips.checklist.refresh': 'Atualizar checklist',
+  'trips.checklist.unverifiedDestinations':
+    'Para {countries}, confira as exigências de entrada na fonte oficial — ainda não temos a regra conferida desses destinos.',
   'trips.checklist.allRequiredDone': '✓ Tudo certo com os itens obrigatórios!',
 
   'trips.celebration.allDone.title': 'Tudo pronto! 🎉',

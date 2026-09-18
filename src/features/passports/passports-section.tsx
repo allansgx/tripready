@@ -23,7 +23,7 @@ import type { Passport } from '@/types/models';
 
 /** Seção "Passaportes" do Perfil: lista, principal, adicionar e remover. */
 export function PassportsSection() {
-  const { passports, isLoading, setPrimary, removePassport } = usePassports();
+  const { passports, isLoading, setPrimary, removePassport, hasPendingRules } = usePassports();
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -87,7 +87,15 @@ export function PassportsSection() {
       { text: t('common.action.cancel'), style: 'cancel' },
     ];
 
-    showDialog(name, undefined, buttons);
+    // A consequência de promover aparece antes da escolha: é este passaporte
+    // que vai decidir quais regras a checklist consegue aplicar.
+    showDialog(
+      name,
+      hasPendingRules(passport.country_code)
+        ? t('passports.dialog.pendingRules.message')
+        : undefined,
+      buttons,
+    );
   }
 
   return (
@@ -105,6 +113,7 @@ export function PassportsSection() {
           <PassportRow
             key={passport.id}
             passport={passport}
+            pendingRules={hasPendingRules(passport.country_code)}
             busy={busyId === passport.id}
             onPress={() => openActions(passport)}
           />
@@ -127,10 +136,12 @@ export function PassportsSection() {
 
 function PassportRow({
   passport,
+  pendingRules,
   busy,
   onPress,
 }: {
   passport: Passport;
+  pendingRules: boolean;
   busy: boolean;
   onPress: () => void;
 }) {
@@ -151,6 +162,11 @@ function PassportRow({
         </Text>
         {passport.is_primary ? (
           <Text style={styles.primaryTag}>{t('passports.section.primaryTag')}</Text>
+        ) : null}
+        {/* Estado, e não alerta: sem cor de aviso, para quem convive com ele
+            todo dia continuar lendo em vez de ignorar. */}
+        {pendingRules ? (
+          <Text style={styles.pendingTag}>{t('passports.section.pendingRulesTag')}</Text>
         ) : null}
       </View>
 
@@ -193,6 +209,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '600',
     color: colors.primary,
+  },
+  pendingTag: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   addIcon: {
     width: 36,

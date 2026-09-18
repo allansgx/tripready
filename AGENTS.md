@@ -120,6 +120,41 @@ Ordenação:
 
 Nunca assumir que o passaporte do usuário é brasileiro. O passaporte usado deve ser determinado pelo passaporte principal cadastrado pelo usuário. Atualmente o catálogo de regras de visto possui dados para BR, mas a arquitetura deve suportar outros países.
 
+### Passaportes
+
+Qualquer pessoa escolhe o país do passaporte dela na lista completa. **A lista
+nunca é filtrada pela cobertura de regras** — guardar o país real é o que mantém
+a viagem doméstica correta, e é o que deixa a checklist melhorar sozinha quando
+as regras daquele país chegarem.
+
+Sem passaporte principal o motor não tem como decidir nada: a viagem deixa de ser
+doméstica, o próprio país do viajante passa a receber item de fronteira e nenhum
+item de visto é gerado. Por isso o app exige um passaporte antes de entrar, e por
+isso não existe "seguir sem informar".
+
+O que a cobertura governa é **o que o app diz**, nunca quem entra.
+`supported_passport_countries` lista os passaportes que já passaram no critério
+abaixo; para os demais, a interface avisa que as regras estão em preparação — no
+onboarding, na linha do Perfil e no diálogo que promove um passaporte a
+principal. O aviso falha em silêncio: se a consulta não responder, não se afirma
+nada.
+
+Um passaporte só entra em `supported_passport_countries` quando cumpre as quatro
+condições:
+
+1. **Viagem doméstica coberta** — existe requisito aplicável dentro do próprio
+   país. Não vem de `visa_rules`, que proíbe par com origem e destino iguais.
+2. **Grupos de destino inteiros** — todo membro vigente de `destination_groups`
+   precisa de regra. Grupo pela metade faz dois vizinhos com a mesma regra real
+   aparecerem diferentes na checklist.
+3. **Trinta destinos mais comuns** daquele passaporte, cobertos por inteiro. A
+   lista mora no documento de coleta do país, com data.
+4. **Piso de 75%** dos países com sugestão de cidade em
+   `src/constants/cities.ts`, descontado o próprio país do passaporte.
+
+Nada disso se deduz de `select distinct passport_country_code from visa_rules`: a
+primeira regra coletada de um país não é promessa de suporte.
+
 ### Checklist
 
 Prioridades: `required`, `recommended`, `informational`.

@@ -19,6 +19,7 @@ import { showDialog } from '@/components/ui/dialog';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { getCountryName } from '@/constants/countries';
 import { ReminderOptInCard } from '@/features/notifications/components/reminder-opt-in-card';
+import { usePassports } from '@/features/passports/passports-context';
 import {
   canAskForReminders,
   markRemindersAsked,
@@ -51,7 +52,9 @@ import {
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
 import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
 import { getTripStatus } from '@/features/trips/domain/trip-status';
+import { destinationsWithoutVerifiedRule } from '@/features/trips/domain/visa-coverage';
 import { getLocale, t } from '@/i18n';
+import { formatList } from '@/i18n/format';
 import { layoutTransition, SECTION_TOGGLE_MS, useReduceMotion } from '@/lib/animation';
 import {
   requirementCatalogService,
@@ -127,6 +130,7 @@ export default function TripChecklistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const { primary } = usePassports();
 
   // `router.canGoBack()` enxerga a árvore inteira e podia levar para outra aba.
   function goBackToTrips() {
@@ -376,6 +380,19 @@ export default function TripChecklistScreen() {
     [requirements],
   );
 
+  // O aviso só existe quando tem destino a nomear: ele diz onde a checklist não
+  // pôde aplicar regra conferida, e nunca substitui o item de exigências de
+  // entrada, que continua obrigatório em todo destino internacional.
+  const unverified = useMemo(
+    () =>
+      destinationsWithoutVerifiedRule(
+        countries.map((country) => country.country_code),
+        requirements,
+        primary?.country_code ?? null,
+      ).map((code) => getCountryName(code)),
+    [countries, requirements, primary],
+  );
+
   function toggleSection(category: RequirementCategory) {
     // O toque manual assume o comando e cancela um avanço em curso.
     advanceRef.current += 1;
@@ -559,6 +576,17 @@ export default function TripChecklistScreen() {
         </View>
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+
+        {unverified.length > 0 ? (
+          <View style={styles.coverageNote}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.coverageText}>
+              {t('trips.checklist.unverifiedDestinations', {
+                countries: formatList(unverified, getLocale()),
+              })}
+            </Text>
+          </View>
+        ) : null}
 
         {showOptIn ? (
           <ReminderOptInCard
@@ -804,6 +832,17 @@ const styles = StyleSheet.create({
     backgroundColor: prioritySoftColors.recommended,
     borderRadius: radius.md,
     padding: spacing.md,
+  },
+  coverageNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  coverageText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flex: 1,
   },
   list: { gap: spacing.md },
   item: {

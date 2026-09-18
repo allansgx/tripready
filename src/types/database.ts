@@ -332,6 +332,21 @@ export type Database = {
         };
         Relationships: [];
       };
+      supported_passport_countries: {
+        Row: {
+          country_code: string;
+          created_at: string;
+        };
+        Insert: {
+          country_code: string;
+          created_at?: string;
+        };
+        Update: {
+          country_code?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       visa_rule_translations: {
         Row: {
           visa_rule_id: string;

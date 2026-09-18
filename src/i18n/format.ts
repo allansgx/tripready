@@ -70,6 +70,24 @@ const MONTH_ABBREVIATIONS: Record<Locale, readonly string[]> = {
   es: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
 };
 
+const LIST_CONJUNCTION: Record<Locale, string> = { 'pt-BR': 'e', en: 'and', es: 'y' };
+
+/**
+ * Enumeração no idioma ativo: "A, B e C". Existe aqui, e não como frase do
+ * dicionário, porque o número de itens é variável — montar isso na tela viraria
+ * concatenação, que erra em pelo menos um dos três idiomas.
+ */
+export function formatList(items: readonly string[], locale: Locale): string {
+  if (items.length <= 1) return items[0] ?? '';
+
+  const last = items[items.length - 1];
+  // Em espanhol a conjunção vira "e" antes de som de /i/: "Irlanda e Islandia".
+  const conjunction =
+    locale === 'es' && /^(i|hi)(?!e)/i.test(last) ? 'e' : LIST_CONJUNCTION[locale];
+
+  return `${items.slice(0, -1).join(', ')} ${conjunction} ${last}`;
+}
+
 export function monthNames(locale: Locale): readonly string[] {
   return MONTH_NAMES[locale];
 }
