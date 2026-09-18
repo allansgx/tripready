@@ -21,8 +21,28 @@ import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { CityStep } from '@/features/trips/components/city-step';
 import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import { createTripWithDestinations } from '@/features/trips/data/trip-persistence';
+import { formatTripLimitMessage } from '@/features/trips/domain/trip-format';
+import {
+  canAddCountry,
+  checkTripLimits,
+  MAX_TRIP_COUNTRIES,
+  MAX_TRIP_DURATION_DAYS,
+  type TripLimitIssue,
+} from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
+import { t, type MessageKey } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
+
+const LIMIT_MESSAGE_MAX: Partial<Record<TripLimitIssue, number>> = {
+  countries: MAX_TRIP_COUNTRIES,
+  duration: MAX_TRIP_DURATION_DAYS,
+};
+
+/** Frase do limite estourado; nula quando a viagem está dentro deles. */
+function limitMessage(issue: TripLimitIssue | null): string | null {
+  if (!issue) return null;
+  return formatTripLimitMessage(issue, LIMIT_MESSAGE_MAX[issue]);
+}
 
 const STEPS = ['countries', 'cities', 'dates', 'name'] as const;
 type Step = (typeof STEPS)[number];
@@ -30,18 +50,18 @@ type Step = (typeof STEPS)[number];
 /** O nome cabe no card da lista e no destaque da Home; acima disso, não cabe. */
 const NAME_MAX_LENGTH = 60;
 
-const TITLES: Record<Step, string> = {
-  countries: 'Para onde você vai?',
-  cities: 'Quais cidades você pretende visitar?',
-  dates: 'Quando você vai viajar?',
-  name: 'Como quer chamar esta viagem?',
+const TITLE_KEY: Record<Step, MessageKey> = {
+  countries: 'trip.new.title.countries',
+  cities: 'trip.new.title.cities',
+  dates: 'trip.new.title.dates',
+  name: 'trip.new.title.name',
 };
 
-const SUBTITLES: Record<Step, string> = {
-  countries: 'Escolha um ou mais países do seu roteiro.',
-  cities: 'Escolha as cidades que já estão no plano. Dá para decidir isso depois.',
-  dates: 'Toque na data de ida e depois na de volta.',
-  name: 'Confira o roteiro e ajuste o nome se quiser.',
+const SUBTITLE_KEY: Record<Step, MessageKey> = {
+  countries: 'trip.new.subtitle.countries',
+  cities: 'trip.new.subtitle.cities',
+  dates: 'trip.new.subtitle.dates',
+  name: 'trip.new.subtitle.name',
 };
 
 export default function NewTripScreen() {
@@ -60,12 +80,35 @@ export default function NewTripScreen() {
   const step = STEPS[stepIndex];
   const { countryCodes, cities, range, name } = draft;
 
+  const limits = checkTripLimits({
+    countryCodes,
+    startDate: range.start,
+    endDate: range.end,
+  });
+
   function goBack() {
     if (stepIndex === 0) {
       router.back();
       return;
     }
+    setNotice(null);
     setStepIndex((current) => current - 1);
+  }
+
+  function goForward() {
+    setNotice(null);
+    setStepIndex((current) => current + 1);
+  }
+
+  // O país que não cabe não entra calado: a lista continua aberta e o rodapé
+  // explica por que aquele toque não marcou nada.
+  function selectCountry(country: Country) {
+    if (!canAddCountry(countryCodes, country.code)) {
+      setNotice(t('trip.limit.countries', { max: MAX_TRIP_COUNTRIES }));
+      return;
+    }
+    setNotice(null);
+    toggleCountry(country.code);
   }
 
   // Sem país nenhum não há cidade a escolher, e o fluxo volta para os destinos.
@@ -77,40 +120,53 @@ export default function NewTripScreen() {
   async function createTrip() {
     if (!user || busy) return;
 
+    // Última barreira antes de gravar: nenhum caminho da tela pode criar uma
+    // viagem fora dos limites.
+    if (!limits.isValid) {
+      setNotice(limitMessage(limits.issue));
+      return;
+    }
+
     setBusy(true);
     setNotice(null);
     try {
       const trip = await createTripWithDestinations(user.id, draft, resolvedName);
       router.replace({ pathname: '/trip-preparing', params: { tripId: trip.id } });
     } catch {
-      setNotice('Sua conexão oscilou. Toque em "Criar viagem" para tentar de novo.');
+      setNotice(t('trip.new.error.createRetry'));
       setBusy(false);
     }
   }
+
+  // Na etapa de países o aviso mora embaixo do botão, no lugar da orientação
+  // que ele substitui; nas demais, acima. O rótulo do botão já conta quantos
+  // países foram escolhidos, então não há contador a repetir aqui.
+  const countriesHint =
+    notice ?? (countryCodes.length === 0 ? t('trip.new.hint.chooseCountry') : null);
 
   const canContinue =
     step === 'countries'
       ? countryCodes.length > 0
       : step === 'dates'
-        ? Boolean(range.start && range.end)
+        ? Boolean(range.start && range.end) && limits.isValid
         : true;
 
   // Um botão só por etapa: sem cidade escolhida, seguir é pular.
   const continueLabel =
     step === 'countries' && countryCodes.length > 0
-      ? `Continuar com ${countryCodes.length} ${countryCodes.length === 1 ? 'país' : 'países'}`
+      ? t('trip.new.continueWithCountries', { count: countryCodes.length })
       : step === 'cities'
         ? cities.length === 0
-          ? 'Pular por enquanto'
-          : `Continuar com ${cities.length} ${cities.length === 1 ? 'cidade' : 'cidades'}`
-        : 'Continuar';
+          ? t('trip.new.skipForNow')
+          : t('trip.new.continueWithCities', { count: cities.length })
+        : t('common.action.continue');
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={stepIndex === 0 ? 'Fechar' : 'Voltar'}
+          accessibilityLabel={t(stepIndex === 0 ? 'common.action.close' : 'common.action.back')}
           hitSlop={12}
           onPress={goBack}
           style={styles.headerButton}>
@@ -121,21 +177,17 @@ export default function NewTripScreen() {
           />
         </Pressable>
         <Text style={styles.stepIndicator}>
-          Etapa {stepIndex + 1} de {STEPS.length}
+          {t('trip.new.stepIndicator', { current: stepIndex + 1, total: STEPS.length })}
         </Text>
       </View>
 
       <View style={styles.titles}>
-        <Text style={styles.title}>{TITLES[step]}</Text>
-        <Text style={styles.subtitle}>{SUBTITLES[step]}</Text>
+        <Text style={styles.title}>{t(TITLE_KEY[step])}</Text>
+        <Text style={styles.subtitle}>{t(SUBTITLE_KEY[step])}</Text>
       </View>
 
       {step === 'countries' ? (
-        <CountryPickerList
-          searchByCity
-          onSelect={(country: Country) => toggleCountry(country.code)}
-          selectedCodes={countryCodes}
-        />
+        <CountryPickerList searchByCity onSelect={selectCountry} selectedCodes={countryCodes} />
       ) : (
         <KeyboardAvoidingView
           style={styles.flex}
@@ -156,21 +208,30 @@ export default function NewTripScreen() {
 
             {step === 'dates' ? (
               <View style={styles.datesArea}>
-                <DateRangePicker value={range} onChange={setRange} />
+                <DateRangePicker
+                  value={range}
+                  onChange={setRange}
+                  maxDurationDays={MAX_TRIP_DURATION_DAYS}
+                />
                 <DateRangeSummary
                   value={range}
                   onClear={() => setRange({ start: null, end: null })}
                 />
+                <Text style={styles.hint}>
+                  {limits.isValid
+                    ? t('trip.limit.durationHint', { max: MAX_TRIP_DURATION_DAYS })
+                    : limitMessage(limits.issue)}
+                </Text>
               </View>
             ) : null}
 
             {step === 'name' ? (
               <View style={styles.nameArea}>
                 <TextField
-                  label="Nome da viagem"
+                  label={t('trip.name.label')}
                   value={name}
                   onChangeText={changeName}
-                  placeholder="Minha viagem"
+                  placeholder={t('trip.new.name.placeholder')}
                   returnKeyType="done"
                   maxLength={NAME_MAX_LENGTH}
                   // O nome sugerido já vem escrito no campo: tocar seleciona
@@ -188,12 +249,20 @@ export default function NewTripScreen() {
                   tirar um país leva junto as cidades dele.
                 */}
                 <View style={styles.block}>
-                  <ReviewHeader label="Datas" onEdit={() => setStepIndex(2)} />
+                  <ReviewHeader
+                    label={t('trip.review.dates.label')}
+                    a11yLabel={t('trip.review.dates.action')}
+                    onEdit={() => setStepIndex(2)}
+                  />
                   <DateRangeSummary value={range} />
                 </View>
 
                 <View style={styles.block}>
-                  <ReviewHeader label="Roteiro" onEdit={() => setStepIndex(1)} />
+                  <ReviewHeader
+                    label={t('trip.review.itinerary.label')}
+                    a11yLabel={t('trip.review.itinerary.action')}
+                    onEdit={() => setStepIndex(1)}
+                  />
                   <CityStep countryCodes={countryCodes} selected={cities} />
                 </View>
               </View>
@@ -203,20 +272,20 @@ export default function NewTripScreen() {
       )}
 
       <View style={styles.footer}>
-        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+        {notice && step !== 'countries' ? <Text style={styles.notice}>{notice}</Text> : null}
 
         {step === 'name' ? (
-          <Button label="Criar viagem" onPress={() => void createTrip()} loading={busy} />
-        ) : (
           <Button
-            label={continueLabel}
-            onPress={() => setStepIndex((current) => current + 1)}
-            disabled={!canContinue}
+            label={t('trips.action.create')}
+            onPress={() => void createTrip()}
+            loading={busy}
           />
+        ) : (
+          <Button label={continueLabel} onPress={goForward} disabled={!canContinue} />
         )}
 
-        {step === 'countries' && countryCodes.length === 0 ? (
-          <Text style={styles.hint}>Escolha ao menos um país para continuar.</Text>
+        {step === 'countries' && countriesHint ? (
+          <Text style={styles.hint}>{countriesHint}</Text>
         ) : null}
       </View>
     </SafeAreaView>
@@ -224,16 +293,24 @@ export default function NewTripScreen() {
 }
 
 /** O que é o bloco e o único caminho para mudá-lo. */
-function ReviewHeader({ label, onEdit }: { label: string; onEdit: () => void }) {
+function ReviewHeader({
+  label,
+  a11yLabel,
+  onEdit,
+}: {
+  label: string;
+  a11yLabel: string;
+  onEdit: () => void;
+}) {
   return (
     <View style={styles.blockHeader}>
-      <Text style={styles.blockLabel}>{label.toUpperCase()}</Text>
+      <Text style={styles.blockLabel}>{label}</Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Alterar ${label.toLowerCase()}`}
+        accessibilityLabel={a11yLabel}
         hitSlop={10}
         onPress={onEdit}>
-        <Text style={styles.blockAction}>Alterar</Text>
+        <Text style={styles.blockAction}>{t('common.action.change')}</Text>
       </Pressable>
     </View>
   );

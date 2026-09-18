@@ -1,15 +1,24 @@
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { getCountryName, getFlagEmoji } from '@/constants/countries';
-import { colors, typography } from '@/theme/tokens';
+import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 const MAX_VISIBLE = 5;
 
-/** Bandeiras dos países, no máximo cinco, com "+N" para o restante. */
-export function FlagRow({ codes, size = 22 }: { codes: readonly string[]; size?: number }) {
-  const visible = codes.slice(0, MAX_VISIBLE);
+/** Bandeiras dos países, com "+N" para o que passar de `max`. */
+export function FlagRow({
+  codes,
+  size = 22,
+  max = MAX_VISIBLE,
+}: {
+  codes: readonly string[];
+  size?: number;
+  max?: number;
+}) {
+  const visible = codes.slice(0, max);
   const remaining = codes.length - visible.length;
-  const label = codes.map(getCountryName).join(', ');
+  // O rótulo lista todos: o "+N" corta a linha, não a informação.
+  const label = codes.map((code) => getCountryName(code)).join(', ');
 
   return (
     <View style={styles.row} accessibilityLabel={label}>
@@ -18,7 +27,11 @@ export function FlagRow({ codes, size = 22 }: { codes: readonly string[]; size?:
           {Platform.OS === 'android' ? code.toUpperCase() : getFlagEmoji(code)}
         </Text>
       ))}
-      {remaining > 0 ? <Text style={styles.more}>+{remaining}</Text> : null}
+      {remaining > 0 ? (
+        <View style={styles.moreChip}>
+          <Text style={styles.more}>+{remaining}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -33,6 +46,15 @@ const styles = StyleSheet.create({
   flag: {
     color: colors.text,
     fontWeight: Platform.OS === 'android' ? '700' : '400',
+  },
+  // A contagem nunca encolhe: é a menor peça da linha e a que não pode virar
+  // reticências.
+  moreChip: {
+    flexShrink: 0,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.border,
   },
   more: {
     ...typography.caption,

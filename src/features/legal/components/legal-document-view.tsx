@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { LegalBlock, LegalDocument } from '@/features/legal/data/legal-documents';
+import type { LegalBlock, LegalDocument } from '@/features/legal/data/types';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /** Quebra o texto em trechos, isolando o que está entre `**`. */

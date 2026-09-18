@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Política de Privacidade · TripReady</title>
+    <link rel="alternate" hreflang="pt-BR" href="/privacidade.html" />
+    <link rel="alternate" hreflang="en" href="/en/privacy.html" />
+    <link rel="alternate" hreflang="es" href="/es/privacidad.html" />
+    <link rel="alternate" hreflang="x-default" href="/privacidade.html" />
     <style>
       :root {
         color-scheme: light;
@@ -93,6 +97,14 @@
         font-size: 18px;
         font-weight: 600;
       }
+      .langs {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 8px 0 0;
+      }
+      .langs a {
+        margin-right: 12px;
+      }
       @media (prefers-color-scheme: dark) {
         :root {
           color-scheme: dark;
@@ -107,7 +119,7 @@
   </head>
   <body>
     <div class="wrap">
-      <header><a href="/">← TripReady</a></header>
+      <header><a href="/index.html">← TripReady</a></header>
       <main>
         <h1>Política de Privacidade</h1>
         <p class="meta">Versão 1.0 · em vigor desde {{DATA_VIGENCIA}}</p>
@@ -158,6 +170,17 @@
             mesmo criar e quais deles você marcou como verificados.
           </li>
         </ul>
+        <h3>Uso das recomendações de parceiros</h3>
+        <p>
+          O TripReady registra alguns eventos relacionados ao uso de funcionalidades do aplicativo,
+          como cliques em links de parceiros, exclusivamente para medir o uso dessas recomendações e
+          acompanhar o desempenho dos links afiliados.
+        </p>
+        <p>
+          O que fica registrado é o parceiro indicado, a recomendação em que você tocou, a viagem a
+          partir da qual isso aconteceu e o momento do toque. Nada do que você preencheu na
+          checklist acompanha esse registro, e o parceiro não recebe nenhuma informação sua.
+        </p>
         <h3>Dados guardados no seu aparelho</h3>
         <p>
           Para você não precisar entrar de novo a cada vez que abre o aplicativo, o TripReady mantém
@@ -184,9 +207,13 @@
         </ul>
         <p>
           O TripReady
-          <strong>não usa ferramentas de análise de uso, rastreamento ou publicidade</strong> e não
-          acompanha o seu comportamento dentro ou fora do aplicativo. Se isso mudar algum dia, esta
-          política será atualizada <strong>antes</strong> de a mudança entrar no ar.
+          <strong
+            >não realiza rastreamento do seu comportamento fora do aplicativo, não utiliza seus
+            dados para publicidade comportamental e não cria perfis de publicidade.</strong
+          >
+          Dentro do aplicativo, o único registro de uso é o descrito acima, sobre as recomendações
+          de parceiros. Se isso mudar algum dia, esta política será atualizada
+          <strong>antes</strong> de a mudança entrar no ar.
         </p>
         <p>
           Sobre o país do passaporte: ele indica qual documento você usa para viajar e é o que
@@ -255,6 +282,11 @@
           Quando você exclui a conta, os dados são
           <strong>apagados de forma permanente no momento da exclusão</strong>. Não há cópia de
           segurança de onde eles possam ser recuperados depois.
+        </p>
+        <p>
+          A única exceção é a contagem de cliques em recomendações de parceiros: o registro deixa de
+          estar ligado a você e à sua viagem, e permanece apenas como um número somado ao total
+          daquele parceiro. A partir daí ele não identifica ninguém.
         </p>
         <p>
           Se você criar uma conta e nunca confirmar o e-mail, o cadastro permanece registrado, sem
@@ -327,6 +359,10 @@
           <strong>o TripReady não envia nenhum dado seu para esses sites</strong>. O que eles
           enxergam é o que qualquer visita a uma página revela, como o seu endereço de IP. A partir
           do momento em que você sai do aplicativo, valem as políticas de privacidade de cada site.
+        </p>
+        <p>
+          A contagem de quantas pessoas tocaram em cada sugestão é feita pelo próprio TripReady,
+          para saber quais recomendações são úteis. Ela fica conosco e não é enviada ao parceiro.
         </p>
         <p>
           Se um dia passarmos a enviar alguma informação sua a um parceiro — por exemplo, para uma
@@ -412,6 +448,7 @@
         </p>
         <p class="footer">Versão 1.0 — {{DATA_VIGENCIA}}</p>
       </main>
+      <p class="langs"><a href="/en/privacy.html">en</a><a href="/es/privacidad.html">es</a></p>
     </div>
   </body>
 </html>

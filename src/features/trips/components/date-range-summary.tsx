@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DateRange } from '@/components/ui/date-range-picker';
 import { formatTripDate } from '@/features/trips/domain/trip-format';
 import { countTripDays } from '@/features/trips/domain/trip-status';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /**
@@ -14,23 +15,23 @@ export function DateRangeSummary({ value, onClear }: { value: DateRange; onClear
   const days = countTripDays(value.start, value.end);
 
   if (!value.start) {
-    return <Text style={styles.hint}>Escolha a data de ida no calendário.</Text>;
+    return <Text style={styles.hint}>{t('trips.dateRange.hint')}</Text>;
   }
 
   return (
     <View style={styles.card}>
       <View style={styles.row}>
         <View style={styles.column}>
-          <Text style={styles.label}>IDA</Text>
+          <Text style={styles.label}>{t('trips.dateRange.depart')}</Text>
           <Text style={styles.date}>{formatTripDate(value.start)}</Text>
         </View>
 
         <Ionicons name="arrow-forward" size={16} color={colors.textSecondary} />
 
         <View style={styles.column}>
-          <Text style={styles.label}>VOLTA</Text>
+          <Text style={styles.label}>{t('trips.dateRange.return')}</Text>
           <Text style={[styles.date, !value.end && styles.datePending]}>
-            {value.end ? formatTripDate(value.end) : 'a escolher'}
+            {value.end ? formatTripDate(value.end) : t('trips.dateRange.pending')}
           </Text>
         </View>
       </View>
@@ -38,17 +39,17 @@ export function DateRangeSummary({ value, onClear }: { value: DateRange; onClear
       <View style={styles.footer}>
         <Text style={styles.duration}>
           {days === null
-            ? 'Agora toque na data de volta.'
-            : `${days} ${days === 1 ? 'dia' : 'dias'} de viagem`}
+            ? t('trips.dateRange.chooseReturn')
+            : t('trips.dateRange.duration', { count: days, days })}
         </Text>
 
         {onClear ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Limpar datas"
+            accessibilityLabel={t('a11y.dateRange.clear')}
             hitSlop={10}
             onPress={onClear}>
-            <Text style={styles.action}>Limpar</Text>
+            <Text style={styles.action}>{t('common.action.clear')}</Text>
           </Pressable>
         ) : null}
       </View>

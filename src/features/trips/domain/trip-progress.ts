@@ -25,6 +25,9 @@ export type TripProgress = {
 /**
  * Regra de progresso da viagem: obrigatórios e recomendados entram na
  * porcentagem, informativos ficam de fora, e "pronta" só olha os obrigatórios.
+ *
+ * Só números — nenhuma frase. Quem escreve "8 de 11 itens verificados" é a
+ * tela, com `t()`, para não duplicar plural e idioma aqui.
  */
 export function computeTripProgress(items: readonly ProgressItem[]): TripProgress {
   const scored = items.filter((item) => item.priority !== 'informational');
@@ -47,45 +50,4 @@ export function computeTripProgress(items: readonly ProgressItem[]): TripProgres
     informationalTotal: informational.length,
     informationalDone: informational.filter((item) => item.completed).length,
   };
-}
-
-/** Texto do progresso, sempre no formato "8 de 11 itens verificados". */
-export function formatProgressLabel(progress: TripProgress): string {
-  if (progress.total === 0) {
-    return 'Checklist em preparação';
-  }
-  return `${progress.done} de ${progress.total} ${
-    progress.total === 1 ? 'item verificado' : 'itens verificados'
-  }`;
-}
-
-/** A mesma contagem em versão curta, para o rodapé do card: "1/8 itens". */
-export function formatProgressFraction(progress: TripProgress): string {
-  if (progress.total === 0) return 'Checklist em preparação';
-  return `${progress.done}/${progress.total} ${progress.total === 1 ? 'item' : 'itens'}`;
-}
-
-/** Itens pendentes, no mesmo recorte da porcentagem: é o que a Home mostra no embarque. */
-export function formatPendingLabel(progress: TripProgress): string {
-  if (progress.total === 0) return 'Checklist em preparação';
-
-  const pending = progress.total - progress.done;
-  if (pending === 0) return 'Tudo verificado';
-  return `${pending} ${pending === 1 ? 'item pendente' : 'itens pendentes'}`;
-}
-
-/** O que a checklist oferece a quem já embarcou: os itens `informational`. */
-export function formatReferenceLabel(progress: TripProgress): string {
-  if (progress.informationalTotal === 0) return 'Sua checklist continua à mão.';
-  return progress.informationalTotal === 1
-    ? '1 informação para consultar quando precisar.'
-    : `${progress.informationalTotal} informações para consultar quando precisar.`;
-}
-
-/** Etiqueta dos obrigatórios pendentes; `null` quando não há nenhum. */
-export function formatPendingRequiredLabel(progress: TripProgress): string | null {
-  if (progress.requiredPending === 0) return null;
-  return progress.requiredPending === 1
-    ? '1 obrigatório'
-    : `${progress.requiredPending} obrigatórios`;
 }

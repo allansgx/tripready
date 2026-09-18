@@ -8,10 +8,11 @@ import { StepRow } from '@/components/ui/step-row';
 import { usePassports } from '@/features/passports/passports-context';
 import {
   CATEGORY_ICONS,
-  CATEGORY_LABELS,
+  categoryLabel,
   CHECKLIST_CATEGORIES,
 } from '@/features/trips/data/checklist-catalog';
 import { resolveChecklist } from '@/features/trips/data/trip-persistence';
+import { t } from '@/i18n';
 import { tripRequirementsService, tripsService } from '@/services';
 import { colors, spacing, typography } from '@/theme/tokens';
 
@@ -99,19 +100,17 @@ export default function TripPreparingScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.content}>
         <Text style={styles.title}>
-          {finished ? 'Checklist pronta! 🎉' : 'Preparando sua checklist...'}
+          {t(finished ? 'trip.preparing.title.done' : 'trip.preparing.title.loading')}
         </Text>
         <Text style={styles.subtitle}>
-          {finished
-            ? 'Sua checklist personalizada está pronta.'
-            : 'Estamos organizando o que você precisa verificar.'}
+          {t(finished ? 'trip.preparing.subtitle.done' : 'trip.preparing.subtitle.loading')}
         </Text>
 
         <View style={styles.list}>
           {CHECKLIST_CATEGORIES.map((category, index) => (
             <StepRow
               key={category}
-              label={CATEGORY_LABELS[category]}
+              label={categoryLabel(category)}
               icon={CATEGORY_ICONS[category]}
               done={index < doneCount}
             />
@@ -120,11 +119,9 @@ export default function TripPreparingScreen() {
 
         {needsRetry ? (
           <View style={styles.retry}>
-            <Text style={styles.retryText}>
-              Sua conexão oscilou. Toque para continuar a preparação.
-            </Text>
-            <Button label="Continuar preparação" onPress={retry} />
-            <Button label="Ver a viagem agora" variant="ghost" onPress={openTrip} />
+            <Text style={styles.retryText}>{t('trip.preparing.error.retry')}</Text>
+            <Button label={t('trip.preparing.continueButton')} onPress={retry} />
+            <Button label={t('trip.preparing.viewNow')} variant="ghost" onPress={openTrip} />
           </View>
         ) : null}
       </View>

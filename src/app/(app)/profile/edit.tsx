@@ -19,8 +19,9 @@ import {
   getAvatarInitial,
   getAvatarUrl,
   getStoredName,
-  PROVIDER_LABELS,
+  type AccountProvider,
 } from '@/features/auth/user-profile';
+import { t, type MessageKey } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 const NAME_MAX_LENGTH = 60;
@@ -29,6 +30,11 @@ const PROVIDER_ICONS = {
   google: 'logo-google',
   apple: 'logo-apple',
 } as const;
+
+const PROVIDER_LABEL_KEYS: Record<Exclude<AccountProvider, 'email'>, MessageKey> = {
+  google: 'auth.provider.google',
+  apple: 'auth.provider.apple',
+};
 
 export default function EditProfileScreen() {
   const { user, updateDisplayName } = useAuth();
@@ -57,14 +63,14 @@ export default function EditProfileScreen() {
     }
   }
 
-  const providerLabel = isEmailAccount ? null : PROVIDER_LABELS[provider];
+  const providerLabel = isEmailAccount ? null : t(PROVIDER_LABEL_KEYS[provider]);
   const badge = isEmailAccount ? undefined : (
     <Ionicons name={PROVIDER_ICONS[provider]} size={12} color={colors.textSecondary} />
   );
 
   return (
     <FormLayout>
-      <ScreenHeader title="Editar perfil" fallbackHref="/profile" />
+      <ScreenHeader title={t('profile.edit.title')} fallbackHref="/profile" />
 
       <View style={styles.avatarRow}>
         <Avatar url={getAvatarUrl(user)} initial={getAvatarInitial(user)} size={88} badge={badge} />
@@ -73,11 +79,11 @@ export default function EditProfileScreen() {
       <View style={styles.form}>
         <View>
           <TextField
-            label="Nome"
+            label={t('common.field.name.label')}
             value={name}
             onChangeText={setName}
             locked={!isEmailAccount}
-            placeholder="Como você quer ser chamado"
+            placeholder={t('common.field.name.placeholder')}
             autoCapitalize="words"
             autoComplete="name"
             textContentType="name"
@@ -87,20 +93,22 @@ export default function EditProfileScreen() {
           {!isEmailAccount && providerLabel ? (
             <View style={styles.managedRow}>
               <Ionicons name={PROVIDER_ICONS[provider]} size={14} color={colors.textSecondary} />
-              <Text style={styles.managedText}>Gerenciado pela conta {providerLabel}</Text>
+              <Text style={styles.managedText}>
+                {t('profile.edit.managedBy', { provider: providerLabel })}
+              </Text>
             </View>
           ) : null}
         </View>
 
-        <TextField label="E-mail" value={user?.email ?? ''} locked />
+        <TextField label={t('common.field.email.label')} value={user?.email ?? ''} locked />
 
         {isEmailAccount ? (
           <View>
-            <SectionLabel>Segurança</SectionLabel>
+            <SectionLabel>{t('profile.section.security')}</SectionLabel>
             <Card>
               <ListRow
-                label="Senha"
-                description="Altere sua senha de acesso"
+                label={t('profile.security.passwordRow.label')}
+                description={t('profile.security.passwordRow.description')}
                 icon={<Ionicons name="lock-closed-outline" size={18} color={colors.primary} />}
                 onPress={() => router.push('/profile/password')}
               />
@@ -110,8 +118,7 @@ export default function EditProfileScreen() {
           providerLabel && (
             <View style={styles.notice}>
               <Text style={styles.noticeText}>
-                Sua conta está vinculada ao {providerLabel}. Para alterar nome, e-mail ou senha,
-                acesse as configurações da sua conta {providerLabel}.
+                {t('profile.edit.externalNotice', { provider: providerLabel })}
               </Text>
             </View>
           )
@@ -120,7 +127,12 @@ export default function EditProfileScreen() {
         {error ? <FormMessage text={error} /> : null}
 
         {isEmailAccount ? (
-          <Button label="Salvar alterações" onPress={submit} loading={busy} disabled={!canSubmit} />
+          <Button
+            label={t('profile.edit.submit')}
+            onPress={submit}
+            loading={busy}
+            disabled={!canSubmit}
+          />
         ) : null}
       </View>
     </FormLayout>

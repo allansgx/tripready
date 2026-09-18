@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/ui/screen-header';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { toAuthMessage } from '@/features/auth/auth-errors';
+import { t } from '@/i18n';
 import { spacing } from '@/theme/tokens';
 
 /** TEMPORÁRIO — recuperação de senha por e-mail, para testes no Expo Go. */
@@ -21,7 +22,7 @@ export default function ForgotPasswordScreen() {
 
   async function submit() {
     if (!email.trim()) {
-      setError('Informe o e-mail da conta.');
+      setError(t('auth.forgotPassword.error.empty'));
       return;
     }
 
@@ -40,16 +41,16 @@ export default function ForgotPasswordScreen() {
   return (
     <FormLayout>
       <ScreenHeader
-        title="Recuperar senha"
-        subtitle="Enviaremos um link para você voltar a acessar a conta."
+        title={t('auth.forgotPassword.title')}
+        subtitle={t('auth.forgotPassword.subtitle')}
       />
 
       <View style={styles.form}>
         <TextField
-          label="E-mail"
+          label={t('common.field.email.label')}
           value={email}
           onChangeText={setEmail}
-          placeholder="voce@email.com"
+          placeholder={t('common.field.email.placeholder')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -65,15 +66,9 @@ export default function ForgotPasswordScreen() {
         {sent ? (
           // Resposta neutra de propósito: o Supabase não revela se o e-mail
           // existe, e a tela não deve revelar também.
-          <FormMessage
-            tone="success"
-            text={
-              'Se existir uma conta com esse e-mail, o link de recuperação já está a caminho. ' +
-              'O link abre o app com a sessão iniciada.'
-            }
-          />
+          <FormMessage tone="success" text={t('auth.forgotPassword.success')} />
         ) : (
-          <Button label="Enviar link de recuperação" onPress={submit} loading={busy} />
+          <Button label={t('auth.forgotPassword.submit')} onPress={submit} loading={busy} />
         )}
       </View>
     </FormLayout>

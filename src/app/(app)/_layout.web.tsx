@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { useAuth } from '@/features/auth/auth-context';
-import { getAvatarUrl } from '@/features/auth/user-profile';
-import { colors, radius } from '@/theme/tokens';
+import { t } from '@/i18n';
+import { colors } from '@/theme/tokens';
 
 /**
  * Navegação inferior na web: o `NativeTabs` vira uma pílula no topo, sem
@@ -12,9 +11,6 @@ import { colors, radius } from '@/theme/tokens';
  * mudar uma aba aqui pede mudar no `_layout.tsx`.
  */
 export default function AppWebLayout() {
-  const { user } = useAuth();
-  const avatarUrl = getAvatarUrl(user);
-
   return (
     <Tabs
       screenOptions={{
@@ -35,7 +31,7 @@ export default function AppWebLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Início',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
@@ -45,7 +41,7 @@ export default function AppWebLayout() {
       <Tabs.Screen
         name="trips"
         options={{
-          title: 'Viagens',
+          title: t('tabs.trips'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'airplane' : 'airplane-outline'} size={size} color={color} />
           ),
@@ -55,20 +51,14 @@ export default function AppWebLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color, size, focused }) =>
-            avatarUrl ? (
-              <Image
-                source={{ uri: avatarUrl }}
-                style={[styles.avatar, { width: size, height: size }]}
-              />
-            ) : (
-              <Ionicons
-                name={focused ? 'person-circle' : 'person-circle-outline'}
-                size={size}
-                color={color}
-              />
-            ),
+          title: t('tabs.profile'),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'person-circle' : 'person-circle-outline'}
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>
@@ -83,8 +73,5 @@ const styles = StyleSheet.create({
   },
   scene: {
     backgroundColor: colors.background,
-  },
-  avatar: {
-    borderRadius: radius.pill,
   },
 });

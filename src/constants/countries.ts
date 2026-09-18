@@ -1,6 +1,17 @@
+// Caminhos relativos com extensão: `getCountry`/`normalizeSearch` são
+// carregados direto por `constants/tests/cities.test.ts` sob `node --test`,
+// que não resolve o alias `@/` nem entende `expo-localization` — daí ler o
+// idioma ativo em `active-locale.ts`, e não em `src/i18n/index.ts`.
+import { getActiveLocale } from '../i18n/active-locale.ts';
+import { COUNTRY_NAMES as NAMES_EN } from '../i18n/countries/en.ts';
+import { COUNTRY_NAMES as NAMES_ES } from '../i18n/countries/es.ts';
+import { COUNTRY_NAMES as NAMES_PT_BR } from '../i18n/countries/pt-BR.ts';
+import type { Locale } from '../i18n/locales.ts';
+
 /**
- * Fonte única de países do app. Só o código ISO 3166-1 alpha-2 e o nome em
- * pt-BR são guardados; bandeira e nome nunca são persistidos, saem do código.
+ * Fonte única de países do app. Só o código ISO 3166-1 alpha-2 é persistido
+ * (`trip_countries`, `passports`, `visa_rules`); o nome sai sempre do idioma
+ * ativo, nunca do banco.
  */
 
 export type Country = {
@@ -9,6 +20,12 @@ export type Country = {
   name: string;
 };
 
+/**
+ * A lista dos 251 códigos suportados, em pt-BR — é o que
+ * `scripts/build-country-names.mjs` lê para saber quais códigos gerar nos
+ * outros idiomas. Para o nome no idioma ativo, use `getCountryName`/
+ * `getCountries`: esta lista nunca muda de idioma sozinha.
+ */
 export const COUNTRIES: readonly Country[] = [
   { code: 'AF', name: 'Afeganistão' },
   { code: 'ZA', name: 'África do Sul' },
@@ -263,17 +280,49 @@ export const COUNTRIES: readonly Country[] = [
   { code: 'ZW', name: 'Zimbábue' },
 ];
 
-const BY_CODE = new Map(COUNTRIES.map((country) => [country.code, country]));
+const NAMES_BY_LOCALE: Record<Locale, Readonly<Record<string, string>>> = {
+  'pt-BR': NAMES_PT_BR,
+  en: NAMES_EN,
+  es: NAMES_ES,
+};
 
-/** Busca um país pelo código. Devolve `null` para código desconhecido. */
-export function getCountry(code: string | null | undefined): Country | null {
-  if (!code) return null;
-  return BY_CODE.get(code.trim().toUpperCase()) ?? null;
+/**
+ * Uma lista por idioma, já com o nome localizado e ordenada por
+ * `localeCompare` — computada uma vez no carregamento do módulo, e não a cada
+ * chamada. A ordem do arquivo `COUNTRIES` deixa de importar para quem lê daqui.
+ */
+function buildLocaleList(locale: Locale): readonly Country[] {
+  const names = NAMES_BY_LOCALE[locale];
+  const list = COUNTRIES.map(({ code }) => ({ code, name: names[code] ?? code }));
+  list.sort((a, b) => a.name.localeCompare(b.name, locale));
+  return list;
 }
 
-/** Nome do país, caindo no próprio código quando ele não é conhecido. */
-export function getCountryName(code: string): string {
-  return getCountry(code)?.name ?? code.trim().toUpperCase();
+const COUNTRIES_BY_LOCALE: Record<Locale, readonly Country[]> = {
+  'pt-BR': buildLocaleList('pt-BR'),
+  en: buildLocaleList('en'),
+  es: buildLocaleList('es'),
+};
+
+/** Todos os países no idioma ativo (ou informado), já ordenados. */
+export function getCountries(locale: Locale = getActiveLocale()): readonly Country[] {
+  return COUNTRIES_BY_LOCALE[locale];
+}
+
+/** Busca um país pelo código, no idioma ativo. Devolve `null` para código desconhecido. */
+export function getCountry(
+  code: string | null | undefined,
+  locale: Locale = getActiveLocale(),
+): Country | null {
+  if (!code) return null;
+  const upper = code.trim().toUpperCase();
+  const name = NAMES_BY_LOCALE[locale][upper];
+  return name ? { code: upper, name } : null;
+}
+
+/** Nome do país no idioma ativo, caindo no próprio código quando ele não é conhecido. */
+export function getCountryName(code: string, locale: Locale = getActiveLocale()): string {
+  return getCountry(code, locale)?.name ?? code.trim().toUpperCase();
 }
 
 /**
@@ -305,14 +354,18 @@ export function normalizeSearch(value: string): string {
 }
 
 /**
- * Filtra países por nome ou código. Consulta vazia devolve a lista inteira, já
- * ordenada.
+ * Filtra países por nome ou código, no idioma ativo. Consulta vazia devolve a
+ * lista inteira, já ordenada.
  */
-export function searchCountries(query: string): readonly Country[] {
+export function searchCountries(
+  query: string,
+  locale: Locale = getActiveLocale(),
+): readonly Country[] {
+  const list = getCountries(locale);
   const term = normalizeSearch(query);
-  if (!term) return COUNTRIES;
+  if (!term) return list;
 
-  return COUNTRIES.filter(
+  return list.filter(
     (country) =>
       normalizeSearch(country.name).includes(term) || normalizeSearch(country.code).includes(term),
   );

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,14 +10,22 @@ import { CountryFlag } from '@/components/ui/country-flag';
 import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
 import { usePassports } from '@/features/passports/passports-context';
+import { catalogCache } from '@/features/trips/data/catalog-cache';
 import {
   CATEGORY_ICONS,
-  CATEGORY_LABELS,
-  PRIORITY_LABELS,
+  categoryLabel,
+  priorityLabel,
   type IoniconName,
 } from '@/features/trips/data/checklist-catalog';
-import { describeRequirementScope } from '@/features/trips/domain/requirement-matching';
+import { buildAffiliateClick } from '@/features/trips/domain/affiliate-click';
 import {
+  describeRequirementScope,
+  resolveRequirementText,
+} from '@/features/trips/domain/requirement-matching';
+import { getLocale, t } from '@/i18n';
+import {
+  affiliateClicksService,
+  requirementCatalogService,
   requirementOffersService,
   tripDestinationsService,
   tripRequirementsService,
@@ -34,12 +42,49 @@ import {
 } from '@/theme/tokens';
 import type { RequirementOffer } from '@/types/models';
 
-/** Só aparece quando alguma das ofertas exibidas é de fato afiliada. */
-const AFFILIATE_DISCLOSURE =
-  'Algumas indicações podem gerar comissão para o TripReady, sem custo adicional para você.';
+/**
+ * No iOS o `await` já segura a linha durante toda a visita, porque a promise só
+ * resolve quando o navegador fecha; no Android ela resolve na abertura, e sem
+ * esta espera a linha destravaria com a tela ainda em transição.
+ */
+const OFFER_PRESS_COOLDOWN_MS = 1000;
 
-/** Rodapé do bloco de fonte oficial; só em item que tem fonte a citar. */
-const OFFICIAL_REMINDER = 'Confirme sempre nos canais oficiais antes de viajar.';
+/**
+ * Título, descrição e nome do grupo no idioma ativo, resolvidos por cima do
+ * que já veio gravado (sempre pt-BR). Falha de rede com cache frio não
+ * derruba a tela: o item continua com o texto gravado (§8.3/§12 do plano de
+ * i18n).
+ */
+async function resolveDisplayText(
+  item: TripRequirementWithGroup,
+): Promise<TripRequirementWithGroup> {
+  try {
+    const locale = getLocale();
+    const [catalog, visaRuleNotes] = await Promise.all([
+      catalogCache.get(locale),
+      requirementCatalogService.loadVisaRuleNotes(
+        item.visa_rule_id ? [item.visa_rule_id] : [],
+        locale,
+      ),
+    ]);
+
+    const templates = new Map(catalog.templates.map((template) => [template.id, template]));
+    const groups = new Map(catalog.groups.map((group) => [group.id, group]));
+
+    const translatedGroup = item.group_id ? groups.get(item.group_id) : undefined;
+
+    return {
+      ...item,
+      ...resolveRequirementText(item, { templates, visaRuleNotes }, getCountryName),
+      destination_groups:
+        translatedGroup && item.destination_groups
+          ? { ...item.destination_groups, name: translatedGroup.name }
+          : item.destination_groups,
+    };
+  } catch {
+    return item;
+  }
+}
 
 export default function RequirementDetailScreen() {
   const { requirementId, tripId } = useLocalSearchParams<{
@@ -73,7 +118,8 @@ export default function RequirementDetailScreen() {
 
     async function load() {
       try {
-        const item = await tripRequirementsService.getById(requirementId);
+        const loaded = await tripRequirementsService.getById(requirementId);
+        const item = loaded ? await resolveDisplayText(loaded) : loaded;
         if (!active) return;
         setRequirement(item);
 
@@ -82,7 +128,7 @@ export default function RequirementDetailScreen() {
           void loadOffers(item);
         }
       } catch {
-        if (active) setNotice('Sua conexão oscilou. Volte e abra o item de novo.');
+        if (active) setNotice(t('requirement.error.loadRetry'));
       } finally {
         if (active) setIsLoading(false);
       }
@@ -126,7 +172,7 @@ export default function RequirementDetailScreen() {
       setRequirement({ ...requirement, completed: next });
       if (next) goBack();
     } catch {
-      setNotice('Sua conexão oscilou. Toque de novo para salvar.');
+      setNotice(t('requirement.error.toggleRetry'));
     } finally {
       setIsSaving(false);
     }
@@ -148,8 +194,8 @@ export default function RequirementDetailScreen() {
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Header onBack={goBack} />
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>Este item não está mais na sua checklist.</Text>
-          <Button label="Voltar para a viagem" variant="ghost" onPress={goBack} />
+          <Text style={styles.emptyTitle}>{t('requirement.notFound')}</Text>
+          <Button label={t('trips.action.backToTrip')} variant="ghost" onPress={goBack} />
         </View>
       </SafeAreaView>
     );
@@ -177,7 +223,7 @@ export default function RequirementDetailScreen() {
         <View style={[styles.badge, { backgroundColor: prioritySoftColors[requirement.priority] }]}>
           <View style={[styles.dot, { backgroundColor: tone }]} />
           <Text style={[styles.badgeLabel, { color: tone }]}>
-            {PRIORITY_LABELS[requirement.priority]}
+            {priorityLabel(requirement.priority)}
           </Text>
         </View>
 
@@ -185,7 +231,7 @@ export default function RequirementDetailScreen() {
 
         <View style={styles.context}>
           <Ionicons name={CATEGORY_ICONS[requirement.category]} size={14} color={colors.primary} />
-          <Text style={styles.contextText}>{CATEGORY_LABELS[requirement.category]}</Text>
+          <Text style={styles.contextText}>{categoryLabel(requirement.category)}</Text>
           <Text style={styles.contextSeparator}>·</Text>
           {scope.countryCode ? (
             <CountryFlag code={scope.countryCode} />
@@ -193,13 +239,13 @@ export default function RequirementDetailScreen() {
             <Text style={styles.contextIcon}>{scope.kind === 'trip' ? '🌍' : '🧭'}</Text>
           )}
           <Text style={styles.contextText} numberOfLines={1}>
-            {scope.label}
+            {scope.label ?? t('trips.checklist.wholeTrip')}
           </Text>
         </View>
 
         {requirement.description ? (
           <View>
-            <SectionLabel>O que verificar</SectionLabel>
+            <SectionLabel>{t('requirement.section.whatToCheck')}</SectionLabel>
             <View style={styles.card}>
               <RequirementDescription text={requirement.description} />
             </View>
@@ -208,22 +254,24 @@ export default function RequirementDetailScreen() {
 
         {offers.length > 0 ? (
           <View>
-            <SectionLabel>Opções para contratar</SectionLabel>
+            <SectionLabel>{t('requirement.section.offers')}</SectionLabel>
             <View style={styles.offers}>
               {offers.map((offer) => (
-                <OfferRow key={offer.id} offer={offer} />
+                <OfferRow key={offer.id} offer={offer} tripId={requirement.trip_id} />
               ))}
             </View>
-            {hasAffiliate ? <Text style={styles.disclosure}>{AFFILIATE_DISCLOSURE}</Text> : null}
+            {hasAffiliate ? (
+              <Text style={styles.disclosure}>{t('requirement.affiliateDisclosure')}</Text>
+            ) : null}
           </View>
         ) : null}
 
         {sourceName && sourceUrl ? (
           <View>
-            <SectionLabel>Fonte oficial</SectionLabel>
+            <SectionLabel>{t('requirement.section.source')}</SectionLabel>
             <Pressable
               accessibilityRole="link"
-              accessibilityLabel={`Abrir a fonte oficial: ${sourceName}`}
+              accessibilityLabel={t('a11y.requirement.openSource', { name: sourceName })}
               onPress={() => openLink(sourceUrl)}
               style={({ pressed }) => [styles.card, styles.source, pressed && styles.cardPressed]}>
               <Ionicons name="open-outline" size={16} color={colors.primary} />
@@ -236,7 +284,7 @@ export default function RequirementDetailScreen() {
 
         {hasSource ? (
           <View style={styles.reminder}>
-            <Text style={styles.reminderText}>💡 {OFFICIAL_REMINDER}</Text>
+            <Text style={styles.reminderText}>💡 {t('requirement.officialReminder')}</Text>
           </View>
         ) : null}
 
@@ -245,7 +293,7 @@ export default function RequirementDetailScreen() {
 
       <View style={styles.footer}>
         <Button
-          label={requirement.completed ? 'Desmarcar item' : '✓ Marcar como verificado'}
+          label={t(requirement.completed ? 'requirement.uncheckButton' : 'requirement.checkButton')}
           variant={requirement.completed ? 'ghost' : 'primary'}
           loading={isSaving}
           onPress={() => void toggleCompleted()}
@@ -260,28 +308,45 @@ function Header({ onBack }: { onBack: () => void }) {
     <View style={styles.header}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Voltar"
+        accessibilityLabel={t('common.action.back')}
         hitSlop={12}
         onPress={onBack}
         style={styles.back}>
         <Ionicons name="chevron-back" size={22} color={colors.text} />
       </Pressable>
-      <Text style={styles.headerTitle}>Detalhes</Text>
+      <Text style={styles.headerTitle}>{t('trips.detail.title')}</Text>
     </View>
   );
 }
 
 /** Uma sugestão de onde resolver o requisito. */
-function OfferRow({ offer }: { offer: RequirementOffer }) {
+function OfferRow({ offer, tripId }: { offer: RequirementOffer; tripId: string }) {
   // O ícone vem como nome do Ionicons ou emoji; sem testar, o emoji viraria um
   // quadrado vazio.
   const glyph = offer.icon && offer.icon in Ionicons.glyphMap ? (offer.icon as IoniconName) : null;
 
+  // Toque repetido por ansiedade é uma intenção só, e o registro sai antes do
+  // navegador: invertido, o clique de quem fecha o app de dentro dele sumiria
+  // no iOS, e a métrica diria que iPhone converte menos.
+  const opening = useRef(false);
+
+  async function handlePress() {
+    if (opening.current) return;
+    opening.current = true;
+
+    void affiliateClicksService.record(buildAffiliateClick(offer, tripId));
+    await openLink(offer.url);
+
+    setTimeout(() => {
+      opening.current = false;
+    }, OFFER_PRESS_COOLDOWN_MS);
+  }
+
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={`Abrir ${offer.name}`}
-      onPress={() => openLink(offer.url)}
+      accessibilityLabel={t('a11y.openItem', { name: offer.name })}
+      onPress={() => void handlePress()}
       style={({ pressed }) => [styles.card, styles.offer, pressed && styles.cardPressed]}>
       <View style={styles.offerIcon}>
         {glyph ? (

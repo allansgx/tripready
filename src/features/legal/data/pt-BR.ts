@@ -1,29 +1,7 @@
-/**
- * Identidade do responsável. Os valores entre chaves duplas ainda não foram
- * definidos, e nenhum pode ir para a loja com o marcador.
- */
-export const LEGAL_IDENTITY = {
-  companyName: '{{RAZAO_SOCIAL}}',
-  cnpj: '{{CNPJ}}',
-  contactEmail: '{{EMAIL_CONTATO}}',
-  website: '{{DOMINIO}}',
-  jurisdiction: '{{FORO}}',
-  effectiveDate: '{{DATA_VIGENCIA}}',
-} as const;
-
-/** Trechos entre `**` saem em negrito. */
-export type LegalBlock =
-  | { kind: 'heading'; text: string }
-  | { kind: 'subheading'; text: string }
-  | { kind: 'paragraph'; text: string }
-  | { kind: 'list'; items: readonly string[] };
-
-export type LegalDocument = {
-  title: string;
-  version: string;
-  effectiveDate: string;
-  blocks: readonly LegalBlock[];
-};
+// Caminho relativo, e não o alias `@/`: este módulo é carregado tanto pelo
+// Metro (app) quanto pelo Node puro (`npm run site`), que não conhece alias.
+import { LEGAL_IDENTITY } from './identity.ts';
+import type { LegalDocument } from './types.ts';
 
 export const privacyPolicy: LegalDocument = {
   title: 'Política de Privacidade',
@@ -66,6 +44,15 @@ export const privacyPolicy: LegalDocument = {
         '**A sua checklist**: os itens gerados para a viagem, os itens que você mesmo criar e quais deles você marcou como verificados.',
       ],
     },
+    { kind: 'subheading', text: 'Uso das recomendações de parceiros' },
+    {
+      kind: 'paragraph',
+      text: 'O TripReady registra alguns eventos relacionados ao uso de funcionalidades do aplicativo, como cliques em links de parceiros, exclusivamente para medir o uso dessas recomendações e acompanhar o desempenho dos links afiliados.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'O que fica registrado é o parceiro indicado, a recomendação em que você tocou, a viagem a partir da qual isso aconteceu e o momento do toque. Nada do que você preencheu na checklist acompanha esse registro, e o parceiro não recebe nenhuma informação sua.',
+    },
     { kind: 'subheading', text: 'Dados guardados no seu aparelho' },
     {
       kind: 'paragraph',
@@ -94,7 +81,7 @@ export const privacyPolicy: LegalDocument = {
     },
     {
       kind: 'paragraph',
-      text: 'O TripReady **não usa ferramentas de análise de uso, rastreamento ou publicidade** e não acompanha o seu comportamento dentro ou fora do aplicativo. Se isso mudar algum dia, esta política será atualizada **antes** de a mudança entrar no ar.',
+      text: 'O TripReady **não realiza rastreamento do seu comportamento fora do aplicativo, não utiliza seus dados para publicidade comportamental e não cria perfis de publicidade.** Dentro do aplicativo, o único registro de uso é o descrito acima, sobre as recomendações de parceiros. Se isso mudar algum dia, esta política será atualizada **antes** de a mudança entrar no ar.',
     },
     {
       kind: 'paragraph',
@@ -137,6 +124,10 @@ export const privacyPolicy: LegalDocument = {
     {
       kind: 'paragraph',
       text: 'Quando você exclui a conta, os dados são **apagados de forma permanente no momento da exclusão**. Não há cópia de segurança de onde eles possam ser recuperados depois.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'A única exceção é a contagem de cliques em recomendações de parceiros: o registro deixa de estar ligado a você e à sua viagem, e permanece apenas como um número somado ao total daquele parceiro. A partir daí ele não identifica ninguém.',
     },
     {
       kind: 'paragraph',
@@ -198,6 +189,10 @@ export const privacyPolicy: LegalDocument = {
     {
       kind: 'paragraph',
       text: 'Em todos os casos, o link abre no navegador do seu aparelho e **o TripReady não envia nenhum dado seu para esses sites**. O que eles enxergam é o que qualquer visita a uma página revela, como o seu endereço de IP. A partir do momento em que você sai do aplicativo, valem as políticas de privacidade de cada site.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'A contagem de quantas pessoas tocaram em cada sugestão é feita pelo próprio TripReady, para saber quais recomendações são úteis. Ela fica conosco e não é enviada ao parceiro.',
     },
     {
       kind: 'paragraph',

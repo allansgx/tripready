@@ -17,12 +17,13 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
 import { toPassportMessage } from '@/features/passports/passport-messages';
 import { usePassports } from '@/features/passports/passports-context';
-import type { Passport } from '@/types/models';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+import type { Passport } from '@/types/models';
 
 /** Seção "Passaportes" do Perfil: lista, principal, adicionar e remover. */
 export function PassportsSection() {
-  const { passports, isLoading, setPrimary, removePassport } = usePassports();
+  const { passports, isLoading, setPrimary, removePassport, hasPendingRules } = usePassports();
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -31,7 +32,7 @@ export function PassportsSection() {
     try {
       await action();
     } catch (error) {
-      showDialog('Não foi possível concluir', toPassportMessage(error));
+      showDialog(t('passports.dialog.cannotComplete'), toPassportMessage(error));
     } finally {
       setBusyId(null);
     }
@@ -47,49 +48,59 @@ export function PassportsSection() {
 
       showDialog(
         name,
-        isOnly
-          ? 'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.'
-          : 'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+        t(isOnly ? 'passports.dialog.onlyPrimary.message' : 'passports.dialog.primary.message'),
         isOnly
           ? [
               {
-                text: 'Adicionar passaporte',
+                text: t('passports.addPassport'),
                 onPress: () => router.push('/passport-picker'),
               },
-              { text: 'Fechar', style: 'cancel' },
+              { text: t('common.action.close'), style: 'cancel' },
             ]
-          : [{ text: 'Fechar', style: 'cancel' }],
+          : [{ text: t('common.action.close'), style: 'cancel' }],
       );
       return;
     }
 
     const buttons: AlertButton[] = [
       {
-        text: 'Definir como principal',
+        text: t('passports.dialog.setPrimary'),
         onPress: () => void run(passport.id, () => setPrimary(passport.id)),
       },
       {
-        text: 'Remover passaporte',
+        text: t('passports.dialog.remove'),
         style: 'destructive',
         onPress: () =>
-          showDialog(`Remover ${name}?`, 'Você pode adicioná-lo de novo quando quiser.', [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Remover',
-              style: 'destructive',
-              onPress: () => void run(passport.id, () => removePassport(passport.id)),
-            },
-          ]),
+          showDialog(
+            t('passports.dialog.removeConfirm.title', { name }),
+            t('passports.dialog.removeConfirm.message'),
+            [
+              { text: t('common.action.cancel'), style: 'cancel' },
+              {
+                text: t('passports.dialog.removeConfirm.confirm'),
+                style: 'destructive',
+                onPress: () => void run(passport.id, () => removePassport(passport.id)),
+              },
+            ],
+          ),
       },
-      { text: 'Cancelar', style: 'cancel' },
+      { text: t('common.action.cancel'), style: 'cancel' },
     ];
 
-    showDialog(name, undefined, buttons);
+    // A consequência de promover aparece antes da escolha: é este passaporte
+    // que vai decidir quais regras a checklist consegue aplicar.
+    showDialog(
+      name,
+      hasPendingRules(passport.country_code)
+        ? t('passports.dialog.pendingRules.message')
+        : undefined,
+      buttons,
+    );
   }
 
   return (
     <View>
-      <SectionLabel>Passaportes</SectionLabel>
+      <SectionLabel>{t('passports.section.title')}</SectionLabel>
 
       <Card>
         {isLoading && passports.length === 0 ? (
@@ -102,6 +113,7 @@ export function PassportsSection() {
           <PassportRow
             key={passport.id}
             passport={passport}
+            pendingRules={hasPendingRules(passport.country_code)}
             busy={busyId === passport.id}
             onPress={() => openActions(passport)}
           />
@@ -109,13 +121,13 @@ export function PassportsSection() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Adicionar passaporte"
+          accessibilityLabel={t('passports.addPassport')}
           onPress={() => router.push('/passport-picker')}
           style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
           <View style={styles.addIcon}>
             <Ionicons name="add" size={18} color={colors.primary} />
           </View>
-          <Text style={styles.addLabel}>Adicionar passaporte</Text>
+          <Text style={styles.addLabel}>{t('passports.addPassport')}</Text>
         </Pressable>
       </Card>
     </View>
@@ -124,10 +136,12 @@ export function PassportsSection() {
 
 function PassportRow({
   passport,
+  pendingRules,
   busy,
   onPress,
 }: {
   passport: Passport;
+  pendingRules: boolean;
   busy: boolean;
   onPress: () => void;
 }) {
@@ -136,8 +150,8 @@ function PassportRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={passport.is_primary ? `${name}, passaporte principal` : name}
-      accessibilityHint="Abre as opções do passaporte"
+      accessibilityLabel={passport.is_primary ? t('a11y.passport.primary', { name }) : name}
+      accessibilityHint={t('a11y.passport.openOptions')}
       onPress={busy ? undefined : onPress}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
       <CountryFlag code={passport.country_code} />
@@ -146,7 +160,14 @@ function PassportRow({
         <Text style={styles.name} numberOfLines={1}>
           {name}
         </Text>
-        {passport.is_primary ? <Text style={styles.primaryTag}>Principal</Text> : null}
+        {passport.is_primary ? (
+          <Text style={styles.primaryTag}>{t('passports.section.primaryTag')}</Text>
+        ) : null}
+        {/* Estado, e não alerta: sem cor de aviso, para quem convive com ele
+            todo dia continuar lendo em vez de ignorar. */}
+        {pendingRules ? (
+          <Text style={styles.pendingTag}>{t('passports.section.pendingRulesTag')}</Text>
+        ) : null}
       </View>
 
       {busy ? (
@@ -188,6 +209,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '600',
     color: colors.primary,
+  },
+  pendingTag: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   addIcon: {
     width: 36,

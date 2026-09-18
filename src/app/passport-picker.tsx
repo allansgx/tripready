@@ -8,6 +8,7 @@ import { showDialog } from '@/components/ui/dialog';
 import type { Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
 import { usePassports } from '@/features/passports/passports-context';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 /** Fica na raiz das rotas para ser apresentado como sheet nativo sobre as abas. */
@@ -23,8 +24,8 @@ export default function PassportPickerScreen() {
       router.back();
     } catch (error) {
       showDialog(
-        'Não foi possível adicionar',
-        error instanceof Error ? error.message : 'Tente novamente.',
+        t('passports.picker.addFailed.title'),
+        error instanceof Error ? error.message : t('passports.picker.addFailed.fallback'),
       );
     } finally {
       setBusyCode(null);
@@ -39,10 +40,10 @@ export default function PassportPickerScreen() {
         busyCode={busyCode}
         header={
           <View style={styles.header}>
-            <Text style={styles.title}>Adicionar passaporte</Text>
+            <Text style={styles.title}>{t('passports.picker.title')}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Fechar"
+              accessibilityLabel={t('common.action.close')}
               hitSlop={12}
               onPress={() => router.back()}
               style={({ pressed }) => [styles.close, pressed && styles.closePressed]}>

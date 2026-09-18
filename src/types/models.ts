@@ -30,6 +30,9 @@ export type TripRequirementInsert = Tables['trip_requirements']['Insert'];
 
 export type RequirementOffer = Tables['requirement_offers']['Row'];
 
+/** Só o Insert: o app registra o clique e nunca lê de volta. */
+export type AffiliateClickInsert = Tables['affiliate_clicks']['Insert'];
+
 export type {
   RequirementCategory,
   RequirementPriority,

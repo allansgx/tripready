@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { StepRow } from '@/components/ui/step-row';
 import { useAuth } from '@/features/auth/auth-context';
 import { DeleteAccountError, type DeleteAccountFailure } from '@/features/auth/delete-account';
+import { t, type MessageKey } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 /**
@@ -14,20 +15,20 @@ import { colors, spacing, typography } from '@/theme/tokens';
  * uma chamada só, então as marcações aparecem depois de o servidor confirmar.
  */
 const REMOVAL_STEPS = [
-  { label: 'Viagens e checklists', icon: 'airplane' },
-  { label: 'Passaportes', icon: 'card' },
-  { label: 'Dados do perfil', icon: 'person' },
-  { label: 'Conta e acesso', icon: 'lock-closed' },
-] as const;
+  { labelKey: 'account.deleting.step.trips', icon: 'airplane' },
+  { labelKey: 'account.deleting.step.passports', icon: 'card' },
+  { labelKey: 'account.deleting.step.profile', icon: 'person' },
+  { labelKey: 'account.deleting.step.account', icon: 'lock-closed' },
+] as const satisfies readonly { labelKey: MessageKey; icon: string }[];
 
 /** Ritmo da revelação: rápido o bastante para não virar espera. */
 const STEP_DELAY = 260;
 
 /** Cada mensagem diz o que a pessoa pode fazer a seguir, sem termo técnico. */
-const MESSAGES: Record<DeleteAccountFailure, string> = {
-  connection: 'Sua conexão oscilou. Toque para tentar de novo.',
-  session: 'Sua sessão expirou. Entre de novo para excluir a conta.',
-  unknown: 'Não foi possível concluir agora. Toque para tentar de novo.',
+const MESSAGE_KEY: Record<DeleteAccountFailure, MessageKey> = {
+  connection: 'account.deleting.error.connection',
+  session: 'account.deleting.error.session',
+  unknown: 'account.deleting.error.unknown',
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -69,7 +70,7 @@ export default function AccountDeletingScreen() {
       try {
         await deleteAccount();
       } catch (error) {
-        setNotice(MESSAGES[error instanceof DeleteAccountError ? error.reason : 'unknown']);
+        setNotice(t(MESSAGE_KEY[error instanceof DeleteAccountError ? error.reason : 'unknown']));
         return;
       }
 
@@ -100,18 +101,18 @@ export default function AccountDeletingScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.content}>
-        <Text style={styles.title}>{finished ? 'Conta excluída' : 'Excluindo sua conta...'}</Text>
+        <Text style={styles.title}>
+          {t(finished ? 'account.deleting.title.done' : 'account.deleting.title.loading')}
+        </Text>
         <Text style={styles.subtitle}>
-          {finished
-            ? 'Sua conta e seus dados foram excluídos com sucesso.'
-            : 'Estamos removendo seus dados.'}
+          {t(finished ? 'account.deleting.subtitle.done' : 'account.deleting.subtitle.loading')}
         </Text>
 
         <View style={styles.list}>
           {REMOVAL_STEPS.map((step, index) => (
             <StepRow
-              key={step.label}
-              label={step.label}
+              key={step.labelKey}
+              label={t(step.labelKey)}
               icon={step.icon}
               done={index < doneCount}
             />
@@ -120,15 +121,22 @@ export default function AccountDeletingScreen() {
 
         {finished ? (
           <View style={styles.actions}>
-            <Button label="Ir para o login" onPress={leave} />
+            <Button label={t('account.deleting.goToLogin')} onPress={leave} />
           </View>
         ) : null}
 
         {notice ? (
           <View style={styles.actions}>
             <Text style={styles.notice}>{notice}</Text>
-            <Button label="Tentar de novo" onPress={() => setAttempt((current) => current + 1)} />
-            <Button label="Voltar ao perfil" variant="ghost" onPress={() => router.back()} />
+            <Button
+              label={t('common.action.retry')}
+              onPress={() => setAttempt((current) => current + 1)}
+            />
+            <Button
+              label={t('account.deleting.backToProfile')}
+              variant="ghost"
+              onPress={() => router.back()}
+            />
           </View>
         ) : null}
       </View>

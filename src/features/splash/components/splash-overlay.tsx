@@ -1,45 +1,35 @@
 import * as SplashScreen from 'expo-splash-screen';
-import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Dimensions, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Image, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
-import { AltitudeGradient } from '@/features/splash/components/altitude-gradient';
-import { PlaneMark } from '@/features/splash/components/plane-mark';
-import { CloudDecks } from '@/features/splash/components/sky-clouds';
-import { PLANE_MARK_SIZE, SPLASH_COLORS } from '@/features/splash/domain/plane-art';
+import { ICON_MARK_SCALE, MARK_SIZE, SPLASH_COLORS } from '@/features/splash/domain/brand-art';
 import {
-  REDUCED_CLIMB_MS,
-  SPLASH_BEATS,
-  SPLASH_EXIT_MS,
-  STATUS_BAR_FLIP_AT,
+  SPLASH_EXIT_SCALE,
   WAITING_NOTE_AFTER_HOLD_MS,
   canLeaveSplash,
   splashSchedule,
 } from '@/features/splash/domain/splash-timing';
 
-/** O recuo antes de subir. */
-const CROUCH = 9;
+/** A logo branca do ícone do app. O PNG tem margem própria, daí a divisão. */
+const BRAND_LOGO = require('@/assets/images/android-icon-foreground.png');
+const LOGO_SIZE = Math.round(MARK_SIZE / ICON_MARK_SCALE);
 
-/** A subida acelera: desacelerando, o avião sairia de quadro nos primeiros quadros. */
-const RISE = Easing.in(Easing.quad);
-/** A saída: começa devagar e acelera, como algo que se abre para a frente. */
-const OPEN = Easing.bezier(0.45, 0, 0.9, 1);
+/** A saída começa devagar e acelera, como algo que se afasta de quem olha. */
+const LEAVE = Easing.bezier(0.45, 0, 0.9, 1);
 
 /** Enquanto o sistema não responde sobre reduzir movimento, nada se move. */
 type Motion = 'pending' | 'full' | 'reduced';
 
 /**
- * A abertura do app. O primeiro quadro é o splash nativo redesenhado em SVG, e
- * o nativo só é escondido depois que ele pinta — daí a troca não piscar.
+ * A abertura do app: a logo branca sobre o roxo da marca. O splash nativo só é
+ * escondido depois que este quadro pinta — daí a troca não piscar.
  */
 export function SplashOverlay({
   isAppReady,
@@ -49,22 +39,12 @@ export function SplashOverlay({
   /** Avisa o layout raiz que a abertura acabou e não volta mais. */
   onFinish: () => void;
 }) {
-  // Medidas tiradas uma vez: reagir a mudança de dimensão reiniciaria a
-  // animação no meio, e a tela vive pouco mais de um segundo.
-  const [screen] = useState(() => Dimensions.get('window'));
-
   const [motion, setMotion] = useState<Motion>('pending');
   const [holdReached, setHoldReached] = useState(false);
   const [showWaitingNote, setShowWaitingNote] = useState(false);
 
-  const altitude = useSharedValue(0);
-  const planeY = useSharedValue(0);
-  const planeX = useSharedValue(0);
-  const planeScale = useSharedValue(1);
-  const overlay = useSharedValue(1);
-  const overlayScale = useSharedValue(1);
-
-  const climb = screen.height / 2 + 140;
+  const fade = useSharedValue(1);
+  const scale = useSharedValue(1);
 
   useEffect(() => {
     let active = true;
@@ -74,52 +54,9 @@ export function SplashOverlay({
       if (!active) return;
       setMotion(reduceMotion ? 'reduced' : 'full');
 
-      if (!reduceMotion) {
-        const beats = SPLASH_BEATS;
-
-        altitude.value = withDelay(
-          beats.climb.at,
-          withTiming(1, { duration: beats.climb.duration, easing: Easing.inOut(Easing.quad) }),
-        );
-
-        planeY.value = withDelay(
-          beats.crouch.at,
-          withSequence(
-            withTiming(CROUCH, {
-              duration: beats.crouch.duration,
-              easing: Easing.out(Easing.quad),
-            }),
-            withTiming(-climb, { duration: beats.takeoff.duration, easing: RISE }),
-          ),
-        );
-
-        planeScale.value = withDelay(
-          beats.crouch.at,
-          withSequence(
-            withTiming(0.97, { duration: beats.crouch.duration }),
-            withTiming(1.12, {
-              duration: beats.takeoff.duration,
-              easing: Easing.out(Easing.cubic),
-            }),
-          ),
-        );
-
-        // O arco: o avião não sobe em linha reta, escapa um pouco de lado.
-        planeX.value = withDelay(
-          beats.takeoff.at,
-          withTiming(9, { duration: beats.takeoff.duration, easing: Easing.inOut(Easing.quad) }),
-        );
-      } else {
-        altitude.value = withTiming(1, { duration: REDUCED_CLIMB_MS });
-      }
-
       const { holdAt } = splashSchedule(reduceMotion);
 
       timers.push(
-        setTimeout(
-          () => setStatusBarStyle('light', true),
-          reduceMotion ? REDUCED_CLIMB_MS : STATUS_BAR_FLIP_AT,
-        ),
         setTimeout(() => setHoldReached(true), holdAt),
         setTimeout(() => setShowWaitingNote(true), holdAt + WAITING_NOTE_AFTER_HOLD_MS),
       );
@@ -132,22 +69,22 @@ export function SplashOverlay({
       active = false;
       timers.forEach(clearTimeout);
     };
-    // Referências estáveis: a lista existe para o lint, não para reexecutar.
-  }, [altitude, climb, planeScale, planeX, planeY]);
+  }, []);
 
   useEffect(() => {
+    if (motion === 'pending') return;
     if (!canLeaveSplash({ holdReached, isAppReady })) return;
 
-    // A Home é clara; o céu, a essa altura, está roxo em cima.
-    setStatusBarStyle('dark', true);
+    const { exitMs } = splashSchedule(motion === 'reduced');
 
-    // O céu se abre para a frente e sai de quadro, deixando a Home no lugar.
-    overlay.value = withTiming(0, { duration: SPLASH_EXIT_MS, easing: OPEN });
-    overlayScale.value = withTiming(1.14, { duration: SPLASH_EXIT_MS, easing: OPEN });
+    fade.value = withTiming(0, { duration: exitMs, easing: LEAVE });
+    if (motion === 'full') {
+      scale.value = withTiming(SPLASH_EXIT_SCALE, { duration: exitMs, easing: LEAVE });
+    }
 
-    const id = setTimeout(onFinish, SPLASH_EXIT_MS);
+    const id = setTimeout(onFinish, exitMs);
     return () => clearTimeout(id);
-  }, [holdReached, isAppReady, onFinish, overlay, overlayScale]);
+  }, [fade, holdReached, isAppReady, motion, onFinish, scale]);
 
   // Aqui, e não quando o app fica pronto: é o instante em que existe um quadro
   // idêntico ao splash nativo desenhado por cima.
@@ -158,39 +95,15 @@ export function SplashOverlay({
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  const altitudeStyle = useAnimatedStyle(() => ({ opacity: altitude.value }));
-
-  const planeStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: planeX.value },
-      { translateY: planeY.value },
-      { scale: planeScale.value },
-    ],
-  }));
-
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: overlay.value,
-    transform: [{ scale: overlayScale.value }],
-  }));
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: fade.value }));
+  const markStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
     <Animated.View style={[styles.overlay, overlayStyle]} onLayout={handleLayout}>
-      <View style={styles.sky} />
+      <View style={styles.background} />
 
-      <Animated.View style={[styles.altitude, altitudeStyle]}>
-        <AltitudeGradient width={screen.width} height={screen.height} />
-      </Animated.View>
-
-      {motion === 'pending' ? null : (
-        <CloudDecks
-          width={screen.width}
-          height={screen.height}
-          reduceMotion={motion === 'reduced'}
-        />
-      )}
-
-      <Animated.View style={[styles.centered, planeStyle]}>
-        <PlaneMark size={PLANE_MARK_SIZE} />
+      <Animated.View style={[styles.centered, markStyle]}>
+        <Image source={BRAND_LOGO} style={styles.logo} resizeMode="contain" />
       </Animated.View>
 
       {showWaitingNote ? (
@@ -213,17 +126,20 @@ const styles = StyleSheet.create({
     // Acima de qualquer tela já montada atrás, inclusive das modais.
     zIndex: 10,
   },
-  sky: {
+  background: {
     ...FILL,
-    backgroundColor: SPLASH_COLORS.sky,
+    backgroundColor: SPLASH_COLORS.brand,
   },
-  altitude: FILL,
+  logo: {
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+  },
   centered: {
     ...FILL,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Abaixo do centro, onde o avião já não está e as nuvens ainda não chegaram.
+  // Abaixo do centro, longe da marca.
   noteArea: {
     ...FILL,
     alignItems: 'center',

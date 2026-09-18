@@ -1,9 +1,8 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useMemo } from 'react';
 import { Platform } from 'react-native';
 
-import { useAuth } from '@/features/auth/auth-context';
-import { getAvatarIconSource, getAvatarUrl } from '@/features/auth/user-profile';
+import { useNotificationNavigation } from '@/features/notifications/hooks/use-notification-navigation';
+import { t } from '@/i18n';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -21,25 +20,27 @@ const hideLabels = Platform.OS === 'ios';
 const tabContentStyle = { backgroundColor: colors.background } as const;
 
 export default function AppLayout() {
-  const { user } = useAuth();
-
-  const avatarUrl = getAvatarUrl(user);
-  // Memoizado por uma string estável: o expo-router compara a identidade do
-  // objeto do ícone e reconfigura a aba a cada objeto novo.
-  const avatarIcon = useMemo(() => getAvatarIconSource(avatarUrl), [avatarUrl]);
+  // Aqui, e não no layout raiz: as rotas de viagem só existem deste lado.
+  useNotificationNavigation();
 
   return (
     <NativeTabs tintColor={colors.primary}>
-      <NativeTabs.Trigger name="index" accessibilityLabel="Início" contentStyle={tabContentStyle}>
-        <NativeTabs.Trigger.Label hidden={hideLabels}>Início</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger
+        name="index"
+        accessibilityLabel={t('tabs.home')}
+        contentStyle={tabContentStyle}>
+        <NativeTabs.Trigger.Label hidden={hideLabels}>{t('tabs.home')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'house', selected: 'house.fill' }}
           md={{ default: 'home', selected: 'home' }}
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="trips" accessibilityLabel="Viagens" contentStyle={tabContentStyle}>
-        <NativeTabs.Trigger.Label hidden={hideLabels}>Viagens</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger
+        name="trips"
+        accessibilityLabel={t('tabs.trips')}
+        contentStyle={tabContentStyle}>
+        <NativeTabs.Trigger.Label hidden={hideLabels}>{t('tabs.trips')}</NativeTabs.Trigger.Label>
         {/* Avião subindo em diagonal, como quem decola. No iOS o símbolo é
             sólido nos dois estados: o `airplane` do SF Symbols não tem variante
             de contorno, e quem marca a aba ativa é o roxo do `tintColor`. No
@@ -50,18 +51,15 @@ export default function AppLayout() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="profile" accessibilityLabel="Perfil" contentStyle={tabContentStyle}>
-        <NativeTabs.Trigger.Label hidden={hideLabels}>Perfil</NativeTabs.Trigger.Label>
-        {avatarIcon ? (
-          // `renderingMode="original"` impede o sistema de pintar a foto como
-          // máscara monocromática, que é o tratamento padrão de ícone de aba.
-          <NativeTabs.Trigger.Icon src={avatarIcon} renderingMode="original" />
-        ) : (
-          <NativeTabs.Trigger.Icon
-            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
-            md={{ default: 'account_circle', selected: 'account_circle' }}
-          />
-        )}
+      <NativeTabs.Trigger
+        name="profile"
+        accessibilityLabel={t('tabs.profile')}
+        contentStyle={tabContentStyle}>
+        <NativeTabs.Trigger.Label hidden={hideLabels}>{t('tabs.profile')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+          md={{ default: 'account_circle', selected: 'account_circle' }}
+        />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

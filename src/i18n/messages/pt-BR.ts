@@ -1,0 +1,582 @@
+import type { Message } from '../message.ts';
+
+/**
+ * Dicionário canônico: toda chave nasce aqui. `en.ts` e `es.ts` são tipados
+ * contra `MessageKey`, então esquecer uma tradução é erro de compilação, e não
+ * texto faltando em produção.
+ */
+export const messages = {
+  'profile.language.title': 'IDIOMA',
+  'profile.language.system': 'Padrão do dispositivo',
+
+  'common.action.back': 'Voltar',
+  'common.action.close': 'Fechar',
+  'common.action.ok': 'OK',
+  'common.action.check': 'Verificar',
+  'common.action.open': 'Abrir',
+  'common.action.continue': 'Continuar',
+  'common.action.clear': 'Limpar',
+  'common.action.change': 'Alterar',
+  'common.action.retry': 'Tentar de novo',
+  'common.search.placeholder': 'Buscar...',
+
+  'a11y.avatar.profilePhoto': 'Foto do perfil',
+  'a11y.textField.showPassword': 'Mostrar senha',
+  'a11y.textField.hidePassword': 'Ocultar senha',
+  'a11y.accordion.sectionProgress': '{title}, {done} de {total} verificados',
+
+  'date.picker.previousYear': 'Ano anterior',
+  'date.picker.nextYear': 'Próximo ano',
+  'date.picker.backToCalendar': 'Voltar ao calendário',
+  'date.picker.previousMonth': 'Mês anterior',
+  'date.picker.nextMonth': 'Próximo mês',
+  'date.picker.monthYear.display': '{month} de {year}',
+  'date.picker.monthYear.label': '{month} de {year}. Escolher outro mês',
+  'date.picker.day.label': '{day} de {month}',
+
+  'profile.section.security': 'SEGURANÇA',
+  'profile.section.legal': 'LEGAL',
+  'profile.section.account': 'CONTA',
+  'requirement.section.whatToCheck': 'O QUE VERIFICAR',
+  'requirement.section.offers': 'OPÇÕES PARA CONTRATAR',
+  'requirement.section.source': 'FONTE OFICIAL',
+  'auth.login.section.signIn': 'ENTRAR',
+  'trip.edit.section.name': 'NOME',
+  'trip.edit.section.countries': 'PAÍSES',
+  'trip.edit.section.cities': 'CIDADES',
+  'trip.edit.section.dates': 'DATAS',
+  'passports.section.title': 'PASSAPORTES',
+  'trips.tips.sectionTitle': 'DICA PARA SUA PRÓXIMA VIAGEM',
+
+  'common.action.cancel': 'Cancelar',
+  'common.field.email.label': 'E-mail',
+  'common.field.email.placeholder': 'voce@email.com',
+  'common.field.password.label': 'Senha',
+  'common.field.name.label': 'Nome',
+  'common.field.name.placeholder': 'Como você quer ser chamado',
+
+  'legal.consent.continue': 'Ao continuar, você concorda com os {terms} e com a {privacy}.',
+  'legal.consent.createAccount':
+    'Ao criar sua conta, você concorda com os {terms} e com a {privacy}.',
+  'legal.termsOfUse.linkLabel': 'Termos de uso',
+  'legal.privacyPolicy.linkLabel': 'Política de privacidade',
+  'legal.document.subtitle': 'Versão {version} · em vigor desde {date}',
+  'legal.document.footer': 'Versão {version} — {date}',
+
+  'auth.error.unexpected': 'Erro inesperado na autenticação.',
+  'auth.error.invalidCredentials': 'E-mail ou senha incorretos.',
+  'auth.error.emailNotConfirmed':
+    'Confirme o e-mail antes de entrar. Verifique sua caixa de entrada.',
+  'auth.error.userAlreadyRegistered': 'Este e-mail já está cadastrado.',
+  'auth.error.invalidEmailFormat': 'E-mail inválido.',
+  'auth.error.invalidPassword': 'Informe uma senha válida.',
+  'auth.error.rateLimited': 'Muitas tentativas seguidas. Aguarde alguns minutos.',
+  'auth.error.tooManyRequests': 'Por segurança, aguarde 60 segundos antes de tentar de novo.',
+  'auth.error.currentPasswordRequired': 'Informe sua senha atual.',
+  'auth.error.currentPasswordInvalid': 'A senha atual não confere.',
+  'auth.error.samePassword': 'A nova senha precisa ser diferente da atual.',
+  'auth.error.passwordRejected': 'A senha ainda não cumpre todos os requisitos da lista.',
+  'auth.error.callbackFailed': 'Falha na autenticação: {code}',
+  'auth.error.missingAuthUrl': 'O Supabase não retornou a URL de autenticação.',
+  'auth.error.missingAppleToken': 'A Apple não retornou o identity token.',
+
+  'auth.password.rule.length': 'Pelo menos {min} caracteres',
+  'auth.password.rule.uppercase': 'Letra maiúscula',
+  'auth.password.rule.lowercase': 'Letra minúscula',
+  'auth.password.rule.digit': 'Número',
+  'auth.password.rule.symbol': 'Símbolo',
+  'auth.password.strength.weak': 'Fraca',
+  'auth.password.strength.medium': 'Média',
+  'auth.password.strength.strong': 'Forte',
+  'auth.password.placeholder.minLength': 'Mínimo de {min} caracteres',
+  'a11y.password.strength': 'Força da senha: {strength}',
+  'a11y.password.rule': '{rule}: {status}',
+  'auth.password.rule.status.met': 'atendido',
+  'auth.password.rule.status.pending': 'pendente',
+
+  'auth.email.error.empty': 'Digite seu e-mail.',
+  'auth.email.error.invalid': 'Digite um e-mail válido.',
+  'auth.email.error.typo': 'Você quis dizer @{suggestion}?',
+
+  'auth.deleteAccount.confirmationWord': 'Excluir',
+  'auth.deleteAccount.title': 'Excluir conta',
+  'auth.deleteAccount.warning':
+    'Esta ação é **permanente e irreversível**. Todos os seus dados, viagens e documentos serão apagados.',
+  'auth.deleteAccount.field.label': 'Digite {word} para confirmar',
+  'auth.deleteAccount.field.a11yLabel': 'Digite {word} para confirmar a exclusão da conta',
+  'auth.deleteAccount.confirmButton': 'Excluir minha conta',
+
+  'auth.profile.defaultDisplayName': 'Usuário',
+  'auth.provider.google': 'Google',
+  'auth.provider.apple': 'Apple',
+
+  'auth.login.tagline': 'Tudo o que você precisa antes de viajar, organizado em um só lugar.',
+  'auth.login.continueWithGoogle': 'Continuar com Google',
+  'auth.login.continueWithApple': 'Continuar com Apple',
+  'auth.login.continueWithEmail': 'Entrar com e-mail',
+
+  'auth.emailLogin.title': 'Entrar',
+  'auth.emailLogin.subtitle': 'Use o e-mail e a senha da sua conta TripReady.',
+  'auth.emailLogin.error.empty': 'Preencha e-mail e senha.',
+  'auth.emailLogin.submit': 'Entrar',
+  'auth.emailLogin.forgotPassword': 'Esqueci minha senha',
+  'auth.emailLogin.createAccount': 'Criar uma conta',
+
+  'auth.signUp.title': 'Criar conta',
+  'auth.signUp.subtitle': 'Cadastre-se com e-mail e senha.',
+  'auth.signUp.error.missingName': 'Informe seu nome.',
+  'auth.signUp.error.invalidPassword': 'A senha ainda não cumpre todos os requisitos.',
+  'auth.signUp.error.passwordMismatch': 'As senhas não coincidem.',
+  'auth.signUp.confirmEmail.title': 'Confirme seu e-mail',
+  'auth.signUp.confirmEmail.subtitle':
+    'Enviamos um link de confirmação para {email}. Abra o link e volte para entrar.',
+  'auth.signUp.confirmEmail.backToLogin': 'Voltar para o login',
+  'auth.signUp.field.confirmPassword.label': 'Confirmar senha',
+  'auth.signUp.field.confirmPassword.placeholder': 'Repita a senha',
+  'auth.signUp.submit': 'Criar conta',
+
+  'auth.forgotPassword.title': 'Recuperar senha',
+  'auth.forgotPassword.subtitle': 'Enviaremos um link para você voltar a acessar a conta.',
+  'auth.forgotPassword.error.empty': 'Informe o e-mail da conta.',
+  'auth.forgotPassword.success':
+    'Se existir uma conta com esse e-mail, o link de recuperação já está a caminho. O link abre o app com a sessão iniciada.',
+  'auth.forgotPassword.submit': 'Enviar link de recuperação',
+
+  'auth.changePassword.title': 'Alterar senha',
+  'auth.changePassword.error.missingCurrent': 'Informe sua senha atual.',
+  'auth.changePassword.error.invalidNew': 'A nova senha ainda não cumpre todos os requisitos.',
+  'auth.changePassword.error.mismatch': 'As senhas não coincidem.',
+  'auth.changePassword.successTitle': 'Senha alterada',
+  'auth.changePassword.successMessage': 'Use a nova senha no próximo acesso.',
+  'auth.changePassword.field.current.label': 'Senha atual',
+  'auth.changePassword.field.new.label': 'Nova senha',
+  'auth.changePassword.field.new.placeholder': 'Digite a nova senha',
+  'auth.changePassword.field.confirmNew.label': 'Confirmar nova senha',
+  'auth.changePassword.field.confirmNew.placeholder': 'Repita a nova senha',
+  'auth.changePassword.submit': 'Alterar senha',
+
+  'profile.title': 'Perfil',
+  'profile.editButton': 'Editar',
+  'profile.privacyPolicy': 'Política de Privacidade',
+  'profile.termsOfUse': 'Termos de Uso',
+  'profile.signOut': 'Sair',
+  'profile.deleteAccount': 'Excluir conta',
+
+  'profile.edit.title': 'Editar perfil',
+  'profile.edit.managedBy': 'Gerenciado pela conta {provider}',
+  'profile.edit.externalNotice':
+    'Sua conta está vinculada ao {provider}. Para alterar nome, e-mail ou senha, acesse as configurações da sua conta {provider}.',
+  'profile.edit.submit': 'Salvar alterações',
+  'profile.security.passwordRow.label': 'Senha',
+  'profile.security.passwordRow.description': 'Altere sua senha de acesso',
+
+  'passports.addPassport': 'Adicionar passaporte',
+  'passports.section.primaryTag': 'Principal',
+  'passports.error.connection': 'Sua conexão oscilou. Tente de novo.',
+  'passports.error.loginRequired': 'Faça login para adicionar um passaporte.',
+  'passports.error.onlyOne':
+    'Este é o seu único passaporte. Adicione outro e defina-o como principal para poder remover este.',
+  'passports.error.mustPromoteFirst':
+    'Este é o seu passaporte principal. Defina outro como principal antes de removê-lo.',
+
+  'passports.dialog.cannotComplete': 'Não foi possível concluir',
+  'passports.dialog.onlyPrimary.message':
+    'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.',
+  'passports.dialog.primary.message':
+    'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+  'passports.section.pendingRulesTag': 'Regras em preparação',
+  'passports.dialog.pendingRules.message':
+    'Ainda não temos as regras de entrada para este passaporte. Sua checklist segue com os documentos e o passo de conferir as exigências de cada destino.',
+  'passports.dialog.setPrimary': 'Definir como principal',
+  'passports.dialog.remove': 'Remover passaporte',
+  'passports.dialog.removeConfirm.title': 'Remover {name}?',
+  'passports.dialog.removeConfirm.message': 'Você pode adicioná-lo de novo quando quiser.',
+  'passports.dialog.removeConfirm.confirm': 'Remover',
+
+  'passports.picker.search.byCity': 'Buscar país ou cidade...',
+  'passports.picker.search.byCountry': 'Buscar país...',
+  'passports.picker.empty.byCity': 'Nenhum destino encontrado para “{query}”.',
+  'passports.picker.empty.byCountry': 'Nenhum país encontrado para “{query}”.',
+  'passports.picker.title': 'Adicionar passaporte',
+  'passports.picker.addFailed.title': 'Não foi possível adicionar',
+  'passports.picker.addFailed.fallback': 'Tente novamente.',
+
+  'a11y.passport.primary': '{name}, passaporte principal',
+  'a11y.passport.openOptions': 'Abre as opções do passaporte',
+  'a11y.countryRow.withCity': '{country}, {city}',
+  'a11y.countryRow.alreadyAdded': 'Já adicionado',
+
+  'onboarding.pendingRules.title': 'Regras em preparação',
+  'onboarding.pendingRules.message':
+    'As regras de entrada para o passaporte de {country} ainda estão em preparação. Você já pode montar sua viagem: a checklist traz os documentos e o passo de conferir as exigências de cada destino.',
+  'onboarding.pendingRules.confirm': 'Continuar',
+  'onboarding.saveFailed.title': 'Não foi possível salvar',
+  'onboarding.title': 'Qual passaporte você usa para viajar?',
+  'onboarding.subtitle':
+    'Usamos essa informação para descobrir os requisitos de cada destino. Você pode adicionar outros passaportes depois, no seu perfil.',
+
+  'trip.limit.countries': 'Você pode adicionar até {max} países por viagem.',
+  'trip.limit.duration': 'Escolha um período de até {max} dias.',
+  'trip.limit.range': 'Escolha a data de volta a partir da data de ida.',
+  'trip.limit.durationHint': 'Até {max} dias por viagem',
+  'trip.countrySelection.atLimit': '{max} de {max} países',
+  'trip.countrySelection': {
+    one: '{count} país selecionado',
+    other: '{count} países selecionados',
+  },
+
+  'trips.progress.empty': 'Checklist em preparação',
+  'trips.progress.checked': {
+    one: '{done} de {total} item verificado',
+    other: '{done} de {total} itens verificados',
+  },
+  'trips.progress.fraction': { one: '{done}/{total} item', other: '{done}/{total} itens' },
+  'trips.progress.pending': {
+    one: '{count} item pendente',
+    other: '{count} itens pendentes',
+  },
+  'trips.progress.allChecked': 'Tudo verificado',
+  'trips.progress.referenceEmpty': 'Sua checklist continua à mão.',
+  'trips.progress.reference': {
+    one: '1 informação para consultar quando precisar.',
+    other: '{count} informações para consultar quando precisar.',
+  },
+  'trips.progress.requiredPending': { one: '1 obrigatório', other: '{count} obrigatórios' },
+
+  'trip.moment.completed': 'Concluída',
+  'trip.moment.boardingToday': 'Embarque hoje',
+  'trip.moment.ongoing': 'Viagem em andamento',
+  'trip.moment.undated': 'Escolha as datas',
+  'trip.moment.tomorrow': 'Começa amanhã',
+  'trip.moment.daysUntil': 'Começa em {days} dias',
+  'trip.moment.monthsUntil': { one: 'Começa em {months} mês', other: 'Começa em {months} meses' },
+
+  'trip.countdown.today.message': 'Chegou a hora!',
+  'trip.countdown.today.label': 'BOA VIAGEM!',
+  'trip.countdown.ongoing.label': 'DE {totalDays} DIAS',
+  'trip.countdown.ongoingUndated.message': 'Aproveite!',
+  'trip.countdown.ongoingUndated.label': 'VIAGEM EM ANDAMENTO',
+  'trip.countdown.undated.message': 'Quase lá...',
+  'trip.countdown.undated.label': 'ESCOLHA AS DATAS PARA VER A CONTAGEM',
+  'trip.countdown.tomorrow.message': 'Falta 1 dia',
+  'trip.countdown.tomorrow.label': 'ÚLTIMOS PREPARATIVOS',
+  'trip.countdown.days.label': 'DIAS PARA VIAJAR',
+
+  'trip.returnCountdown.lastDay': 'último dia',
+  'trip.returnCountdown.tomorrow': 'volta amanhã',
+  'trip.returnCountdown.daysLeft': 'volta em {days} dias',
+
+  'date.range.undated': 'Datas a definir',
+  'date.range.openStart': 'A partir de {day} {month} {year}',
+  'date.range.openEnd': 'Até {day} {month} {year}',
+  'date.range.diffYear': '{fromDay} {fromMonth} {fromYear} – {toDay} {toMonth} {toYear}',
+  'date.range.diffMonth': '{fromDay} {fromMonth} – {toDay} {toMonth} {year}',
+  'date.range.sameMonth': '{fromDay}–{toDay} {month} {year}',
+  'date.single': '{day} {month} {year}',
+
+  'trip.name.default': 'Minha viagem',
+  'trip.name.twoCountries': '{a} e {b}',
+  'trip.name.moreCountries': '{a}, {b} e mais {count}',
+
+  'trip.region.centralEurope': 'Europa Central',
+  'trip.region.westernEurope': 'Europa Ocidental',
+  'trip.region.southernEurope': 'Sul da Europa',
+  'trip.region.scandinavia': 'Escandinávia',
+  'trip.region.balkans': 'Bálcãs',
+  'trip.region.southeastAsia': 'Sudeste Asiático',
+  'trip.region.eastAsia': 'Leste da Ásia',
+  'trip.region.middleEast': 'Oriente Médio',
+  'trip.region.southAmerica': 'América do Sul',
+  'trip.region.centralAmerica': 'América Central',
+  'trip.region.northAmerica': 'América do Norte',
+  'trip.region.oceania': 'Oceania',
+  'trip.region.northAfrica': 'Norte da África',
+
+  'season.name.winter': 'Inverno',
+  'season.name.spring': 'Primavera',
+  'season.name.summer': 'Verão',
+  'season.name.autumn': 'Outono',
+  'season.complement.winter': 'no inverno',
+  'season.complement.spring': 'na primavera',
+  'season.complement.summer': 'no verão',
+  'season.complement.autumn': 'no outono',
+  'season.context.allSeasons': '🌎 {count} estações',
+  'season.plural': 'estações',
+
+  'trip.travelVerb.upcoming': 'Você vai viajar',
+  'trip.travelVerb.ongoing': 'Você está viajando',
+  'trip.travelVerb.completed': 'Você viajou',
+  'trip.crossingVerb.upcoming': 'Sua viagem passa por',
+  'trip.crossingVerb.ongoing': 'Sua viagem passa por',
+  'trip.crossingVerb.completed': 'Sua viagem passou por',
+  'trip.seasonCount.two': 'duas',
+  'trip.seasonCount.three': 'três',
+  'trip.seasonCount.four': 'quatro',
+
+  'trips.checklist.wholeTrip': 'Toda a viagem',
+
+  'trips.requiredPendingCount': {
+    one: '1 obrigatório pendente',
+    other: '{count} obrigatórios pendentes',
+  },
+  'a11y.tripCard.openChecklist': 'Abre a checklist da viagem',
+  'trip.card.ready': 'Pronta 🎉',
+
+  'a11y.tripHero.dayOf': 'Dia {day} de {total}',
+  'a11y.tripHero.checkItem': 'Verificar: {title}',
+  'a11y.tripHero.openChecklist': 'Abrir a checklist da viagem',
+  'a11y.tripHero.openChecklistHint': 'Abre a checklist da viagem',
+
+  'trip.hero.section.ongoing': 'Na viagem',
+  'trip.hero.section.departure': 'Antes de embarcar',
+  'trip.hero.section.preparing': 'Preparação',
+  'trip.hero.nextStep.checkNow': '✨ VERIFIQUE AGORA',
+  'trip.hero.nextStep.next': '✨ PRÓXIMO PASSO',
+  'trip.hero.nextStep.ready': '🎉 TUDO PRONTO',
+  'trip.hero.nextStep.start': '✨ COMECE POR AQUI',
+  'trip.hero.allChecked': 'Você já verificou todos os itens importantes.',
+  'trip.hero.pendingHint': 'Veja o que falta conferir antes de viajar.',
+  'trip.hero.tipLabel': '💡 Dica da viagem',
+
+  'trips.cityStep.none': 'Nenhuma cidade ainda',
+  'trips.cityStep.emptyCountry': 'Cidades a definir neste país.',
+  'trips.cityStep.addPlaceholder': 'Adicionar outra cidade',
+  'trips.cityStep.addPlaceholderEmpty': 'Digite uma cidade deste país',
+  'a11y.cityStep.openCountry': 'Mostra as cidades deste país',
+  'a11y.cityStep.removeCountry': 'Remover {country} do roteiro',
+  'a11y.cityStep.addCity': 'Adicionar cidade',
+  'a11y.cityStep.removeCity': 'Remover {city}',
+
+  'a11y.celebration.close': 'Fechar comemoração',
+
+  'a11y.tripCountryChips.more': {
+    one: 'e mais 1 destino',
+    other: 'e mais {count} destinos',
+  },
+
+  'trips.filter.all': 'Todas',
+  'trips.filter.ongoing': 'Em andamento',
+  'trips.filter.upcoming': 'Futuras',
+  'trips.filter.completed': 'Concluídas',
+  'a11y.tripFilter.filterBy': 'Filtrar por {filter}',
+
+  'trips.dateRange.hint': 'Escolha a data de ida no calendário.',
+  'trips.dateRange.depart': 'IDA',
+  'trips.dateRange.return': 'VOLTA',
+  'trips.dateRange.pending': 'a escolher',
+  'trips.dateRange.chooseReturn': 'Agora toque na data de volta.',
+  'trips.dateRange.duration': {
+    one: '{days} dia de viagem',
+    other: '{days} dias de viagem',
+  },
+  'a11y.dateRange.clear': 'Limpar datas',
+
+  'trips.action.create': 'Criar viagem',
+  'trips.action.edit': 'Editar viagem',
+  'trips.action.delete': 'Excluir viagem',
+  'trips.action.backToTrip': 'Voltar para a viagem',
+  'trips.error.loadRetry': 'Sua conexão oscilou. Toque para carregar de novo.',
+  'trips.error.menuRetry': 'Sua conexão oscilou. Toque no menu para tentar de novo.',
+  'a11y.openItem': 'Abrir {name}',
+
+  'trips.home.loading': 'Buscando sua próxima viagem...',
+  'trips.home.loadRetryButton': 'Carregar viagem',
+  'trips.home.emptyTitle': 'Para onde você vai?',
+  'trips.home.emptyText':
+    'Crie sua viagem e acompanhe aqui a contagem regressiva e tudo o que preparar antes de embarcar.',
+
+  'trips.list.title': 'Minhas viagens',
+  'a11y.trips.createNew': 'Criar nova viagem',
+  'trips.list.loading': 'Buscando suas viagens...',
+  'trips.list.loadRetryButton': 'Carregar viagens',
+  'trips.list.emptyTitle': 'Você ainda não tem nenhuma viagem',
+  'trips.list.emptyText':
+    'Crie sua primeira viagem para descobrir o que precisa verificar antes de embarcar.',
+
+  'trips.filterEmpty.ongoing.text': 'Quando sua viagem começar, ela aparece aqui.',
+  'trips.filterEmpty.ongoing.action': 'Ver as futuras',
+  'trips.filterEmpty.upcoming.text': 'Que tal marcar a próxima?',
+  'trips.filterEmpty.completed.text': 'Suas viagens concluídas ficam guardadas aqui.',
+  'trips.filterEmpty.completed.action': 'Ver todas',
+
+  'trips.menu.testReminders': 'Testar lembretes',
+  'trips.reminders.permissionNeeded': 'Ative os lembretes nos ajustes do sistema para ver o teste.',
+  'trips.reminders.none': 'Esta viagem não tem lembrete para mostrar agora.',
+  'trips.reminders.scheduled': {
+    one: '1 lembrete a caminho. Feche o app para vê-los.',
+    other: '{count} lembretes a caminho. Feche o app para vê-los.',
+  },
+
+  'trips.deleteConfirm.title': 'Excluir esta viagem?',
+  'trips.deleteConfirm.message': 'Esta viagem e sua checklist serão removidas do seu histórico.',
+
+  'trips.checklist.loading': 'Abrindo sua checklist...',
+  'trips.checklist.loadRetry': 'Sua conexão oscilou. Toque em atualizar para ver a checklist.',
+  'trips.checklist.toggleRetry': 'Sua conexão oscilou. Toque no item de novo para salvar.',
+  'a11y.trips.menuOptions': 'Opções da viagem',
+  'trips.checklist.empty': 'Sua checklist aparece aqui assim que ficar pronta.',
+  'trips.checklist.itemCount': { one: '{count} item', other: '{count} itens' },
+  'trips.checklist.refresh': 'Atualizar checklist',
+  'trips.checklist.unverifiedDestinations':
+    'Para {countries}, confira as exigências de entrada na fonte oficial — ainda não temos a regra conferida desses destinos.',
+  'trips.checklist.allRequiredDone': '✓ Tudo certo com os itens obrigatórios!',
+
+  'trips.celebration.allDone.title': 'Tudo pronto! 🎉',
+  'trips.celebration.allDone.message': 'Você verificou todos os itens da checklist. Boa viagem!',
+  'trips.celebration.ready.title': 'Viagem pronta! 🎉',
+  'trips.celebration.ready.message': 'Você verificou todos os itens obrigatórios.',
+
+  'a11y.requirement.uncheck': 'Desmarcar {title}',
+  'a11y.requirement.check': 'Marcar {title} como verificado',
+
+  'requirement.affiliateDisclosure':
+    'Algumas indicações podem gerar comissão para o TripReady, sem custo adicional para você.',
+  'requirement.officialReminder': 'Confirme sempre nos canais oficiais antes de viajar.',
+  'requirement.notFound': 'Este item não está mais na sua checklist.',
+  'requirement.error.loadRetry': 'Sua conexão oscilou. Volte e abra o item de novo.',
+  'requirement.error.toggleRetry': 'Sua conexão oscilou. Toque de novo para salvar.',
+  'a11y.requirement.openSource': 'Abrir a fonte oficial: {name}',
+  'requirement.uncheckButton': 'Desmarcar item',
+  'requirement.checkButton': '✓ Marcar como verificado',
+  'trips.detail.title': 'Detalhes',
+
+  'trip.name.label': 'Nome da viagem',
+  'trip.countryStep.title': 'Para onde você vai?',
+
+  'trip.new.title.countries': 'Para onde você vai?',
+  'trip.new.title.cities': 'Quais cidades você pretende visitar?',
+  'trip.new.title.dates': 'Quando você vai viajar?',
+  'trip.new.title.name': 'Como quer chamar esta viagem?',
+  'trip.new.subtitle.countries': 'Escolha um ou mais países do seu roteiro.',
+  'trip.new.subtitle.cities':
+    'Escolha as cidades que já estão no plano. Dá para decidir isso depois.',
+  'trip.new.subtitle.dates': 'Toque na data de ida e depois na de volta.',
+  'trip.new.subtitle.name': 'Confira o roteiro e ajuste o nome se quiser.',
+  'trip.new.stepIndicator': 'Etapa {current} de {total}',
+  'trip.new.error.createRetry': 'Sua conexão oscilou. Toque em "Criar viagem" para tentar de novo.',
+  'trip.new.hint.chooseCountry': 'Escolha ao menos um país para continuar.',
+  'trip.new.continueWithCountries': {
+    one: 'Continuar com {count} país',
+    other: 'Continuar com {count} países',
+  },
+  'trip.new.skipForNow': 'Pular por enquanto',
+  'trip.new.continueWithCities': {
+    one: 'Continuar com {count} cidade',
+    other: 'Continuar com {count} cidades',
+  },
+  'trip.new.name.placeholder': 'Minha viagem',
+
+  'trip.review.dates.label': 'DATAS',
+  'trip.review.dates.action': 'Alterar datas',
+  'trip.review.itinerary.label': 'ROTEIRO',
+  'trip.review.itinerary.action': 'Alterar roteiro',
+
+  'trip.edit.error.loadRetry': 'Sua conexão oscilou. Toque em salvar para tentar de novo.',
+  'trip.edit.discardConfirm.title': 'Descartar alterações?',
+  'trip.edit.discardConfirm.message': 'Você tem alterações que ainda não foram salvas.',
+  'trip.edit.discardConfirm.continue': 'Continuar editando',
+  'trip.edit.discardConfirm.discard': 'Descartar',
+  'trip.edit.error.saveRetry':
+    'Sua conexão oscilou. Toque em "Salvar alterações" para tentar de novo.',
+  'trip.edit.loading': 'Abrindo sua viagem...',
+  'trip.edit.countryPicker.subtitle': 'Toque para adicionar ou remover países do roteiro.',
+  'trip.edit.countryPicker.done': 'Concluir seleção',
+  'trip.edit.hint.keepCountry': 'Mantenha ao menos um país no roteiro.',
+  'trip.edit.savedBanner': 'Viagem atualizada! 🎉',
+  'trip.edit.name.placeholder': 'Europa Central',
+  'a11y.tripEdit.removeCountry': 'Remover {country}',
+  'trip.edit.addRemoveCountries': 'Adicionar ou remover países',
+  'trip.edit.save': 'Salvar alterações',
+  'trip.edit.hint.changeToSave': 'Altere algo acima para salvar.',
+
+  'trip.preparing.title.loading': 'Preparando sua checklist...',
+  'trip.preparing.title.done': 'Checklist pronta! 🎉',
+  'trip.preparing.subtitle.loading': 'Estamos organizando o que você precisa verificar.',
+  'trip.preparing.subtitle.done': 'Sua checklist personalizada está pronta.',
+  'trip.preparing.error.retry': 'Sua conexão oscilou. Toque para continuar a preparação.',
+  'trip.preparing.continueButton': 'Continuar preparação',
+  'trip.preparing.viewNow': 'Ver a viagem agora',
+
+  'account.deleting.step.trips': 'Viagens e checklists',
+  'account.deleting.step.passports': 'Passaportes',
+  'account.deleting.step.profile': 'Dados do perfil',
+  'account.deleting.step.account': 'Conta e acesso',
+  'account.deleting.error.connection': 'Sua conexão oscilou. Toque para tentar de novo.',
+  'account.deleting.error.session': 'Sua sessão expirou. Entre de novo para excluir a conta.',
+  'account.deleting.error.unknown': 'Não foi possível concluir agora. Toque para tentar de novo.',
+  'account.deleting.title.loading': 'Excluindo sua conta...',
+  'account.deleting.title.done': 'Conta excluída',
+  'account.deleting.subtitle.loading': 'Estamos removendo seus dados.',
+  'account.deleting.subtitle.done': 'Sua conta e seus dados foram excluídos com sucesso.',
+  'account.deleting.goToLogin': 'Ir para o login',
+  'account.deleting.backToProfile': 'Voltar ao perfil',
+
+  'auth.callback.loading': 'Concluindo login...',
+
+  'app.connectionError': 'Sua conexão oscilou.',
+
+  'tabs.home': 'Início',
+  'tabs.trips': 'Viagens',
+  'tabs.profile': 'Perfil',
+
+  'reminder.approaching.title': '✈️ Sua viagem está chegando',
+  'reminder.eve.title': '✈️ Amanhã é o grande dia!',
+  'reminder.pending.required': {
+    one: 'Você ainda tem 1 item obrigatório para revisar.',
+    other: 'Você ainda tem {count} itens obrigatórios para revisar.',
+  },
+  'reminder.pending.recommended': {
+    one: 'Você tem 1 item recomendado para dar uma olhada.',
+    other: 'Você tem {count} itens recomendados para dar uma olhada.',
+  },
+  'reminder.eve.genericBody': 'Faça uma última revisão da sua checklist antes de viajar.',
+  'reminder.channelName': 'Lembretes de viagem',
+
+  'reminder.optIn.title': 'Quer receber lembretes desta viagem?',
+  'reminder.optIn.message':
+    'Vamos avisar quando estiver chegando a hora de revisar os itens pendentes.',
+  'reminder.optIn.enable': 'Ativar lembretes',
+  'reminder.optIn.dismiss': 'Agora não',
+
+  'checklist.category.documents': 'Documentos',
+  'checklist.category.health': 'Saúde',
+  'checklist.category.money': 'Dinheiro',
+  'checklist.category.connectivity': 'Conectividade',
+  'checklist.category.luggage': 'Bagagem',
+  'checklist.priority.required': 'Obrigatório',
+  'checklist.priority.recommended': 'Recomendado',
+  'checklist.priority.informational': 'Informativo',
+
+  'travelTip.passportValidity':
+    'Confira a validade do seu passaporte. Alguns destinos exigem meses de validade além da data da viagem.',
+  'travelTip.documentCopies':
+    'Guarde uma cópia dos documentos importantes. Deixe-os acessíveis mesmo sem internet.',
+  'travelTip.backupPayment':
+    'Leve uma segunda forma de pagamento. Um cartão reserva pode ajudar se o principal não funcionar.',
+  'travelTip.offlineMaps':
+    'Baixe mapas e reservas antes de sair. Assim você consegue acessá-los mesmo sem internet.',
+  'travelTip.medication':
+    'Leve seus medicamentos de uso contínuo na bagagem de mão. Confira também se precisa levar receita ou documentação.',
+  'travelTip.powerPlug':
+    'Veja qual é o padrão de tomada do destino. Um adaptador pequeno pode resolver a chegada.',
+  'travelTip.carryOnClothes':
+    'Separe uma muda de roupa na bagagem de mão. Ajuda se a mala despachada demorar a aparecer.',
+  'travelTip.travelInsurance':
+    'Considere um seguro viagem. Alguns destinos pedem comprovação na entrada.',
+  'travelTip.vaccination':
+    'Confira se o destino pede comprovante de vacinação. Algumas doses precisam ser tomadas com antecedência.',
+  'travelTip.connectivity':
+    'Veja como vai se conectar no destino: roaming, chip local ou eSIM. Resolver antes evita correria na chegada.',
+  'travelTip.airportTiming':
+    'Confirme com a companhia aérea a antecedência recomendada para o embarque. Ela varia por aeroporto e tipo de voo.',
+  'travelTip.localCash':
+    'Pense em levar um pouco de dinheiro local. Nem todo lugar aceita cartão, principalmente em transporte e lojas pequenas.',
+  'travelTip.emergencyContacts':
+    'Anote os contatos da hospedagem e da representação do seu país no destino. Fica fácil de achar se você precisar.',
+  'travelTip.baggageAllowance':
+    'Confira o limite de bagagem da sua passagem antes de fazer as malas. Cada companhia tem a sua regra.',
+  'travelTip.weather':
+    'Veja a previsão do tempo perto da data da viagem. Ela ajuda a decidir o que levar.',
+} as const satisfies Record<string, Message>;
+
+export type MessageKey = keyof typeof messages;

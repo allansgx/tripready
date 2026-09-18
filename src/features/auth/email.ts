@@ -50,14 +50,21 @@ export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function validateEmail(value: string): string | null {
+/**
+ * O que há de errado com o e-mail, sem texto: quem chama decide a frase no
+ * idioma ativo. `null` quando o endereço está bom.
+ */
+export type EmailIssue =
+  { kind: 'empty' } | { kind: 'invalid' } | { kind: 'typo'; suggestion: string };
+
+export function validateEmail(value: string): EmailIssue | null {
   const email = normalizeEmail(value);
 
-  if (email.length === 0) return 'Digite seu e-mail.';
-  if (!EMAIL_PATTERN.test(email)) return 'Digite um e-mail válido.';
+  if (email.length === 0) return { kind: 'empty' };
+  if (!EMAIL_PATTERN.test(email)) return { kind: 'invalid' };
 
   const suggestion = DOMAIN_TYPOS[email.slice(email.lastIndexOf('@') + 1)];
-  if (suggestion) return `Você quis dizer @${suggestion}?`;
+  if (suggestion) return { kind: 'typo', suggestion };
 
   return null;
 }

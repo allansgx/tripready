@@ -10,6 +10,7 @@ import {
   type AlertButton,
 } from 'react-native';
 
+import { t } from '@/i18n';
 import { colors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
 /**
@@ -24,15 +25,13 @@ type DialogRequest = {
   buttons: AlertButton[];
 };
 
-const DEFAULT_BUTTONS: AlertButton[] = [{ text: 'OK' }];
-
 /** Preenchido pelo host da web enquanto ele está montado. */
 let present: ((request: DialogRequest) => void) | null = null;
 
 export function showDialog(
   title: string,
   message?: string,
-  buttons: AlertButton[] = DEFAULT_BUTTONS,
+  buttons: AlertButton[] = [{ text: t('common.action.ok') }],
 ): void {
   if (Platform.OS !== 'web') {
     Alert.alert(title, message, buttons);
@@ -79,7 +78,7 @@ export function DialogHost() {
       <View style={styles.root}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Fechar"
+          accessibilityLabel={t('common.action.close')}
           style={StyleSheet.absoluteFill}
           onPress={dismiss}>
           <View style={styles.backdrop} />

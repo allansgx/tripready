@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { t } from '@/i18n';
 import { USE_NATIVE_DRIVER, useReduceMotion } from '@/lib/animation';
 import { colors, priorityColors, radius, shadow, spacing, typography } from '@/theme/tokens';
 
@@ -118,7 +119,7 @@ export function CelebrationOverlay({
       <View style={styles.root}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Fechar comemoração"
+          accessibilityLabel={t('a11y.celebration.close')}
           style={styles.backdropArea}
           onPress={onDismiss}>
           <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
@@ -204,7 +205,7 @@ export function CelebrationOverlay({
             <Text style={styles.message}>{celebration.message}</Text>
 
             <View style={styles.action}>
-              <Button label="Continuar" onPress={onDismiss} />
+              <Button label={t('common.action.continue')} onPress={onDismiss} />
             </View>
           </Animated.View>
         </View>

@@ -8,9 +8,11 @@
     "scheme": "tripready",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.tripready.app"
     },
     "android": {
+      "package": "com.tripready.app",
       "adaptiveIcon": {
         "backgroundColor": "#6C4EE3",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -26,6 +28,13 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#6C4EE3"
+        }
+      ],
       "expo-web-browser",
       [
         "expo-splash-screen",
@@ -39,6 +48,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "41c6bd0b-49a4-46b6-97e9-bebf3907fe2c"
+      }
+    },
+    "owner": "allansg"
   }
 }

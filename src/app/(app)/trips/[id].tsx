@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  LayoutAnimation,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccordionSection } from '@/components/ui/accordion-section';
@@ -9,29 +17,51 @@ import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { getCountryName } from '@/constants/countries';
+import { ReminderOptInCard } from '@/features/notifications/components/reminder-opt-in-card';
+import { usePassports } from '@/features/passports/passports-context';
+import {
+  canAskForReminders,
+  markRemindersAsked,
+  requestReminderPermission,
+} from '@/features/notifications/data/reminder-permission';
+import {
+  cancelTripReminders,
+  scheduleReminderPreview,
+  syncTripReminders,
+} from '@/features/notifications/data/reminder-scheduler';
 import {
   CelebrationOverlay,
   type Celebration,
 } from '@/features/trips/components/celebration-overlay';
 import { FlagRow } from '@/features/trips/components/flag-row';
+import { catalogCache } from '@/features/trips/data/catalog-cache';
 import {
   CATEGORY_ICONS,
-  CATEGORY_LABELS,
+  categoryLabel,
   CHECKLIST_CATEGORIES,
-  PRIORITY_LABELS,
+  priorityLabel,
 } from '@/features/trips/data/checklist-catalog';
 import {
   groupRequirementsByCategory,
+  isSectionComplete,
+  nextPendingCategory,
+  resolveRequirementText,
   tripSeasons,
 } from '@/features/trips/domain/requirement-matching';
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
-import {
-  computeTripProgress,
-  formatPendingRequiredLabel,
-  formatProgressLabel,
-} from '@/features/trips/domain/trip-progress';
+import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
 import { getTripStatus } from '@/features/trips/domain/trip-status';
-import { tripRequirementsService, tripsService, type TripRequirementWithGroup } from '@/services';
+import { destinationsWithoutVerifiedRule } from '@/features/trips/domain/visa-coverage';
+import { getLocale, t } from '@/i18n';
+import { formatList } from '@/i18n/format';
+import { layoutTransition, SECTION_TOGGLE_MS, useReduceMotion } from '@/lib/animation';
+import {
+  requirementCatalogService,
+  tripRequirementsService,
+  tripsService,
+  type TripRequirementWithGroup,
+} from '@/services';
 import {
   colors,
   priorityColors,
@@ -46,10 +76,61 @@ import {
 } from '@/theme/tokens';
 import type { RequirementCategory, TripCity, TripCountry } from '@/types/models';
 
+// Uma pausa para a marcação do último item ser vista — a fração da seção fecha
+// a conta — antes de a seção ceder o lugar para a próxima.
+const COMPLETION_BEAT_MS = 360;
+
+function wait(duration: number) {
+  return new Promise((resolve) => setTimeout(resolve, duration));
+}
+
+/**
+ * Título e descrição no idioma ativo, resolvidos por cima do que já veio
+ * gravado (sempre pt-BR). Falha de rede com cache frio não derruba a tela: os
+ * itens continuam com o texto gravado, em pt-BR (§8.3/§12 do plano de i18n).
+ */
+async function resolveDisplayText(
+  requirements: readonly TripRequirementWithGroup[],
+): Promise<TripRequirementWithGroup[]> {
+  if (requirements.length === 0) return [...requirements];
+
+  try {
+    const locale = getLocale();
+    const visaRuleIds = requirements.flatMap((item) =>
+      item.visa_rule_id ? [item.visa_rule_id] : [],
+    );
+
+    const [catalog, visaRuleNotes] = await Promise.all([
+      catalogCache.get(locale),
+      requirementCatalogService.loadVisaRuleNotes(visaRuleIds, locale),
+    ]);
+
+    const templates = new Map(catalog.templates.map((template) => [template.id, template]));
+
+    return requirements.map((requirement) => ({
+      ...requirement,
+      ...resolveRequirementText(requirement, { templates, visaRuleNotes }, getCountryName),
+    }));
+  } catch {
+    return [...requirements];
+  }
+}
+
+/** "8 de 11 itens verificados", sempre no mesmo formato. */
+function progressLabel(progress: TripProgress): string {
+  if (progress.total === 0) return t('trips.progress.empty');
+  return t('trips.progress.checked', {
+    count: progress.total,
+    done: progress.done,
+    total: progress.total,
+  });
+}
+
 export default function TripChecklistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const { primary } = usePassports();
 
   // `router.canGoBack()` enxerga a árvore inteira e podia levar para outra aba.
   function goBackToTrips() {
@@ -75,6 +156,44 @@ export default function TripChecklistScreen() {
   const [expanded, setExpanded] = useState<ReadonlySet<RequirementCategory>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const [showOptIn, setShowOptIn] = useState(false);
+  const [optInBusy, setOptInBusy] = useState(false);
+
+  const reduceMotion = useReduceMotion();
+
+  // Rolagem até a seção recém-aberta. As posições vêm do `onLayout` de cada
+  // cartão, medidas dentro da lista; o alvo espera a medida chegar atualizada.
+  const scrollRef = useRef<ScrollView>(null);
+  const listTopRef = useRef(0);
+  const sectionTopsRef = useRef(new Map<RequirementCategory, number>());
+  const scrollTargetRef = useRef<RequirementCategory | null>(null);
+  /** Identifica o avanço em curso: um novo toque invalida o anterior. */
+  const advanceRef = useRef(0);
+
+  function consumeScrollTarget(category: RequirementCategory) {
+    if (scrollTargetRef.current !== category) return;
+    scrollTargetRef.current = null;
+
+    const top = sectionTopsRef.current.get(category);
+    if (top === undefined) return;
+
+    scrollRef.current?.scrollTo({
+      y: Math.max(listTopRef.current + top - spacing.lg, 0),
+      animated: !reduceMotion,
+    });
+  }
+
+  function animateSections() {
+    if (!reduceMotion) LayoutAnimation.configureNext(layoutTransition());
+  }
+
+  /** Espera só quando há animação a acompanhar. */
+  function beat(duration: number) {
+    return reduceMotion ? Promise.resolve() : wait(duration);
+  }
+
+  /** A viagem no formato que o agendador espera. */
+  const reminderTrip = { id: id ?? '', start_date: range.start, end_date: range.end };
 
   /** Menu ••• : edição e exclusão ficam separadas, como ações distintas. */
   function openMenu() {
@@ -82,36 +201,54 @@ export default function TripChecklistScreen() {
 
     showDialog(name, undefined, [
       {
-        text: 'Editar viagem',
+        text: t('trips.action.edit'),
         onPress: () => router.push({ pathname: '/trip-edit', params: { tripId: id } }),
       },
-      { text: 'Excluir viagem', style: 'destructive', onPress: confirmDelete },
-      { text: 'Cancelar', style: 'cancel' },
+      { text: t('trips.action.delete'), style: 'destructive', onPress: confirmDelete },
+      // Some do build de produção junto com o `__DEV__`.
+      ...(__DEV__ ? [{ text: t('trips.menu.testReminders'), onPress: previewReminders }] : []),
+      { text: t('common.action.cancel'), style: 'cancel' },
     ]);
   }
 
+  /** Só em desenvolvimento: os lembretes reais desta viagem, em segundos. */
+  async function previewReminders() {
+    if (!id) return;
+
+    try {
+      if (!(await requestReminderPermission())) {
+        setNotice(t('trips.reminders.permissionNeeded'));
+        return;
+      }
+
+      const count = await scheduleReminderPreview(reminderTrip, requirements);
+      setNotice(
+        count === 0 ? t('trips.reminders.none') : t('trips.reminders.scheduled', { count }),
+      );
+    } catch {
+      setNotice(t('trips.error.menuRetry'));
+    }
+  }
+
   function confirmDelete() {
-    showDialog(
-      'Excluir esta viagem?',
-      'Esta viagem e sua checklist serão removidas do seu histórico.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir viagem',
-          style: 'destructive',
-          onPress: async () => {
-            if (!id) return;
-            try {
-              // A cascata do banco remove países, cidades e requisitos junto.
-              await tripsService.remove(id);
-              router.replace('/trips');
-            } catch {
-              setNotice('Sua conexão oscilou. Toque no menu para tentar de novo.');
-            }
-          },
+    showDialog(t('trips.deleteConfirm.title'), t('trips.deleteConfirm.message'), [
+      { text: t('common.action.cancel'), style: 'cancel' },
+      {
+        text: t('trips.action.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          if (!id) return;
+          try {
+            // A cascata do banco remove países, cidades e requisitos junto.
+            await tripsService.remove(id);
+            await cancelTripReminders(id).catch(() => {});
+            router.replace('/trips');
+          } catch {
+            setNotice(t('trips.error.menuRetry'));
+          }
         },
-      ],
-    );
+      },
+    ]);
   }
 
   // Abertura inicial decidida uma vez por viagem: a primeira categoria com
@@ -129,22 +266,21 @@ export default function TripChecklistScreen() {
       setRange({ start: detail.start_date, end: detail.end_date });
       setCountries(detail.trip_countries ?? []);
       setCities(detail.trip_cities ?? []);
-      setRequirements(detail.trip_requirements ?? []);
+
+      const resolved = await resolveDisplayText(detail.trip_requirements ?? []);
+      setRequirements(resolved);
 
       if (!didExpandRef.current) {
         didExpandRef.current = true;
 
-        const first = groupRequirementsByCategory(
-          detail.trip_requirements ?? [],
-          CHECKLIST_CATEGORIES,
-        ).find((section) =>
+        const first = groupRequirementsByCategory(resolved, CHECKLIST_CATEGORIES).find((section) =>
           section.items.some((item) => item.priority === 'required' && !item.completed),
         );
 
         if (first) setExpanded(new Set([first.category]));
       }
     } catch {
-      setNotice('Sua conexão oscilou. Toque em atualizar para ver a checklist.');
+      setNotice(t('trips.checklist.loadRetry'));
     } finally {
       setIsLoading(false);
     }
@@ -174,19 +310,56 @@ export default function TripChecklistScreen() {
 
     if (!previous.complete && complete) {
       setCelebration({
-        title: 'Tudo pronto! 🎉',
-        message: 'Você verificou todos os itens da checklist. Boa viagem!',
+        title: t('trips.celebration.allDone.title'),
+        message: t('trips.celebration.allDone.message'),
       });
       return;
     }
 
     if (!previous.ready && progress.isReady) {
       setCelebration({
-        title: 'Viagem pronta! 🎉',
-        message: 'Você verificou todos os itens obrigatórios.',
+        title: t('trips.celebration.ready.title'),
+        message: t('trips.celebration.ready.message'),
       });
     }
   }, [isLoading, progress]);
+
+  // O convite espera a checklist carregar: é diante dos itens que ele se
+  // explica. Viagem sem data futura não tem lembrete a oferecer.
+  useEffect(() => {
+    if (isLoading || !range.start) return;
+    if (getTripStatus({ start_date: range.start, end_date: range.end }) !== 'upcoming') return;
+
+    let active = true;
+    void canAskForReminders()
+      .then((canAsk) => {
+        if (active && canAsk) setShowOptIn(true);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [isLoading, range]);
+
+  async function enableReminders() {
+    setOptInBusy(true);
+    try {
+      if (await requestReminderPermission()) {
+        await syncTripReminders(reminderTrip, requirements);
+      }
+    } catch {
+      // Nada a dizer: o app funciona igual sem lembrete.
+    } finally {
+      setOptInBusy(false);
+      setShowOptIn(false);
+    }
+  }
+
+  function dismissReminders() {
+    setShowOptIn(false);
+    void markRemindersAsked().catch(() => {});
+  }
 
   // A estação sai dos países da viagem: dezembro é inverno em Viena e verão no Rio.
   const season = useMemo(
@@ -207,7 +380,27 @@ export default function TripChecklistScreen() {
     [requirements],
   );
 
+  // O aviso só existe quando tem destino a nomear: ele diz onde a checklist não
+  // pôde aplicar regra conferida, e nunca substitui o item de exigências de
+  // entrada, que continua obrigatório em todo destino internacional.
+  const unverified = useMemo(
+    () =>
+      destinationsWithoutVerifiedRule(
+        countries.map((country) => country.country_code),
+        requirements,
+        primary?.country_code ?? null,
+      ).map((code) => getCountryName(code)),
+    [countries, requirements, primary],
+  );
+
   function toggleSection(category: RequirementCategory) {
+    // O toque manual assume o comando e cancela um avanço em curso.
+    advanceRef.current += 1;
+
+    // Seção lá embaixo abre fora da janela: a rolagem leva o cabeçalho para o
+    // topo e os itens aparecem sem o usuário procurar.
+    if (!expanded.has(category)) scrollTargetRef.current = category;
+
     setExpanded((current) => {
       const next = new Set(current);
       if (!next.delete(category)) next.add(category);
@@ -215,24 +408,69 @@ export default function TripChecklistScreen() {
     });
   }
 
+  /**
+   * Seção completa fecha e entrega a vez à próxima com item por verificar, um
+   * tempo de cada vez: a marcação se vê, a seção recolhe, a seguinte abre junto
+   * com a rolagem que a traz para a janela.
+   */
+  async function advanceAfterCompleting(
+    category: RequirementCategory,
+    updated: TripRequirementWithGroup[],
+  ) {
+    const grouped = groupRequirementsByCategory(updated, CHECKLIST_CATEGORIES);
+    const section = grouped.find((item) => item.category === category);
+    if (!section || !isSectionComplete(section)) return;
+
+    const following = nextPendingCategory(grouped, category);
+    const run = (advanceRef.current += 1);
+
+    await beat(COMPLETION_BEAT_MS);
+    if (advanceRef.current !== run) return;
+
+    animateSections();
+    setExpanded((current) => {
+      const next = new Set(current);
+      next.delete(category);
+      return next;
+    });
+
+    if (!following) return;
+
+    await beat(SECTION_TOGGLE_MS);
+    if (advanceRef.current !== run) return;
+
+    animateSections();
+    setExpanded((current) => new Set(current).add(following));
+    scrollTargetRef.current = following;
+  }
+
   async function toggle(requirement: TripRequirementWithGroup) {
     const next = !requirement.completed;
 
-    // Atualiza na hora: a checklist reflete o progresso sem esperar a rede.
-    setRequirements((current) =>
-      current.map((item) => (item.id === requirement.id ? { ...item, completed: next } : item)),
+    const updated = requirements.map((item) =>
+      item.id === requirement.id ? { ...item, completed: next } : item,
     );
+
+    // Atualiza na hora: a checklist reflete o progresso sem esperar a rede.
+    animateSections();
+    setRequirements(updated);
     setNotice(null);
+
+    if (next) void advanceAfterCompleting(requirement.category, updated);
 
     try {
       await tripRequirementsService.setCompleted(requirement.id, next);
+
+      // Aqui, e não só ao voltar para a lista: marcar o último obrigatório
+      // cancela o lembrete de pendência no ato.
+      void syncTripReminders(reminderTrip, updated).catch(() => {});
     } catch {
       setRequirements((current) =>
         current.map((item) =>
           item.id === requirement.id ? { ...item, completed: requirement.completed } : item,
         ),
       );
-      setNotice('Sua conexão oscilou. Toque no item de novo para salvar.');
+      setNotice(t('trips.checklist.toggleRetry'));
     }
   }
 
@@ -248,7 +486,7 @@ export default function TripChecklistScreen() {
       <SafeAreaView style={styles.screen} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.hint}>Abrindo sua checklist...</Text>
+          <Text style={styles.hint}>{t('trips.checklist.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -258,13 +496,20 @@ export default function TripChecklistScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       {/* "automatic": sem isso o fim da lista fica sob a tab bar flutuante do iOS. */}
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
+        // Rede de segurança: quando o alvo já estava aberto, o `onLayout` dele
+        // não dispara e só a mudança de altura da lista denuncia o rearranjo.
+        onContentSizeChange={() => {
+          const target = scrollTargetRef.current;
+          if (target) requestAnimationFrame(() => consumeScrollTarget(target));
+        }}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Voltar"
+            accessibilityLabel={t('common.action.back')}
             hitSlop={12}
             onPress={goBackToTrips}
             style={styles.back}>
@@ -286,7 +531,7 @@ export default function TripChecklistScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Opções da viagem"
+            accessibilityLabel={t('a11y.trips.menuOptions')}
             hitSlop={12}
             onPress={openMenu}
             style={styles.menuButton}>
@@ -308,7 +553,7 @@ export default function TripChecklistScreen() {
           <View style={styles.progressRow}>
             <ProgressRing percent={progress.percent} />
             <View style={styles.progressTexts}>
-              <Text style={styles.progressLabel}>{formatProgressLabel(progress)}</Text>
+              <Text style={styles.progressLabel}>{progressLabel(progress)}</Text>
               <RequiredLine progress={progress} />
             </View>
           </View>
@@ -332,43 +577,76 @@ export default function TripChecklistScreen() {
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
-        <View style={styles.list}>
+        {unverified.length > 0 ? (
+          <View style={styles.coverageNote}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.coverageText}>
+              {t('trips.checklist.unverifiedDestinations', {
+                countries: formatList(unverified, getLocale()),
+              })}
+            </Text>
+          </View>
+        ) : null}
+
+        {showOptIn ? (
+          <ReminderOptInCard
+            onEnable={enableReminders}
+            onDismiss={dismissReminders}
+            busy={optInBusy}
+          />
+        ) : null}
+
+        <View
+          style={styles.list}
+          onLayout={(event) => {
+            listTopRef.current = event.nativeEvent.layout.y;
+          }}>
           {sections.length === 0 ? (
-            <Text style={styles.hint}>Sua checklist aparece aqui assim que ficar pronta.</Text>
+            <Text style={styles.hint}>{t('trips.checklist.empty')}</Text>
           ) : (
             sections.map((section) => (
-              <AccordionSection
+              <View
                 key={section.category}
-                title={CATEGORY_LABELS[section.category]}
-                icon={
-                  <Ionicons
-                    name={CATEGORY_ICONS[section.category]}
-                    size={18}
-                    color={colors.primary}
-                  />
-                }
-                progress={{ done: section.done, total: section.total }}
-                // Categoria só de informativos não tem fração: uma barra em
-                // zero pareceria trabalho pendente.
-                meta={`${section.items.length} ${section.items.length === 1 ? 'item' : 'itens'}`}
-                expanded={expanded.has(section.category)}
-                onToggle={() => toggleSection(section.category)}>
-                {section.items.map((requirement, index) => (
-                  <RequirementRow
-                    key={requirement.id}
-                    requirement={requirement}
-                    first={index === 0}
-                    onToggle={() => void toggle(requirement)}
-                    onOpen={() => openRequirement(requirement)}
-                  />
-                ))}
-              </AccordionSection>
+                onLayout={(event) => {
+                  sectionTopsRef.current.set(section.category, event.nativeEvent.layout.y);
+                  consumeScrollTarget(section.category);
+                }}>
+                <AccordionSection
+                  title={categoryLabel(section.category)}
+                  icon={
+                    <Ionicons
+                      name={CATEGORY_ICONS[section.category]}
+                      size={18}
+                      color={colors.primary}
+                    />
+                  }
+                  progress={{ done: section.done, total: section.total }}
+                  // Categoria só de informativos não tem fração: uma barra em
+                  // zero pareceria trabalho pendente.
+                  meta={t('trips.checklist.itemCount', { count: section.items.length })}
+                  expanded={expanded.has(section.category)}
+                  onToggle={() => toggleSection(section.category)}>
+                  {section.items.map((requirement, index) => (
+                    <RequirementRow
+                      key={requirement.id}
+                      requirement={requirement}
+                      first={index === 0}
+                      onToggle={() => void toggle(requirement)}
+                      onOpen={() => openRequirement(requirement)}
+                    />
+                  ))}
+                </AccordionSection>
+              </View>
             ))
           )}
         </View>
 
         {progress.total === 0 ? (
-          <Button label="Atualizar checklist" variant="ghost" onPress={() => void load()} />
+          <Button
+            label={t('trips.checklist.refresh')}
+            variant="ghost"
+            onPress={() => void load()}
+          />
         ) : null}
       </ScrollView>
 
@@ -384,17 +662,16 @@ function RequiredLine({ progress }: { progress: ReturnType<typeof computeTripPro
   if (progress.isReady) {
     return (
       <Text style={[styles.progressPending, { color: colors.primary }]}>
-        ✓ Tudo certo com os itens obrigatórios!
+        {t('trips.checklist.allRequiredDone')}
       </Text>
     );
   }
 
-  const pending = formatPendingRequiredLabel(progress);
-  if (!pending) return null;
+  if (progress.requiredPending === 0) return null;
 
   return (
     <Text style={[styles.progressPending, { color: priorityColors.required }]}>
-      {pending} {progress.requiredPending === 1 ? 'pendente' : 'pendentes'}
+      {t('trips.requiredPendingCount', { count: progress.requiredPending })}
     </Text>
   );
 }
@@ -416,7 +693,7 @@ function RequirementRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Abrir ${requirement.title}`}
+      accessibilityLabel={t('a11y.openItem', { name: requirement.title })}
       onPress={onOpen}
       style={({ pressed }) => [
         styles.item,
@@ -426,11 +703,10 @@ function RequirementRow({
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: requirement.completed }}
-        accessibilityLabel={
-          requirement.completed
-            ? `Desmarcar ${requirement.title}`
-            : `Marcar ${requirement.title} como verificado`
-        }
+        accessibilityLabel={t(
+          requirement.completed ? 'a11y.requirement.uncheck' : 'a11y.requirement.check',
+          { title: requirement.title },
+        )}
         hitSlop={8}
         onPress={onToggle}
         style={[styles.checkbox, requirement.completed && styles.checkboxDone]}>
@@ -449,7 +725,7 @@ function RequirementRow({
         <View style={styles.itemMeta}>
           <View style={[styles.dot, { backgroundColor: tone }]} />
           <Text style={[styles.priority, { color: tone }]}>
-            {PRIORITY_LABELS[requirement.priority]}
+            {priorityLabel(requirement.priority)}
           </Text>
           {requirement.country_code ? (
             <CountryFlag code={requirement.country_code} size={13} />
@@ -556,6 +832,17 @@ const styles = StyleSheet.create({
     backgroundColor: prioritySoftColors.recommended,
     borderRadius: radius.md,
     padding: spacing.md,
+  },
+  coverageNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  coverageText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flex: 1,
   },
   list: { gap: spacing.md },
   item: {

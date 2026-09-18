@@ -5,7 +5,7 @@ import {
   checkPassword,
   getPasswordStrength,
   isPasswordValid,
-  PASSWORD_RULES,
+  PASSWORD_RULE_ORDER,
 } from '../password.ts';
 
 /** A validação da tela precisa concordar com a do Supabase Auth. */
@@ -101,7 +101,7 @@ test('força e validade são independentes', () => {
 });
 
 test('a lista exibida cobre exatamente os requisitos avaliados', () => {
-  const listed = PASSWORD_RULES.map((rule) => rule.id).sort();
+  const listed = [...PASSWORD_RULE_ORDER].sort();
   const evaluated = Object.keys(checkPassword('qualquer')).sort();
 
   assert.deepEqual(listed, evaluated);

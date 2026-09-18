@@ -4,6 +4,7 @@ import { getQueryParams } from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
+import { AuthUiError } from '@/features/auth/auth-errors';
 import { authRedirectUri } from '@/features/auth/auth-redirect';
 import { DeleteAccountError, type DeleteAccountFailure } from '@/features/auth/delete-account';
 import { normalizeEmail } from '@/features/auth/email';
@@ -33,7 +34,7 @@ export async function createSessionFromUrl(url: string) {
   const { params, errorCode } = getQueryParams(url);
 
   if (errorCode) {
-    throw new Error(`Falha na autenticação: ${errorCode}`);
+    throw new AuthUiError('auth.error.callbackFailed', { code: errorCode });
   }
 
   const { code, access_token, refresh_token } = params;
@@ -77,7 +78,7 @@ async function signInWithOAuthBrowser(provider: OAuthProvider) {
     options: { redirectTo: authRedirectUri, skipBrowserRedirect: true },
   });
   if (error) throw error;
-  if (!data.url) throw new Error('O Supabase não retornou a URL de autenticação.');
+  if (!data.url) throw new AuthUiError('auth.error.missingAuthUrl');
 
   if (__DEV__) {
     // É esta string exata que precisa estar em Supabase → Redirect URLs.
@@ -131,7 +132,7 @@ export const authService = {
       });
 
       if (!credential.identityToken) {
-        throw new Error('A Apple não retornou o identity token.');
+        throw new AuthUiError('auth.error.missingAppleToken');
       }
 
       const { data, error } = await supabase.auth.signInWithIdToken({

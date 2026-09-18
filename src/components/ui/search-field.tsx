@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 type SearchFieldProps = Omit<TextInputProps, 'style'> & {
@@ -14,7 +15,10 @@ type SearchFieldProps = Omit<TextInputProps, 'style'> & {
 };
 
 /** Campo de busca com lupa, no padrão da referência. */
-export function SearchField({ placeholder = 'Buscar...', ...rest }: SearchFieldProps) {
+export function SearchField({
+  placeholder = t('common.search.placeholder'),
+  ...rest
+}: SearchFieldProps) {
   return (
     <View style={styles.wrapper}>
       <Ionicons name="search" size={18} color={colors.textSecondary} />

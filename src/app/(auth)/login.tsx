@@ -10,6 +10,7 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { useAuth } from '@/features/auth/auth-context';
 import { getRedirectDiagnostics } from '@/features/auth/auth-redirect';
 import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
+import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 export default function LoginScreen() {
@@ -38,16 +39,14 @@ export default function LoginScreen() {
             <Ionicons name="airplane" size={34} color={colors.contrastText} />
           </View>
           <Text style={styles.title}>TripReady</Text>
-          <Text style={styles.subtitle}>
-            Tudo o que você precisa antes de viajar, organizado em um só lugar.
-          </Text>
+          <Text style={styles.subtitle}>{t('auth.login.tagline')}</Text>
         </View>
 
         <View style={styles.section}>
-          <SectionLabel>Entrar</SectionLabel>
+          <SectionLabel>{t('auth.login.section.signIn')}</SectionLabel>
           <Card>
             <ListRow
-              label="Continuar com Google"
+              label={t('auth.login.continueWithGoogle')}
               icon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
               iconBackground="#EFF3FE"
               onPress={() => handle('google')}
@@ -55,7 +54,7 @@ export default function LoginScreen() {
               disabled={isSigningIn && pending !== 'google'}
             />
             <ListRow
-              label="Continuar com Apple"
+              label={t('auth.login.continueWithApple')}
               icon={<Ionicons name="logo-apple" size={18} color={colors.contrastText} />}
               iconBackground={colors.contrast}
               onPress={() => handle('apple')}
@@ -66,7 +65,7 @@ export default function LoginScreen() {
                 autenticado no Expo Go. Remover junto com as telas
                 email-login / sign-up / forgot-password. */}
             <ListRow
-              label="Entrar com e-mail"
+              label={t('auth.login.continueWithEmail')}
               icon={<Ionicons name="mail" size={18} color={colors.primary} />}
               onPress={() => router.push('/email-login')}
               disabled={isSigningIn}
@@ -81,7 +80,7 @@ export default function LoginScreen() {
           ) : null}
         </View>
 
-        <LegalConsentNotice lead="Ao continuar" />
+        <LegalConsentNotice variant="continue" />
 
         {/* Bloco só de desenvolvimento: mostra a URL exata que precisa estar em
             Supabase → Authentication → URL Configuration → Redirect URLs. */}

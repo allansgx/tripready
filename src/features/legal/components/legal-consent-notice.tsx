@@ -1,29 +1,52 @@
 import { useRouter } from 'expo-router';
+import { Fragment, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text } from 'react-native';
 
+import { t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
-/** Aviso de aceite com os dois links; `lead` completa a frase com a ação da tela. */
-export function LegalConsentNotice({ lead }: { lead: string }) {
+const TEMPLATE_KEYS = {
+  continue: 'legal.consent.continue',
+  createAccount: 'legal.consent.createAccount',
+} as const;
+
+/** Troca `{nome}` por um nó React — os links, aqui — sem quebrar a frase em pedaços. */
+function renderWithParts(template: string, parts: Record<string, ReactNode>): ReactNode {
+  return template.split(/(\{\w+\})/g).map((token, index) => {
+    const match = /^\{(\w+)\}$/.exec(token);
+    const part = match ? parts[match[1]] : undefined;
+    return <Fragment key={index}>{part ?? token}</Fragment>;
+  });
+}
+
+/**
+ * Aviso de aceite com os dois links. `variant` escolhe a frase inteira no
+ * idioma ativo — a ação da tela não é mais montada por concatenação, porque a
+ * ordem das palavras muda de um idioma para o outro.
+ */
+export function LegalConsentNotice({ variant }: { variant: keyof typeof TEMPLATE_KEYS }) {
   const router = useRouter();
 
   return (
     <Text style={styles.notice}>
-      {lead}, você concorda com os{' '}
-      <Text
-        style={styles.link}
-        accessibilityRole="link"
-        onPress={() => router.push('/legal/termos')}>
-        Termos de uso
-      </Text>{' '}
-      e com a{' '}
-      <Text
-        style={styles.link}
-        accessibilityRole="link"
-        onPress={() => router.push('/legal/privacidade')}>
-        Política de privacidade
-      </Text>
-      .
+      {renderWithParts(t(TEMPLATE_KEYS[variant]), {
+        terms: (
+          <Text
+            style={styles.link}
+            accessibilityRole="link"
+            onPress={() => router.push('/legal/termos')}>
+            {t('legal.termsOfUse.linkLabel')}
+          </Text>
+        ),
+        privacy: (
+          <Text
+            style={styles.link}
+            accessibilityRole="link"
+            onPress={() => router.push('/legal/privacidade')}>
+            {t('legal.privacyPolicy.linkLabel')}
+          </Text>
+        ),
+      })}
     </Text>
   );
 }

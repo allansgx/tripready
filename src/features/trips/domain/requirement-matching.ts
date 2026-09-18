@@ -1,3 +1,6 @@
+// Caminho relativo, e não o alias `@/`: é o que deixa o módulo carregar no
+// `node --test`, que resolve pelo arquivo real. Só o tipo — sem custo em runtime.
+import type { Locale } from '../../../i18n/locales.ts';
 import type {
   RequirementCategory,
   RequirementPriority,
@@ -156,6 +159,7 @@ export type CatalogTemplate = {
 
 /** Exigência de visto para um par (passaporte, destino), com fonte e vigência. */
 export type VisaRule = {
+  id: string;
   passportCountryCode: string;
   destinationCountryCode: string;
   requirementType: VisaRequirementType;
@@ -195,6 +199,8 @@ export type ResolvedRequirement = {
   template_id: string;
   group_id: string | null;
   country_code: string | null;
+  /** Regra de visto que originou o item; nula nos demais escopos. */
+  visa_rule_id: string | null;
   title: string;
   description: string | null;
   priority: RequirementPriority;
@@ -365,14 +371,15 @@ function matchesSeason(template: CatalogTemplate, target: Target, trip: TripCont
   );
 }
 
-function renderTitle(
-  template: CatalogTemplate,
+/** Troca o marcador `{country}` pelo nome do país no idioma ativo. */
+export function renderTitle(
+  title: string,
   countryCode: string | null,
   countryName: (code: string) => string,
 ): string {
-  if (!template.title.includes(MARKER_COUNTRY)) return template.title;
-  if (!countryCode) return template.title.replace(MARKER_COUNTRY, '').trim();
-  return template.title.replace(MARKER_COUNTRY, countryName(countryCode));
+  if (!title.includes(MARKER_COUNTRY)) return title;
+  if (!countryCode) return title.replace(MARKER_COUNTRY, '').trim();
+  return title.replace(MARKER_COUNTRY, countryName(countryCode));
 }
 
 /** Requisitos aplicáveis a uma viagem, no máximo um item por regra e país. */
@@ -412,7 +419,8 @@ export function resolveTripRequirements(
         template_id: template.id,
         group_id: target.group?.id ?? null,
         country_code: target.countryCode,
-        title: renderTitle(template, target.countryCode, options.countryName),
+        visa_rule_id: target.rule?.id ?? null,
+        title: renderTitle(template.title, target.countryCode, options.countryName),
         // A observação oficial da regra é mais específica que o texto do template.
         description: target.rule?.notes ?? template.description,
         priority: template.priority,
@@ -473,7 +481,8 @@ export type ChecklistSectionKind = 'trip' | 'group' | 'country';
 export type ChecklistSection<T> = {
   key: string;
   kind: ChecklistSectionKind;
-  label: string;
+  /** Nulo na seção `'trip'` — ver `RequirementScopeDescription.label`. */
+  label: string | null;
   /** Preenchido apenas em seções de país, para a tela mostrar a bandeira. */
   countryCode: string | null;
   items: T[];
@@ -487,8 +496,6 @@ export type ScopedRequirement = {
   created_at: string;
   destination_groups?: { name: string } | null;
 };
-
-const TRIP_SECTION_LABEL = 'Toda a viagem';
 
 // Mesma hierarquia que decide o progresso da viagem.
 const PRIORITY_ORDER: Record<RequirementPriority, number> = {
@@ -530,7 +537,12 @@ export type RequirementScopeDescription = {
   kind: ChecklistSectionKind;
   /** Identifica a seção do item; itens de mesma origem compartilham a chave. */
   key: string;
-  label: string;
+  /**
+   * Nulo quando `kind` é `'trip'`: o texto ("Toda a viagem") sai do idioma
+   * ativo, não do dado — `t('trips.checklist.wholeTrip')`. Nos outros dois
+   * casos vem do banco (nome do país ou do grupo) e permanece como está.
+   */
+  label: string | null;
   /** Preenchido apenas em itens de país, para a tela mostrar a bandeira. */
   countryCode: string | null;
 };
@@ -558,18 +570,23 @@ export function describeRequirementScope<T extends ScopedRequirement>(
     };
   }
 
-  return { kind: 'trip', key: 'trip', label: TRIP_SECTION_LABEL, countryCode: null };
+  return { kind: 'trip', key: 'trip', label: null, countryCode: null };
 }
 
-/** Agrupa a checklist por origem. Seções nascem dos itens, nunca vazias. */
+/**
+ * Agrupa a checklist por origem. Seções nascem dos itens, nunca vazias.
+ * `locale` só decide a ordem alfabética entre grupos e países — o rótulo da
+ * viagem inteira é resolvido pela tela a partir de `kind === 'trip'`.
+ */
 export function groupRequirementsByScope<T extends ScopedRequirement>(
   requirements: readonly T[],
   countryName: (code: string) => string,
+  locale: Locale,
 ): ChecklistSection<T>[] {
   const trip: ChecklistSection<T> = {
     key: 'trip',
     kind: 'trip',
-    label: TRIP_SECTION_LABEL,
+    label: null,
     countryCode: null,
     items: [],
   };
@@ -608,8 +625,10 @@ export function groupRequirementsByScope<T extends ScopedRequirement>(
     trip.items.push(requirement);
   }
 
+  // Só grupos e países chegam aqui, e os dois sempre têm `label` — a seção da
+  // viagem inteira (`label: null`) nunca entra nestas duas listas.
   const byLabel = (a: ChecklistSection<T>, b: ChecklistSection<T>) =>
-    a.label.localeCompare(b.label, 'pt-BR');
+    (a.label ?? '').localeCompare(b.label ?? '', locale);
 
   const sections = [
     ...(trip.items.length > 0 ? [trip] : []),
@@ -668,4 +687,75 @@ export function groupRequirementsByCategory<T extends CategorizedRequirement>(
   }
 
   return sections;
+}
+
+/** Título e descrição de um template, já no idioma pedido (com reserva em pt-BR). */
+export type TranslatedTemplate = { title: string; description: string | null };
+
+/**
+ * O catálogo traduzido de que a leitura precisa: só o que a tela já carregou —
+ * nunca dispara requisição por conta própria (§5.5 do plano de i18n).
+ */
+export type DisplayCatalog = {
+  templates: ReadonlyMap<string, TranslatedTemplate>;
+  /** Observação de `visa_rules`, já no idioma pedido. Ausente quando não buscada. */
+  visaRuleNotes: ReadonlyMap<string, string | null>;
+};
+
+/** O que a leitura de um item precisa, antes da tradução do catálogo. */
+export type DisplayableRequirement = {
+  template_id: string | null;
+  visa_rule_id: string | null;
+  country_code: string | null;
+  title: string;
+  description: string | null;
+};
+
+/**
+ * Texto do item no idioma ativo (§8.3 do plano de i18n): observação de visto
+ * traduzida, senão o template traduzido, senão o que ficou gravado em
+ * `trip_requirements` — que nunca falta, porque a gravação sempre grava pt-BR.
+ * Item sem `template_id` (criado à mão) ou fora do catálogo em cache usa
+ * sempre o texto gravado.
+ */
+export function resolveRequirementText(
+  item: DisplayableRequirement,
+  catalog: DisplayCatalog,
+  countryName: (code: string) => string,
+): { title: string; description: string | null } {
+  const template = item.template_id ? catalog.templates.get(item.template_id) : undefined;
+  if (!template) return { title: item.title, description: item.description };
+
+  const notes = item.visa_rule_id ? catalog.visaRuleNotes.get(item.visa_rule_id) : undefined;
+
+  return {
+    title: renderTitle(template.title, item.country_code, countryName),
+    description: notes ?? template.description ?? item.description,
+  };
+}
+
+/** Seção sem nada por verificar — informativos incluídos. */
+export function isSectionComplete<T extends CategorizedRequirement>(
+  section: ChecklistCategorySection<T>,
+): boolean {
+  return section.items.every((item) => item.completed);
+}
+
+/**
+ * Para onde a checklist continua quando uma seção fecha completa: a próxima com
+ * item pendente, voltando ao começo se as de baixo já estiverem verificadas.
+ */
+export function nextPendingCategory<T extends CategorizedRequirement>(
+  sections: readonly ChecklistCategorySection<T>[],
+  after: RequirementCategory,
+): RequirementCategory | null {
+  const start = sections.findIndex((section) => section.category === after);
+  if (start < 0) return null;
+
+  for (let step = 1; step <= sections.length; step++) {
+    const section = sections[(start + step) % sections.length];
+    if (!isSectionComplete(section)) return section.category;
+  }
+
+  return null;
 }

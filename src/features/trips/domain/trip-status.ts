@@ -10,8 +10,7 @@ type DateRange = Pick<Trip, 'start_date' | 'end_date'>;
 
 // Partes locais do `Date`, e não `toISOString()`: em fuso negativo o UTC
 // devolveria o dia anterior à noite.
-export function todayISO(): string {
-  const now = new Date();
+export function todayISO(now: Date = new Date()): string {
   const month = `${now.getMonth() + 1}`.padStart(2, '0');
   const day = `${now.getDate()}`.padStart(2, '0');
   return `${now.getFullYear()}-${month}-${day}`;
@@ -57,12 +56,23 @@ export function daysUntilStart(trip: DateRange, today: string = todayISO()): num
   return daysBetween(today, trip.start_date);
 }
 
-/** O momento da viagem no card da lista: uma frase curta e um tom para a cor. */
+/**
+ * O momento da viagem no card da lista: o tom decide a cor, `kind` decide a
+ * frase. Nenhum texto aqui — `days`/`months` só existem para os dois `kind`
+ * que precisam de número, e a tela resolve `t('trip.moment.' + kind, ...)`.
+ */
 export type TripMomentTone = 'ongoing' | 'imminent' | 'upcoming' | 'completed';
+
+export type TripMomentKind =
+  'completed' | 'boardingToday' | 'ongoing' | 'undated' | 'tomorrow' | 'daysUntil' | 'monthsUntil';
 
 export type TripMoment = {
   tone: TripMomentTone;
-  label: string;
+  kind: TripMomentKind;
+  /** Só em `daysUntil`. */
+  days?: number;
+  /** Só em `monthsUntil`. */
+  months?: number;
 };
 
 /** Até aqui a espera se conta em dias; acima disso, em meses. */
@@ -73,26 +83,26 @@ const DAYS_PER_MONTH = 30.44;
 
 export function buildTripMoment(trip: DateRange, today: string = todayISO()): TripMoment {
   if (getTripStatus(trip, today) === 'completed') {
-    return { tone: 'completed', label: 'Concluída' };
+    return { tone: 'completed', kind: 'completed' };
   }
 
   const days = daysUntilStart(trip, today);
 
   // Antes do estado: para `getTripStatus` a viagem já começou.
-  if (days === 0) return { tone: 'imminent', label: 'Embarque hoje' };
+  if (days === 0) return { tone: 'imminent', kind: 'boardingToday' };
 
   if (getTripStatus(trip, today) === 'ongoing') {
-    return { tone: 'ongoing', label: 'Viagem em andamento' };
+    return { tone: 'ongoing', kind: 'ongoing' };
   }
 
   // Sem data não há espera a anunciar, então a faixa diz o que fazer a respeito.
-  if (days === null) return { tone: 'upcoming', label: 'Escolha as datas' };
+  if (days === null) return { tone: 'upcoming', kind: 'undated' };
 
-  if (days === 1) return { tone: 'imminent', label: 'Começa amanhã' };
-  if (days <= MOMENT_DAYS_WINDOW) return { tone: 'upcoming', label: `Começa em ${days} dias` };
+  if (days === 1) return { tone: 'imminent', kind: 'tomorrow' };
+  if (days <= MOMENT_DAYS_WINDOW) return { tone: 'upcoming', kind: 'daysUntil', days };
 
   const months = Math.round(days / DAYS_PER_MONTH);
-  return { tone: 'upcoming', label: `Começa em ${months} ${months === 1 ? 'mês' : 'meses'}` };
+  return { tone: 'upcoming', kind: 'monthsUntil', months };
 }
 
 /** Onde a pessoa está dentro da viagem: dia 3 de 7, faltando 4 para voltar. */
@@ -120,16 +130,25 @@ export function buildTripDayCount(
   return { day: elapsed + 1, total: span + 1, remaining: left };
 }
 
-/** Legenda do retorno, em minúsculas porque é apoio e não manchete. */
-export function formatReturnCountdown(dayCount: TripDayCount): string {
-  if (dayCount.remaining === 0) return 'último dia';
-  if (dayCount.remaining === 1) return 'volta amanhã';
-  return `volta em ${dayCount.remaining} dias`;
+/** O que dizer sobre o retorno; a tela resolve `t('trip.returnCountdown.' + kind, ...)`. */
+export type ReturnCountdownKind = 'lastDay' | 'tomorrow' | 'daysLeft';
+
+export type ReturnCountdown = {
+  kind: ReturnCountdownKind;
+  /** Só em `daysLeft`. */
+  days?: number;
+};
+
+export function describeReturnCountdown(dayCount: TripDayCount): ReturnCountdown {
+  if (dayCount.remaining === 0) return { kind: 'lastDay' };
+  if (dayCount.remaining === 1) return { kind: 'tomorrow' };
+  return { kind: 'daysLeft', days: dayCount.remaining };
 }
 
 /**
- * A contagem da Home. O `kind` decide a forma sem reinterpretar textos: `days`
- * e `ongoing` têm número grande, os demais trazem uma frase pronta.
+ * A contagem da Home. Nenhuma frase: `kind` decide a forma
+ * (`days`/`ongoing` têm número grande, os demais viram frase pronta na tela),
+ * e `totalDays` só existe para a viagem em andamento com término definido.
  */
 export type TripCountdownKind = 'days' | 'tomorrow' | 'today' | 'ongoing' | 'undated';
 
@@ -137,10 +156,8 @@ export type TripCountdown = {
   kind: TripCountdownKind;
   /** Dias que faltam em `days`, dia atual da viagem em `ongoing`. */
   days: number | null;
-  /** Frase grande quando não há número a mostrar. */
-  message: string | null;
-  /** Legenda de apoio, abaixo do número ou da frase. */
-  label: string | null;
+  /** Só em `ongoing`, quando a viagem tem término definido. */
+  totalDays?: number;
 };
 
 export function buildTripCountdown(trip: DateRange, today: string = todayISO()): TripCountdown {
@@ -148,47 +165,27 @@ export function buildTripCountdown(trip: DateRange, today: string = todayISO()):
 
   // Antes do estado: para `getTripStatus` a viagem já começou.
   if (days === 0) {
-    return { kind: 'today', days: null, message: 'Chegou a hora!', label: 'Boa viagem!' };
+    return { kind: 'today', days: null };
   }
 
   // Com a viagem acontecendo a contagem inverte: o número passa a ser o dia.
   if (getTripStatus(trip, today) === 'ongoing') {
     const dayCount = buildTripDayCount(trip, today);
     if (dayCount) {
-      return {
-        kind: 'ongoing',
-        days: dayCount.day,
-        message: null,
-        label: `de ${dayCount.total} dias`,
-      };
+      return { kind: 'ongoing', days: dayCount.day, totalDays: dayCount.total };
     }
 
     // Viagem sem término definido: não há "de quantos" a dizer.
-    return {
-      kind: 'ongoing',
-      days: null,
-      message: 'Aproveite!',
-      label: 'Viagem em andamento',
-    };
+    return { kind: 'ongoing', days: null };
   }
 
   if (days === null) {
-    return {
-      kind: 'undated',
-      days: null,
-      message: 'Quase lá...',
-      label: 'Escolha as datas para ver a contagem',
-    };
+    return { kind: 'undated', days: null };
   }
 
   if (days === 1) {
-    return {
-      kind: 'tomorrow',
-      days: null,
-      message: 'Falta 1 dia',
-      label: 'Últimos preparativos',
-    };
+    return { kind: 'tomorrow', days: null };
   }
 
-  return { kind: 'days', days, message: null, label: 'dias para viajar' };
+  return { kind: 'days', days };
 }

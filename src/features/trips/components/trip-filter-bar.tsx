@@ -1,13 +1,14 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import type { TripFilter } from '@/features/trips/domain/trip-summary';
+import { t, type MessageKey } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
-const FILTERS: readonly { value: TripFilter; label: string }[] = [
-  { value: 'all', label: 'Todas' },
-  { value: 'ongoing', label: 'Em andamento' },
-  { value: 'upcoming', label: 'Futuras' },
-  { value: 'completed', label: 'Concluídas' },
+const FILTERS: readonly { value: TripFilter; labelKey: MessageKey }[] = [
+  { value: 'all', labelKey: 'trips.filter.all' },
+  { value: 'ongoing', labelKey: 'trips.filter.ongoing' },
+  { value: 'upcoming', labelKey: 'trips.filter.upcoming' },
+  { value: 'completed', labelKey: 'trips.filter.completed' },
 ];
 
 /**
@@ -28,13 +29,14 @@ export function TripFilterBar({
       contentContainerStyle={styles.row}>
       {FILTERS.map((filter) => {
         const selected = filter.value === value;
+        const label = t(filter.labelKey);
 
         return (
           <Pressable
             key={filter.value}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            accessibilityLabel={`Filtrar por ${filter.label.toLowerCase()}`}
+            accessibilityLabel={t('a11y.tripFilter.filterBy', { filter: label.toLowerCase() })}
             onPress={() => onChange(filter.value)}
             style={({ pressed }) => [
               styles.chip,
@@ -42,7 +44,7 @@ export function TripFilterBar({
               pressed && !selected && styles.chipPressed,
             ]}>
             <Text style={[styles.label, selected && styles.labelSelected]} numberOfLines={1}>
-              {filter.label}
+              {label}
             </Text>
           </Pressable>
         );

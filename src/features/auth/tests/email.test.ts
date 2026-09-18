@@ -3,28 +3,25 @@ import test from 'node:test';
 
 import { normalizeEmail, validateEmail } from '../email.ts';
 
-const EMPTY = 'Digite seu e-mail.';
-const INVALID = 'Digite um e-mail válido.';
-
 test('campo vazio pede o e-mail', () => {
-  assert.equal(validateEmail(''), EMPTY);
-  assert.equal(validateEmail('   '), EMPTY);
-  assert.equal(validateEmail('\n\t'), EMPTY);
+  assert.deepEqual(validateEmail(''), { kind: 'empty' });
+  assert.deepEqual(validateEmail('   '), { kind: 'empty' });
+  assert.deepEqual(validateEmail('\n\t'), { kind: 'empty' });
 });
 
 test('endereço incompleto é recusado', () => {
-  assert.equal(validateEmail('voce'), INVALID);
-  assert.equal(validateEmail('voce@'), INVALID);
-  assert.equal(validateEmail('@email.com'), INVALID);
-  assert.equal(validateEmail('voce@email'), INVALID);
-  assert.equal(validateEmail('voce@email.c'), INVALID);
+  assert.deepEqual(validateEmail('voce'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('voce@'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('@email.com'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('voce@email'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('voce@email.c'), { kind: 'invalid' });
 });
 
 test('espaço no meio e arroba repetida são recusados', () => {
-  assert.equal(validateEmail('vo ce@email.com'), INVALID);
-  assert.equal(validateEmail('voce@em ail.com'), INVALID);
-  assert.equal(validateEmail('voce@@email.com'), INVALID);
-  assert.equal(validateEmail('voce@email.com extra'), INVALID);
+  assert.deepEqual(validateEmail('vo ce@email.com'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('voce@em ail.com'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('voce@@email.com'), { kind: 'invalid' });
+  assert.deepEqual(validateEmail('voce@email.com extra'), { kind: 'invalid' });
 });
 
 test('endereço comum é aceito', () => {
@@ -40,17 +37,17 @@ test('espaço nas pontas não invalida', () => {
 });
 
 test('erro de digitação em provedor conhecido é recusado com a correção', () => {
-  assert.equal(validateEmail('allan@gmai.com'), 'Você quis dizer @gmail.com?');
-  assert.equal(validateEmail('allan@gmial.com'), 'Você quis dizer @gmail.com?');
-  assert.equal(validateEmail('allan@gmail.con'), 'Você quis dizer @gmail.com?');
-  assert.equal(validateEmail('allan@hotmial.com'), 'Você quis dizer @hotmail.com?');
-  assert.equal(validateEmail('allan@outlok.com'), 'Você quis dizer @outlook.com?');
-  assert.equal(validateEmail('allan@yaho.com'), 'Você quis dizer @yahoo.com?');
-  assert.equal(validateEmail('allan@iclod.com'), 'Você quis dizer @icloud.com?');
+  assert.deepEqual(validateEmail('allan@gmai.com'), { kind: 'typo', suggestion: 'gmail.com' });
+  assert.deepEqual(validateEmail('allan@gmial.com'), { kind: 'typo', suggestion: 'gmail.com' });
+  assert.deepEqual(validateEmail('allan@gmail.con'), { kind: 'typo', suggestion: 'gmail.com' });
+  assert.deepEqual(validateEmail('allan@hotmial.com'), { kind: 'typo', suggestion: 'hotmail.com' });
+  assert.deepEqual(validateEmail('allan@outlok.com'), { kind: 'typo', suggestion: 'outlook.com' });
+  assert.deepEqual(validateEmail('allan@yaho.com'), { kind: 'typo', suggestion: 'yahoo.com' });
+  assert.deepEqual(validateEmail('allan@iclod.com'), { kind: 'typo', suggestion: 'icloud.com' });
 });
 
 test('a correção não depende da caixa nem de espaço', () => {
-  assert.equal(validateEmail('  Allan@GMAI.com '), 'Você quis dizer @gmail.com?');
+  assert.deepEqual(validateEmail('  Allan@GMAI.com '), { kind: 'typo', suggestion: 'gmail.com' });
 });
 
 test('o provedor escrito certo passa', () => {

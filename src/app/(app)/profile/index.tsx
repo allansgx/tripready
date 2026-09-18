@@ -14,6 +14,9 @@ import { useAuth } from '@/features/auth/auth-context';
 import { DeleteAccountModal } from '@/features/auth/delete-account-modal';
 import { getAvatarInitial, getAvatarUrl, getDisplayName } from '@/features/auth/user-profile';
 import { PassportsSection } from '@/features/passports/passports-section';
+import { chooseLocale, getDeviceLocale, t, useLocaleChoice, type Locale } from '@/i18n';
+import { LANGUAGE_NAMES, SUPPORTED_LOCALES } from '@/i18n/locales';
+import { profilesService } from '@/services';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 export default function ProfileScreen() {
@@ -30,20 +33,20 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-        <Text style={styles.title}>Perfil</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
 
         <View style={styles.identity}>
           <Avatar url={getAvatarUrl(user)} initial={getAvatarInitial(user)} size={56} />
           <View style={styles.identityTexts}>
             <Text style={styles.name} numberOfLines={1}>
-              {getDisplayName(user)}
+              {getDisplayName(user, t('auth.profile.defaultDisplayName'))}
             </Text>
             <Text style={styles.email} numberOfLines={1}>
               {user?.email ?? user?.id}
             </Text>
           </View>
           <Button
-            label="Editar"
+            label={t('profile.editButton')}
             variant="soft"
             size="sm"
             onPress={() => router.push('/profile/edit')}
@@ -52,16 +55,18 @@ export default function ProfileScreen() {
 
         <PassportsSection />
 
+        <LanguageSection />
+
         <View>
-          <SectionLabel>Legal</SectionLabel>
+          <SectionLabel>{t('profile.section.legal')}</SectionLabel>
           <Card>
             <ListRow
-              label="Política de Privacidade"
+              label={t('profile.privacyPolicy')}
               icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />}
               onPress={() => router.push('/legal/privacidade')}
             />
             <ListRow
-              label="Termos de Uso"
+              label={t('profile.termsOfUse')}
               icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
               onPress={() => router.push('/legal/termos')}
             />
@@ -69,10 +74,10 @@ export default function ProfileScreen() {
         </View>
 
         <View>
-          <SectionLabel>Conta</SectionLabel>
+          <SectionLabel>{t('profile.section.account')}</SectionLabel>
           <Card>
             <ListRow
-              label="Sair"
+              label={t('profile.signOut')}
               icon={<Ionicons name="log-out-outline" size={18} color={colors.danger} />}
               iconBackground="#FDECEA"
               right={null}
@@ -85,7 +90,7 @@ export default function ProfileScreen() {
             outras da seção — é a saída definitiva. */}
         <View style={styles.dangerZone}>
           <Button
-            label="Excluir conta"
+            label={t('profile.deleteAccount')}
             variant="outline"
             tone="danger"
             onPress={() => setIsDeleteOpen(true)}
@@ -101,6 +106,45 @@ export default function ProfileScreen() {
         onConfirm={startDeletion}
       />
     </SafeAreaView>
+  );
+}
+
+/**
+ * A troca vale na hora e é gravada depois: a escolha local é quem manda no que
+ * a tela desenha, e o perfil só a carrega para outro aparelho. "Padrão do
+ * dispositivo" apaga a escolha — é o único jeito de desfazê-la.
+ */
+function LanguageSection() {
+  const { user } = useAuth();
+  const choice = useLocaleChoice();
+
+  function select(next: Locale | null) {
+    if (next === choice) return;
+
+    chooseLocale(next);
+    if (user) void profilesService.setLocale(user.id, next).catch(() => {});
+  }
+
+  return (
+    <View>
+      <SectionLabel>{t('profile.language.title')}</SectionLabel>
+      <Card>
+        {SUPPORTED_LOCALES.map((locale) => (
+          <ListRow
+            key={locale}
+            label={LANGUAGE_NAMES[locale]}
+            selected={choice === locale}
+            onPress={() => select(locale)}
+          />
+        ))}
+        <ListRow
+          label={t('profile.language.system')}
+          description={LANGUAGE_NAMES[getDeviceLocale()]}
+          selected={choice === null}
+          onPress={() => select(null)}
+        />
+      </Card>
+    </View>
   );
 }
 

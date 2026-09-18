@@ -7,6 +7,8 @@ import {
   groupRequirementsByCategory,
   groupRequirementsByScope,
   isDomesticTrip,
+  isSectionComplete,
+  nextPendingCategory,
   resolveTripRequirements,
   seasonAt,
   selectNextRequirement,
@@ -74,6 +76,7 @@ function visaRule(
     Pick<VisaRule, 'passportCountryCode' | 'destinationCountryCode' | 'requirementType'>,
 ): VisaRule {
   return {
+    id: 'visa-rule-1',
     sourceName: 'Órgão oficial',
     sourceUrl: 'https://exemplo.gov/vistos',
     notes: null,
@@ -898,12 +901,13 @@ test('a checklist é agrupada por viagem, grupo e país, sem seção vazia', () 
       scoped({ group_id: 'g-desconhecido' }),
     ],
     (code) => (code === 'HU' ? 'Hungria' : 'Áustria'),
+    'pt-BR',
   );
 
   assert.deepEqual(
     sections.map((section) => [section.kind, section.label, section.items.length]),
     [
-      ['trip', 'Toda a viagem', 2],
+      ['trip', null, 2],
       ['group', 'Espaço Schengen', 1],
       ['country', 'Áustria', 1],
       ['country', 'Hungria', 1],
@@ -921,6 +925,7 @@ test('dentro da seção, os itens saem por prioridade e depois por criação', (
       scoped({ priority: 'required', created_at: '2026-09-01T12:00:04Z' }),
     ],
     (code) => code,
+    'pt-BR',
   );
 
   assert.deepEqual(
@@ -1120,7 +1125,7 @@ test('a origem de um item é a mesma que o agrupamento por escopo enxerga', () =
   assert.deepEqual(describeRequirementScope(scoped(), countryName), {
     kind: 'trip',
     key: 'trip',
-    label: 'Toda a viagem',
+    label: null,
     countryCode: null,
   });
 
@@ -1130,4 +1135,63 @@ test('a origem de um item é a mesma que o agrupamento por escopo enxerga', () =
     describeRequirementScope(scoped({ group_id: 'g-desconhecido' }), countryName).kind,
     'trip',
   );
+});
+
+test('a seção só está completa quando nenhum item ficou por verificar', () => {
+  const [pending] = groupRequirementsByCategory(
+    [
+      categorized({ priority: 'required', completed: true }),
+      categorized({ priority: 'informational', completed: false }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  const [done] = groupRequirementsByCategory(
+    [
+      categorized({ priority: 'required', completed: true }),
+      categorized({ priority: 'informational', completed: true }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  assert.equal(isSectionComplete(pending), false);
+  assert.equal(isSectionComplete(done), true);
+});
+
+test('ao completar uma seção, a vez passa para a próxima com item pendente', () => {
+  const sections = groupRequirementsByCategory(
+    [
+      categorized({ category: 'documents', completed: true }),
+      categorized({ category: 'health', completed: true }),
+      categorized({ category: 'money', completed: false }),
+      categorized({ category: 'luggage', completed: false }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  assert.equal(nextPendingCategory(sections, 'documents'), 'money');
+});
+
+test('sem pendência abaixo, a vez volta para uma seção acima', () => {
+  const sections = groupRequirementsByCategory(
+    [
+      categorized({ category: 'documents', completed: false }),
+      categorized({ category: 'luggage', completed: true }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  assert.equal(nextPendingCategory(sections, 'luggage'), 'documents');
+});
+
+test('checklist inteira verificada não tem próxima seção a abrir', () => {
+  const sections = groupRequirementsByCategory(
+    [
+      categorized({ category: 'documents', completed: true }),
+      categorized({ category: 'luggage', completed: true }),
+    ],
+    CATEGORY_ORDER,
+  );
+
+  assert.equal(nextPendingCategory(sections, 'documents'), null);
 });

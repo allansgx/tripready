@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { messages as ptBR } from '../../../i18n/messages/pt-BR.ts';
 import { pickTravelTips, travelTips } from '../data/travel-tips.ts';
 
 /** O carrossel mostra 5 das 15 dicas: nenhuma repetida, nenhuma fora do catálogo. */
@@ -21,7 +22,9 @@ test('o catálogo tem 15 dicas, com ids únicos', () => {
 
 test('nenhuma dica é longa o bastante para estourar o card', () => {
   for (const tip of travelTips) {
-    assert.ok(tip.text.length <= 140, `${tip.id} tem ${tip.text.length} caracteres`);
+    const text = ptBR[tip.textKey];
+    assert.equal(typeof text, 'string', `${tip.id} não tem texto simples em pt-BR`);
+    assert.ok(String(text).length <= 140, `${tip.id} tem ${String(text).length} caracteres`);
   }
 });
 

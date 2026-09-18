@@ -1,6 +1,17 @@
+// Caminhos relativos com extensão: carregado direto por
+// `constants/tests/cities.test.ts` sob `node --test` — mesmo motivo do
+// `countries.ts`.
+import { getActiveLocale } from '../i18n/active-locale.ts';
+import { CITY_NAME_OVERRIDES as OVERRIDES_EN } from '../i18n/cities/en.ts';
+import { CITY_NAME_OVERRIDES as OVERRIDES_ES } from '../i18n/cities/es.ts';
+import type { Locale } from '../i18n/locales.ts';
+
 /**
  * Sugestões de cidades por país — um atalho, não um limite: a tela aceita
- * qualquer cidade digitada. Cada lista vai da mais visitada para a menos.
+ * qualquer cidade digitada. Cada lista vai da mais visitada para a menos, em
+ * pt-BR; `getCitySuggestions` aplica a exceção do idioma ativo por cima,
+ * preservando a ordem. O nome escolhido nesta lista é o que grava em
+ * `trip_cities.city_name`, e o que já está gravado nunca muda de idioma.
  */
 export const CITY_SUGGESTIONS: Record<string, readonly string[]> = {
   AE: ['Dubai', 'Abu Dhabi', 'Sharjah'],
@@ -108,7 +119,19 @@ export const CITY_SUGGESTIONS: Record<string, readonly string[]> = {
   ZA: ['Cidade do Cabo', 'Joanesburgo', 'Durban', 'Kruger'],
 };
 
-/** Sugestões de um país; vazio quando o país não está no catálogo. */
-export function getCitySuggestions(countryCode: string): readonly string[] {
-  return CITY_SUGGESTIONS[countryCode.trim().toUpperCase()] ?? [];
+const OVERRIDES_BY_LOCALE: Partial<Record<Locale, Readonly<Record<string, string>>>> = {
+  en: OVERRIDES_EN,
+  es: OVERRIDES_ES,
+};
+
+/** Sugestões de um país no idioma ativo; vazio quando o país não está no catálogo. */
+export function getCitySuggestions(
+  countryCode: string,
+  locale: Locale = getActiveLocale(),
+): readonly string[] {
+  const base = CITY_SUGGESTIONS[countryCode.trim().toUpperCase()] ?? [];
+  const overrides = OVERRIDES_BY_LOCALE[locale];
+  if (!overrides) return base;
+
+  return base.map((name) => overrides[name] ?? name);
 }

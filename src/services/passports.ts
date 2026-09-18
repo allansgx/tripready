@@ -66,4 +66,20 @@ export const passportsService = {
       'Falha ao remover passaporte',
     );
   },
+
+  /** Passaportes cujas regras já cobrem o critério mínimo. Não restringe a escolha: só decide o que a interface informa. */
+  async listSupportedCountryCodes(): Promise<string[]> {
+    if (!supportedCodes) {
+      const rows = unwrapRequired(
+        await supabase.from('supported_passport_countries').select('country_code'),
+        'Falha ao consultar os passaportes com regras',
+      );
+      supportedCodes = rows.map((row) => row.country_code);
+    }
+
+    return supportedCodes;
+  },
 };
+
+// O catálogo muda por migration, nunca pelo app: uma leitura por sessão basta.
+let supportedCodes: string[] | null = null;
