@@ -159,7 +159,7 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
       async setPrimary(passportId) {
         if (!userId) return;
 
-        const promoted = await passportsService.setPrimary(userId, passportId);
+        const promoted = await passportsService.setPrimary(passportId);
         await refresh();
 
         try {

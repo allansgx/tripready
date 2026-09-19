@@ -774,6 +774,27 @@ export type Database = {
         Args: { p_remove_ids: string[]; p_inserts: Json };
         Returns: undefined;
       };
+      apply_trip_passport_change: {
+        Args: {
+          p_trip_id: string;
+          p_expected_country_code: string | null;
+          p_passport_country_code: string;
+          p_today: string;
+          p_supersede_ids: string[];
+          p_restore_ids: string[];
+          p_updates: Json;
+          p_inserts: Json;
+        };
+        Returns: undefined;
+      };
+      delete_passport: {
+        Args: { p_passport_id: string };
+        Returns: string | null;
+      };
+      set_primary_passport: {
+        Args: { p_passport_id: string };
+        Returns: Database['public']['Tables']['passports']['Row'];
+      };
     };
     Enums: {
       requirement_priority: RequirementPriority;

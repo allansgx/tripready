@@ -7,7 +7,8 @@ export type { TranslatedCatalog } from '@/services/requirement-catalog';
 export { requirementOffersService } from '@/services/requirement-offers';
 export type { OfferContext } from '@/services/requirement-offers';
 export { tripDestinationsService } from '@/services/trip-destinations';
-export { tripRequirementsService } from '@/services/trip-requirements';
+export { isPassportChangeConflict, tripRequirementsService } from '@/services/trip-requirements';
+export type { PassportChangeInput } from '@/services/trip-requirements';
 export { tripsService } from '@/services/trips';
 export type {
   TripDetail,
