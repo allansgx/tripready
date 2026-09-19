@@ -104,6 +104,8 @@ export type Database = {
           name: string;
           start_date: string | null;
           end_date: string | null;
+          passport_country_code: string | null;
+          passport_selected_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -113,6 +115,8 @@ export type Database = {
           name: string;
           start_date?: string | null;
           end_date?: string | null;
+          passport_country_code?: string | null;
+          passport_selected_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -122,6 +126,8 @@ export type Database = {
           name?: string;
           start_date?: string | null;
           end_date?: string | null;
+          passport_country_code?: string | null;
+          passport_selected_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -207,6 +213,7 @@ export type Database = {
           priority: RequirementPriority;
           category: RequirementCategory;
           completed: boolean;
+          superseded_at: string | null;
           template_id: string | null;
           group_id: string | null;
           visa_rule_id: string | null;
@@ -224,6 +231,7 @@ export type Database = {
           priority: RequirementPriority;
           category: RequirementCategory;
           completed?: boolean;
+          superseded_at?: string | null;
           template_id?: string | null;
           group_id?: string | null;
           visa_rule_id?: string | null;
@@ -241,6 +249,7 @@ export type Database = {
           priority?: RequirementPriority;
           category?: RequirementCategory;
           completed?: boolean;
+          superseded_at?: string | null;
           template_id?: string | null;
           group_id?: string | null;
           visa_rule_id?: string | null;
