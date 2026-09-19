@@ -443,10 +443,13 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.name.label': 'Nombre del viaje',
   'trip.countryStep.title': '¿A dónde vas?',
 
+  'trip.new.title.passport': '¿Con qué pasaporte vas a viajar?',
   'trip.new.title.countries': '¿A dónde vas?',
   'trip.new.title.cities': '¿Qué ciudades piensas visitar?',
   'trip.new.title.dates': '¿Cuándo viajas?',
   'trip.new.title.name': '¿Cómo quieres llamar a este viaje?',
+  'trip.new.subtitle.passport':
+    'Los requisitos de entrada cambian según el pasaporte. Puedes cambiarlo después.',
   'trip.new.subtitle.countries': 'Elige uno o más países de tu itinerario.',
   'trip.new.subtitle.cities':
     'Elige las ciudades que ya están en el plan. Puedes decidirlo después.',
@@ -466,6 +469,8 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   },
   'trip.new.name.placeholder': 'Mi viaje',
 
+  'trip.review.passport.label': 'PASAPORTE',
+  'trip.review.passport.action': 'Cambiar pasaporte',
   'trip.review.dates.label': 'FECHAS',
   'trip.review.dates.action': 'Cambiar fechas',
   'trip.review.itinerary.label': 'ITINERARIO',

@@ -436,10 +436,13 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.name.label': 'Trip name',
   'trip.countryStep.title': 'Where are you headed?',
 
+  'trip.new.title.passport': 'Which passport are you traveling with?',
   'trip.new.title.countries': 'Where are you headed?',
   'trip.new.title.cities': 'Which cities are you planning to visit?',
   'trip.new.title.dates': 'When are you traveling?',
   'trip.new.title.name': 'What do you want to call this trip?',
+  'trip.new.subtitle.passport':
+    'Entry requirements change with the passport. You can change this later.',
   'trip.new.subtitle.countries': 'Choose one or more countries for your itinerary.',
   'trip.new.subtitle.cities': 'Choose the cities already in the plan. You can decide this later.',
   'trip.new.subtitle.dates': 'Tap the departure date, then the return date.',
@@ -458,6 +461,8 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   },
   'trip.new.name.placeholder': 'My trip',
 
+  'trip.review.passport.label': 'PASSPORT',
+  'trip.review.passport.action': 'Change passport',
   'trip.review.dates.label': 'DATES',
   'trip.review.dates.action': 'Change dates',
   'trip.review.itinerary.label': 'ITINERARY',

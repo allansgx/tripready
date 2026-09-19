@@ -146,7 +146,11 @@ export const tripsService = {
     name: string;
     startDate?: string | null;
     endDate?: string | null;
+    /** Passaporte-base; a data da escolha só existe quando há escolha. */
+    passportCountryCode?: string | null;
   }): Promise<Trip> {
+    const passportCountryCode = input.passportCountryCode ?? null;
+
     return unwrapRequired(
       await supabase
         .from('trips')
@@ -155,6 +159,8 @@ export const tripsService = {
           name: input.name,
           start_date: input.startDate ?? null,
           end_date: input.endDate ?? null,
+          passport_country_code: passportCountryCode,
+          passport_selected_at: passportCountryCode ? new Date().toISOString() : null,
         })
         .select('*')
         .single(),

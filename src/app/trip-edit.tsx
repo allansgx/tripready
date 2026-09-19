@@ -100,6 +100,7 @@ export default function EditTripScreen() {
             cityName: city.city_name,
           })),
           range: { start: detail.start_date, end: detail.end_date },
+          passportCountryCode: detail.passport_country_code,
         });
 
         setBaseline({

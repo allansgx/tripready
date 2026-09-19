@@ -443,10 +443,13 @@ export const messages = {
   'trip.name.label': 'Nome da viagem',
   'trip.countryStep.title': 'Para onde você vai?',
 
+  'trip.new.title.passport': 'Com qual passaporte você vai viajar?',
   'trip.new.title.countries': 'Para onde você vai?',
   'trip.new.title.cities': 'Quais cidades você pretende visitar?',
   'trip.new.title.dates': 'Quando você vai viajar?',
   'trip.new.title.name': 'Como quer chamar esta viagem?',
+  'trip.new.subtitle.passport':
+    'As exigências de entrada mudam conforme o passaporte. Dá para alterar depois.',
   'trip.new.subtitle.countries': 'Escolha um ou mais países do seu roteiro.',
   'trip.new.subtitle.cities':
     'Escolha as cidades que já estão no plano. Dá para decidir isso depois.',
@@ -466,6 +469,8 @@ export const messages = {
   },
   'trip.new.name.placeholder': 'Minha viagem',
 
+  'trip.review.passport.label': 'PASSAPORTE',
+  'trip.review.passport.action': 'Alterar passaporte',
   'trip.review.dates.label': 'DATAS',
   'trip.review.dates.action': 'Alterar datas',
   'trip.review.itinerary.label': 'ROTEIRO',

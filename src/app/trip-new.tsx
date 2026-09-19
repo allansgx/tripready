@@ -16,8 +16,12 @@ import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { TextField } from '@/components/ui/text-field';
 import type { Country } from '@/constants/countries';
+import { CountryFlag } from '@/components/ui/country-flag';
+import { getCountryName } from '@/constants/countries';
 import { useAuth } from '@/features/auth/auth-context';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
+import { PassportChoiceList } from '@/features/passports/passport-choice-list';
+import { usePassports } from '@/features/passports/passports-context';
 import { CityStep } from '@/features/trips/components/city-step';
 import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import { createTripWithDestinations } from '@/features/trips/data/trip-persistence';
@@ -31,7 +35,7 @@ import {
 } from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { t, type MessageKey } from '@/i18n';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 const LIMIT_MESSAGE_MAX: Partial<Record<TripLimitIssue, number>> = {
   countries: MAX_TRIP_COUNTRIES,
@@ -44,13 +48,16 @@ function limitMessage(issue: TripLimitIssue | null): string | null {
   return formatTripLimitMessage(issue, LIMIT_MESSAGE_MAX[issue]);
 }
 
-const STEPS = ['countries', 'cities', 'dates', 'name'] as const;
+// O passaporte vem primeiro porque é a lente do resto: o mesmo destino gera
+// exigências diferentes conforme ele.
+const STEPS = ['passport', 'countries', 'cities', 'dates', 'name'] as const;
 type Step = (typeof STEPS)[number];
 
 /** O nome cabe no card da lista e no destaque da Home; acima disso, não cabe. */
 const NAME_MAX_LENGTH = 60;
 
 const TITLE_KEY: Record<Step, MessageKey> = {
+  passport: 'trip.new.title.passport',
   countries: 'trip.new.title.countries',
   cities: 'trip.new.title.cities',
   dates: 'trip.new.title.dates',
@@ -58,6 +65,7 @@ const TITLE_KEY: Record<Step, MessageKey> = {
 };
 
 const SUBTITLE_KEY: Record<Step, MessageKey> = {
+  passport: 'trip.new.subtitle.passport',
   countries: 'trip.new.subtitle.countries',
   cities: 'trip.new.subtitle.cities',
   dates: 'trip.new.subtitle.dates',
@@ -70,8 +78,21 @@ export default function NewTripScreen() {
 
   // Mesmo estado de seleção usado na edição: as regras de país/cidade/nome
   // vivem em um lugar só.
-  const { draft, toggleCountry, toggleCity, addCity, changeName, setRange, resolvedName } =
-    useTripDraft();
+  const {
+    draft,
+    toggleCountry,
+    toggleCity,
+    addCity,
+    changeName,
+    setRange,
+    setPassport,
+    resolvedName,
+  } = useTripDraft();
+  const { primary } = usePassports();
+
+  // Derivado, e não um efeito copiando o principal para o rascunho: a escolha
+  // já sai correta na mesma renderização em que a lista de passaportes chega.
+  const passportCountryCode = draft.passportCountryCode ?? primary?.country_code ?? null;
 
   const [stepIndex, setStepIndex] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -114,7 +135,7 @@ export default function NewTripScreen() {
   // Sem país nenhum não há cidade a escolher, e o fluxo volta para os destinos.
   function removeCountry(code: string) {
     toggleCountry(code);
-    if (countryCodes.length === 1) setStepIndex(0);
+    if (countryCodes.length === 1) setStepIndex(STEPS.indexOf('countries'));
   }
 
   async function createTrip() {
@@ -130,7 +151,12 @@ export default function NewTripScreen() {
     setBusy(true);
     setNotice(null);
     try {
-      const trip = await createTripWithDestinations(user.id, draft, resolvedName);
+      const trip = await createTripWithDestinations(
+        user.id,
+        draft,
+        resolvedName,
+        passportCountryCode,
+      );
       router.replace({ pathname: '/trip-preparing', params: { tripId: trip.id } });
     } catch {
       setNotice(t('trip.new.error.createRetry'));
@@ -145,11 +171,13 @@ export default function NewTripScreen() {
     notice ?? (countryCodes.length === 0 ? t('trip.new.hint.chooseCountry') : null);
 
   const canContinue =
-    step === 'countries'
-      ? countryCodes.length > 0
-      : step === 'dates'
-        ? Boolean(range.start && range.end) && limits.isValid
-        : true;
+    step === 'passport'
+      ? passportCountryCode !== null
+      : step === 'countries'
+        ? countryCodes.length > 0
+        : step === 'dates'
+          ? Boolean(range.start && range.end) && limits.isValid
+          : true;
 
   // Um botão só por etapa: sem cidade escolhida, seguir é pular.
   const continueLabel =
@@ -196,6 +224,13 @@ export default function NewTripScreen() {
             contentContainerStyle={styles.body}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
+            {step === 'passport' ? (
+              <PassportChoiceList
+                selectedCountryCode={passportCountryCode}
+                onSelect={setPassport}
+              />
+            ) : null}
+
             {step === 'cities' ? (
               <CityStep
                 countryCodes={countryCodes}
@@ -250,9 +285,23 @@ export default function NewTripScreen() {
                 */}
                 <View style={styles.block}>
                   <ReviewHeader
+                    label={t('trip.review.passport.label')}
+                    a11yLabel={t('trip.review.passport.action')}
+                    onEdit={() => setStepIndex(STEPS.indexOf('passport'))}
+                  />
+                  {passportCountryCode ? (
+                    <View style={styles.passportSummary}>
+                      <CountryFlag code={passportCountryCode} />
+                      <Text style={styles.passportName}>{getCountryName(passportCountryCode)}</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={styles.block}>
+                  <ReviewHeader
                     label={t('trip.review.dates.label')}
                     a11yLabel={t('trip.review.dates.action')}
-                    onEdit={() => setStepIndex(2)}
+                    onEdit={() => setStepIndex(STEPS.indexOf('dates'))}
                   />
                   <DateRangeSummary value={range} />
                 </View>
@@ -261,7 +310,7 @@ export default function NewTripScreen() {
                   <ReviewHeader
                     label={t('trip.review.itinerary.label')}
                     a11yLabel={t('trip.review.itinerary.action')}
-                    onEdit={() => setStepIndex(1)}
+                    onEdit={() => setStepIndex(STEPS.indexOf('cities'))}
                   />
                   <CityStep countryCodes={countryCodes} selected={cities} />
                 </View>
@@ -350,6 +399,16 @@ const styles = StyleSheet.create({
   datesArea: { gap: spacing.md },
   nameArea: { gap: spacing.xl },
   block: { gap: spacing.sm },
+  passportSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 52,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
+  },
+  passportName: { ...typography.body, color: colors.text, flex: 1 },
   blockHeader: {
     flexDirection: 'row',
     alignItems: 'center',

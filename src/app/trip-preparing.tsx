@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { StepRow } from '@/components/ui/step-row';
-import { usePassports } from '@/features/passports/passports-context';
 import {
   CATEGORY_ICONS,
   categoryLabel,
@@ -29,9 +28,6 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function TripPreparingScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const router = useRouter();
-  const { primary } = usePassports();
-  const passportCountryCode = primary?.country_code ?? null;
-
   const [doneCount, setDoneCount] = useState(0);
   const [finished, setFinished] = useState(false);
   const [needsRetry, setNeedsRetry] = useState(false);
@@ -68,7 +64,9 @@ export default function TripPreparingScreen() {
           countryCodes: (trip.trip_countries ?? []).map((country) => country.country_code),
           startDate: trip.start_date,
           endDate: trip.end_date,
-          passportCountryCode,
+          // O passaporte é da viagem, e não a preferência do perfil: é ele que
+          // explica esta checklist daqui a um ano.
+          passportCountryCode: trip.passport_country_code,
         });
 
         // Uma categoria por passo, retomando de onde parou: o índice já gravado
@@ -90,7 +88,7 @@ export default function TripPreparingScreen() {
         setNeedsRetry(true);
       }
     }
-  }, [tripId, attempt, openTrip, passportCountryCode]);
+  }, [tripId, attempt, openTrip]);
 
   function retry() {
     setAttempt((current) => current + 1);

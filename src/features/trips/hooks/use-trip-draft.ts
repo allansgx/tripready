@@ -11,6 +11,8 @@ export type TripDraft = {
   countryCodes: string[];
   cities: SelectedCity[];
   range: DateRange;
+  /** Passaporte-base da viagem; nulo enquanto a pessoa não escolheu. */
+  passportCountryCode: string | null;
 };
 
 const EMPTY: TripDraft = {
@@ -18,6 +20,7 @@ const EMPTY: TripDraft = {
   countryCodes: [],
   cities: [],
   range: { start: null, end: null },
+  passportCountryCode: null,
 };
 
 /**
@@ -38,6 +41,7 @@ function normalize(draft: TripDraft) {
     countryCodes: [...draft.countryCodes].sort(),
     cities: [...draft.cities].map((city) => `${city.countryCode}:${city.cityName}`).sort(),
     range: draft.range,
+    passportCountryCode: draft.passportCountryCode,
   });
 }
 
@@ -53,6 +57,9 @@ export function useTripDraft(initial?: TripDraft) {
   );
   const [cities, setCities] = useState<SelectedCity[]>(initial?.cities ?? EMPTY.cities);
   const [range, setRange] = useState<DateRange>(initial?.range ?? EMPTY.range);
+  const [passportCountryCode, setPassport] = useState<string | null>(
+    initial?.passportCountryCode ?? EMPTY.passportCountryCode,
+  );
 
   /** Snapshot para comparar o que mudou; trocado a cada hidratação/salvamento. */
   const [baseline, setBaseline] = useState(() => normalize(initial ?? EMPTY));
@@ -100,12 +107,13 @@ export function useTripDraft(initial?: TripDraft) {
     setCountryCodes(draft.countryCodes);
     setCities(draft.cities);
     setRange(draft.range);
+    setPassport(draft.passportCountryCode);
     setBaseline(normalize(draft));
   }, []);
 
   const draft = useMemo<TripDraft>(
-    () => ({ name, countryCodes, cities, range }),
-    [name, countryCodes, cities, range],
+    () => ({ name, countryCodes, cities, range, passportCountryCode }),
+    [name, countryCodes, cities, range, passportCountryCode],
   );
 
   const isDirty = normalize(draft) !== baseline;
@@ -118,6 +126,7 @@ export function useTripDraft(initial?: TripDraft) {
     addCity,
     changeName,
     setRange,
+    setPassport,
     hydrate,
     /** Nome final: o digitado ou, se vazio, a sugestão pelos destinos. */
     resolvedName: name.trim() || suggestTripName(countryCodes),

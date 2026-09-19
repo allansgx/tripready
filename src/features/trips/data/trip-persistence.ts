@@ -145,12 +145,14 @@ export async function createTripWithDestinations(
   userId: string,
   draft: TripDraft,
   name: string,
+  passportCountryCode: string | null,
 ): Promise<Trip> {
   const trip = await tripsService.create({
     userId,
     name,
     startDate: draft.range.start,
     endDate: draft.range.end,
+    passportCountryCode,
   });
 
   // Países antes das cidades: a chave estrangeira composta de `trip_cities`
