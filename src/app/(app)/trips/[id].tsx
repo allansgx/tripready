@@ -154,6 +154,7 @@ export default function TripChecklistScreen() {
   const [passportCountryCode, setPassportCountryCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<ReadonlySet<RequirementCategory>>(new Set());
+  const [supersededOpen, setSupersededOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [showOptIn, setShowOptIn] = useState(false);
@@ -385,6 +386,14 @@ export default function TripChecklistScreen() {
 
   const sections = useMemo(
     () => groupRequirementsByCategory(activeRequirements(requirements), CHECKLIST_CATEGORIES),
+    [requirements],
+  );
+
+  // O que a troca de passaporte tirou de vigência. Continua na tela, fora das
+  // contagens: o item não pode sumir sem explicação nem seguir se apresentando
+  // como exigência.
+  const superseded = useMemo(
+    () => requirements.filter((requirement) => requirement.superseded_at !== null),
     [requirements],
   );
 
@@ -656,6 +665,28 @@ export default function TripChecklistScreen() {
           )}
         </View>
 
+        {superseded.length > 0 ? (
+          <View style={styles.list}>
+            <AccordionSection
+              title={t('trips.checklist.superseded.title')}
+              icon={<Ionicons name="archive-outline" size={18} color={colors.textSecondary} />}
+              iconBackground={colors.background}
+              meta={t('trips.checklist.itemCount', { count: superseded.length })}
+              expanded={supersededOpen}
+              onToggle={() => {
+                animateSections();
+                setSupersededOpen((open) => !open);
+              }}>
+              <Text style={styles.supersededHint}>{t('trips.checklist.superseded.hint')}</Text>
+              {superseded.map((requirement) => (
+                <Text key={requirement.id} style={styles.supersededItem} numberOfLines={2}>
+                  {requirement.title}
+                </Text>
+              ))}
+            </AccordionSection>
+          </View>
+        ) : null}
+
         {progress.total === 0 ? (
           <Button
             label={t('trips.checklist.refresh')}
@@ -793,6 +824,18 @@ const styles = StyleSheet.create({
   },
   headerTexts: { flex: 1, gap: spacing.xs },
   passport: { ...typography.caption, color: colors.textSecondary },
+  supersededHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  supersededItem: {
+    ...typography.body,
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   title: { ...typography.screenTitle, color: colors.text },
   cities: { ...typography.caption, color: colors.textSecondary },
   dates: { ...typography.caption, color: colors.textSecondary },

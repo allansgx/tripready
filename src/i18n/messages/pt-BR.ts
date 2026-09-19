@@ -45,6 +45,7 @@ export const messages = {
   'trip.edit.section.countries': 'PAÍSES',
   'trip.edit.section.cities': 'CIDADES',
   'trip.edit.section.dates': 'DATAS',
+  'trip.edit.section.passport': 'PASSAPORTE',
   'passports.section.title': 'PASSAPORTES',
   'trips.tips.sectionTitle': 'DICA PARA SUA PRÓXIMA VIAGEM',
 
@@ -416,6 +417,21 @@ export const messages = {
   'a11y.trips.menuOptions': 'Opções da viagem',
   'trips.checklist.empty': 'Sua checklist aparece aqui assim que ficar pronta.',
   'trips.checklist.itemCount': { one: '{count} item', other: '{count} itens' },
+  'trips.checklist.superseded.title': 'NÃO SE APLICAM MAIS',
+  'trips.checklist.superseded.hint':
+    'Estes itens vieram do passaporte anterior desta viagem. Ficam aqui para você saber o que mudou.',
+  'trip.edit.passport.hint': 'A troca vale na hora e revisa a checklist desta viagem.',
+  'trip.passport.change.title': 'Alterar o passaporte da viagem?',
+  'trip.passport.change.message':
+    'Alguns itens da sua checklist podem mudar, porque as exigências de entrada dependem do passaporte selecionado. Vamos revisar os itens afetados e preservar seu progresso sempre que possível.',
+  'trip.passport.change.confirm': 'Alterar e revisar checklist',
+  'trip.passport.changed.same': 'Passaporte atualizado. Sua checklist continua igual.',
+  'trip.passport.changed.superseded': {
+    one: 'Passaporte atualizado. {count} item da checklist não se aplica mais.',
+    other: 'Passaporte atualizado. {count} itens da checklist não se aplicam mais.',
+  },
+  'trip.passport.change.error': 'Não foi possível atualizar agora. Tente de novo.',
+  'trip.passport.change.conflict': 'Esta viagem mudou em outro lugar. Vamos recarregar.',
   'trips.checklist.refresh': 'Atualizar checklist',
   'trips.checklist.unverifiedDestinations':
     'Para {countries}, confira as exigências de entrada na fonte oficial — ainda não temos a regra conferida desses destinos.',

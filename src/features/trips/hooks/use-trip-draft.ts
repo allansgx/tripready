@@ -34,14 +34,17 @@ function sameCity(a: SelectedCity, b: SelectedCity) {
   );
 }
 
-/** Comparação estável para detectar alterações não salvas. */
+/**
+ * Comparação estável para detectar alterações não salvas. O passaporte fica de
+ * fora de propósito: a troca é aplicada na hora, com confirmação própria, e
+ * nunca fica pendente de "Salvar".
+ */
 function normalize(draft: TripDraft) {
   return JSON.stringify({
     name: draft.name.trim(),
     countryCodes: [...draft.countryCodes].sort(),
     cities: [...draft.cities].map((city) => `${city.countryCode}:${city.cityName}`).sort(),
     range: draft.range,
-    passportCountryCode: draft.passportCountryCode,
   });
 }
 

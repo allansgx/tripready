@@ -41,6 +41,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.edit.section.countries': 'PAÍSES',
   'trip.edit.section.cities': 'CIUDADES',
   'trip.edit.section.dates': 'FECHAS',
+  'trip.edit.section.passport': 'PASAPORTE',
   'passports.section.title': 'PASAPORTES',
   'trips.tips.sectionTitle': 'CONSEJO PARA TU PRÓXIMO VIAJE',
 
@@ -416,6 +417,21 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.trips.menuOptions': 'Opciones del viaje',
   'trips.checklist.empty': 'Tu lista aparece aquí en cuanto esté lista.',
   'trips.checklist.itemCount': { one: '{count} elemento', other: '{count} elementos' },
+  'trips.checklist.superseded.title': 'YA NO APLICAN',
+  'trips.checklist.superseded.hint':
+    'Estos ítems venían del pasaporte anterior de este viaje. Se quedan aquí para que veas qué cambió.',
+  'trip.edit.passport.hint': 'El cambio se aplica al instante y revisa la checklist de este viaje.',
+  'trip.passport.change.title': '¿Cambiar el pasaporte del viaje?',
+  'trip.passport.change.message':
+    'Algunos ítems de tu checklist pueden cambiar, porque los requisitos de entrada dependen del pasaporte seleccionado. Vamos a revisar los ítems afectados y conservar tu progreso siempre que sea posible.',
+  'trip.passport.change.confirm': 'Cambiar y revisar checklist',
+  'trip.passport.changed.same': 'Pasaporte actualizado. Tu checklist sigue igual.',
+  'trip.passport.changed.superseded': {
+    one: 'Pasaporte actualizado. {count} ítem de la checklist ya no aplica.',
+    other: 'Pasaporte actualizado. {count} ítems de la checklist ya no aplican.',
+  },
+  'trip.passport.change.error': 'No pudimos actualizarlo ahora. Inténtalo de nuevo.',
+  'trip.passport.change.conflict': 'Este viaje cambió en otro lugar. Vamos a recargarlo.',
   'trips.checklist.refresh': 'Actualizar lista',
   'trips.checklist.unverifiedDestinations':
     'Para {countries}, revisa los requisitos de entrada en la fuente oficial: todavía no tenemos la regla verificada de esos destinos.',

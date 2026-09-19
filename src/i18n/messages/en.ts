@@ -41,6 +41,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.edit.section.countries': 'COUNTRIES',
   'trip.edit.section.cities': 'CITIES',
   'trip.edit.section.dates': 'DATES',
+  'trip.edit.section.passport': 'PASSPORT',
   'passports.section.title': 'PASSPORTS',
   'trips.tips.sectionTitle': 'TIP FOR YOUR NEXT TRIP',
 
@@ -408,6 +409,21 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.trips.menuOptions': 'Trip options',
   'trips.checklist.empty': 'Your checklist shows up here as soon as it is ready.',
   'trips.checklist.itemCount': { one: '{count} item', other: '{count} items' },
+  'trips.checklist.superseded.title': 'NO LONGER APPLY',
+  'trips.checklist.superseded.hint':
+    'These items came from this trip’s previous passport. They stay here so you can see what changed.',
+  'trip.edit.passport.hint': 'The change applies right away and reviews this trip’s checklist.',
+  'trip.passport.change.title': 'Change this trip’s passport?',
+  'trip.passport.change.message':
+    'Some checklist items may change, because entry requirements depend on the selected passport. We will review the affected items and keep your progress whenever possible.',
+  'trip.passport.change.confirm': 'Change and review checklist',
+  'trip.passport.changed.same': 'Passport updated. Your checklist stays the same.',
+  'trip.passport.changed.superseded': {
+    one: 'Passport updated. {count} checklist item no longer applies.',
+    other: 'Passport updated. {count} checklist items no longer apply.',
+  },
+  'trip.passport.change.error': 'We could not update it right now. Please try again.',
+  'trip.passport.change.conflict': 'This trip changed somewhere else. Let’s reload it.',
   'trips.checklist.refresh': 'Refresh checklist',
   'trips.checklist.unverifiedDestinations':
     'For {countries}, check the entry requirements on the official source — we do not have a verified rule for these destinations yet.',
