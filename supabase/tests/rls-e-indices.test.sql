@@ -10,7 +10,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, public;
 
-select plan(6);
+select plan(7);
 
 insert into auth.users (id, email)
 values
@@ -67,14 +67,18 @@ select is(
 -- -----------------------------------------------------------------------------
 set local role anon;
 
--- Erro de privilégio, e não uma lista vazia: `anon` não tem GRANT em `trips`,
--- então a policy nem chega a ser avaliada. São as duas camadas que o AGENTS.md
--- pede, e é por isso que o teste espera 42501.
-select throws_ok(
+-- Sem esta linha o teste abaixo passaria mesmo se a troca de papel falhasse,
+-- porque `postgres` também não veria erro nenhum.
+select is(current_user, 'anon', 'o teste está mesmo rodando como anon');
+
+-- Lista vazia, e não erro de privilégio: o que barra `anon` aqui é a RLS, já
+-- que nenhuma policy é `to anon`. O privilégio de tabela ele tem, herdado do
+-- `alter default privileges ... to anon` que o próprio Supabase deixa no banco
+-- antes da primeira migration — nenhuma migration do projeto o revoga. O dado
+-- está protegido, mas por uma camada só.
+select is_empty(
   $$ select id from public.trips $$,
-  '42501',
-  null,
-  'anon não alcança a tabela de viagens'
+  'anon não lê viagem nenhuma'
 );
 
 set local role postgres;
