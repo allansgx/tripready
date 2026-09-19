@@ -45,6 +45,7 @@ export const messages = {
   'trip.edit.section.countries': 'PAÍSES',
   'trip.edit.section.cities': 'CIDADES',
   'trip.edit.section.dates': 'DATAS',
+  'trip.edit.section.passport': 'PASSAPORTE',
   'passports.section.title': 'PASSAPORTES',
   'trips.tips.sectionTitle': 'DICA PARA SUA PRÓXIMA VIAGEM',
 
@@ -174,16 +175,11 @@ export const messages = {
   'passports.section.primaryTag': 'Principal',
   'passports.error.connection': 'Sua conexão oscilou. Tente de novo.',
   'passports.error.loginRequired': 'Faça login para adicionar um passaporte.',
-  'passports.error.onlyOne':
-    'Este é o seu único passaporte. Adicione outro e defina-o como principal para poder remover este.',
-  'passports.error.mustPromoteFirst':
-    'Este é o seu passaporte principal. Defina outro como principal antes de removê-lo.',
+  'passports.error.onlyOne': 'Este é o seu único passaporte. Adicione outro antes de remover este.',
 
   'passports.dialog.cannotComplete': 'Não foi possível concluir',
   'passports.dialog.onlyPrimary.message':
-    'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.',
-  'passports.dialog.primary.message':
-    'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+    'Este é o seu único passaporte. Para removê-lo, adicione outro antes.',
   'passports.section.pendingRulesTag': 'Regras em preparação',
   'passports.dialog.pendingRules.message':
     'Ainda não temos as regras de entrada para este passaporte. Sua checklist segue com os documentos e o passo de conferir as exigências de cada destino.',
@@ -191,6 +187,19 @@ export const messages = {
   'passports.dialog.remove': 'Remover passaporte',
   'passports.dialog.removeConfirm.title': 'Remover {name}?',
   'passports.dialog.removeConfirm.message': 'Você pode adicioná-lo de novo quando quiser.',
+  'passports.dialog.removeConfirm.withTrips': {
+    one: '{count} viagem usa este passaporte. Ela continua salva, com a checklist intacta, e vai pedir a escolha de outro.',
+    other:
+      '{count} viagens usam este passaporte. Elas continuam salvas, com as checklists intactas, e vão pedir a escolha de outro.',
+  },
+  'passports.dialog.removeConfirm.completedOnly':
+    'Suas viagens concluídas continuam exatamente como estão.',
+  'passports.promoted.title': 'Passaporte principal atualizado',
+  'passports.promoted.notice': '{country} agora é o seu passaporte principal.',
+  'trips.passport.review.title': 'Escolha o passaporte desta viagem',
+  'trips.passport.review.message':
+    'O passaporte que você usava aqui saiu do seu perfil. Escolha outro para as exigências de entrada voltarem a ser conferidas.',
+  'trips.passport.review.action': 'Escolher passaporte',
   'passports.dialog.removeConfirm.confirm': 'Remover',
 
   'passports.picker.search.byCity': 'Buscar país ou cidade...',
@@ -416,6 +425,21 @@ export const messages = {
   'a11y.trips.menuOptions': 'Opções da viagem',
   'trips.checklist.empty': 'Sua checklist aparece aqui assim que ficar pronta.',
   'trips.checklist.itemCount': { one: '{count} item', other: '{count} itens' },
+  'trips.checklist.superseded.title': 'NÃO SE APLICAM MAIS',
+  'trips.checklist.superseded.hint':
+    'Estes itens vieram do passaporte anterior desta viagem. Ficam aqui para você saber o que mudou.',
+  'trip.edit.passport.hint': 'A troca vale na hora e revisa a checklist desta viagem.',
+  'trip.passport.change.title': 'Alterar o passaporte da viagem?',
+  'trip.passport.change.message':
+    'Alguns itens da sua checklist podem mudar, porque as exigências de entrada dependem do passaporte selecionado. Vamos revisar os itens afetados e preservar seu progresso sempre que possível.',
+  'trip.passport.change.confirm': 'Alterar e revisar checklist',
+  'trip.passport.changed.same': 'Passaporte atualizado. Sua checklist continua igual.',
+  'trip.passport.changed.superseded': {
+    one: 'Passaporte atualizado. {count} item da checklist não se aplica mais.',
+    other: 'Passaporte atualizado. {count} itens da checklist não se aplicam mais.',
+  },
+  'trip.passport.change.error': 'Não foi possível atualizar agora. Tente de novo.',
+  'trip.passport.change.conflict': 'Esta viagem mudou em outro lugar. Vamos recarregar.',
   'trips.checklist.refresh': 'Atualizar checklist',
   'trips.checklist.unverifiedDestinations':
     'Para {countries}, confira as exigências de entrada na fonte oficial — ainda não temos a regra conferida desses destinos.',
@@ -443,10 +467,13 @@ export const messages = {
   'trip.name.label': 'Nome da viagem',
   'trip.countryStep.title': 'Para onde você vai?',
 
+  'trip.new.title.passport': 'Com qual passaporte você vai viajar?',
   'trip.new.title.countries': 'Para onde você vai?',
   'trip.new.title.cities': 'Quais cidades você pretende visitar?',
   'trip.new.title.dates': 'Quando você vai viajar?',
   'trip.new.title.name': 'Como quer chamar esta viagem?',
+  'trip.new.subtitle.passport':
+    'As exigências de entrada mudam conforme o passaporte. Dá para alterar depois.',
   'trip.new.subtitle.countries': 'Escolha um ou mais países do seu roteiro.',
   'trip.new.subtitle.cities':
     'Escolha as cidades que já estão no plano. Dá para decidir isso depois.',
@@ -466,6 +493,9 @@ export const messages = {
   },
   'trip.new.name.placeholder': 'Minha viagem',
 
+  'trips.passport.label': 'Passaporte: {country}',
+  'trip.review.passport.label': 'PASSAPORTE',
+  'trip.review.passport.action': 'Alterar passaporte',
   'trip.review.dates.label': 'DATAS',
   'trip.review.dates.action': 'Alterar datas',
   'trip.review.itinerary.label': 'ROTEIRO',

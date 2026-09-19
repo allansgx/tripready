@@ -11,6 +11,7 @@ import {
   type ScheduledReminder,
   type TripReminder,
 } from '@/features/notifications/domain/trip-reminders';
+import { activeRequirements } from '@/features/trips/domain/requirement-matching';
 import type { ProgressItem } from '@/features/trips/domain/trip-progress';
 import { t, type MessageKey } from '@/i18n';
 
@@ -124,7 +125,7 @@ async function apply(
 }
 
 type TripWithRequirements = ReminderTrip & {
-  trip_requirements: readonly ProgressItem[] | null;
+  trip_requirements: readonly (ProgressItem & { superseded_at: string | null })[] | null;
 };
 
 /**
@@ -134,8 +135,10 @@ type TripWithRequirements = ReminderTrip & {
 export async function syncAllTripReminders(trips: readonly TripWithRequirements[]): Promise<void> {
   if (!(await hasReminderPermission())) return;
 
+  // Item superado não é pendência: lembrar de um visto que deixou de valer
+  // manda a pessoa resolver o que não existe mais.
   const desired = selectTripsForReminders(trips).flatMap((trip) =>
-    getTripNotificationCandidates(trip, trip.trip_requirements ?? []),
+    getTripNotificationCandidates(trip, activeRequirements(trip.trip_requirements ?? [])),
   );
 
   await apply(await readScheduled(), desired);

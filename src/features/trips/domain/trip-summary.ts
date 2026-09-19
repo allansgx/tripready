@@ -1,4 +1,7 @@
-import { selectNextRequirement } from '@/features/trips/domain/requirement-matching';
+import {
+  activeRequirements,
+  selectNextRequirement,
+} from '@/features/trips/domain/requirement-matching';
 import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
 import { getTripStatus, todayISO, type TripStatus } from '@/features/trips/domain/trip-status';
 import type { TripRequirementBrief, TripWithRelations } from '@/services/trips';
@@ -22,7 +25,9 @@ const STATUS_ORDER: Record<TripStatus, number> = {
 
 export function toTripSummary(row: TripWithRelations, today: string = todayISO()): TripSummary {
   const { trip_countries, trip_requirements, ...trip } = row;
-  const requirements = trip_requirements ?? [];
+  // Item superado não conta em lugar nenhum: nem no progresso, nem no próximo
+  // passo. A regra mora aqui para não depender de cada consulta filtrar.
+  const requirements = activeRequirements(trip_requirements ?? []);
 
   return {
     trip,

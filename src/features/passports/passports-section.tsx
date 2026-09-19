@@ -15,15 +15,19 @@ import { CountryFlag } from '@/components/ui/country-flag';
 import { showDialog } from '@/components/ui/dialog';
 import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
+import { useAuth } from '@/features/auth/auth-context';
 import { toPassportMessage } from '@/features/passports/passport-messages';
 import { usePassports } from '@/features/passports/passports-context';
+import { getTripStatus, todayISO } from '@/features/trips/domain/trip-status';
 import { t } from '@/i18n';
+import { passportsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 import type { Passport } from '@/types/models';
 
 /** Seção "Passaportes" do Perfil: lista, principal, adicionar e remover. */
 export function PassportsSection() {
   const { passports, isLoading, setPrimary, removePassport, hasPendingRules } = usePassports();
+  const { user } = useAuth();
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -38,51 +42,90 @@ export function PassportsSection() {
     }
   }
 
+  /**
+   * Pergunta com o que está em jogo: quantas viagens usam este passaporte e o
+   * que acontece com elas. O aviso só aparece quando há viagem a citar.
+   */
+  async function confirmRemoval(passport: Passport) {
+    const name = getCountryName(passport.country_code);
+    setBusyId(passport.id);
+
+    try {
+      const trips = user
+        ? await passportsService.listTripsUsingPassport(user.id, passport.country_code)
+        : [];
+
+      const today = todayISO();
+      const pending = trips.filter((trip) => getTripStatus(trip, today) !== 'completed').length;
+
+      const message =
+        pending > 0
+          ? t('passports.dialog.removeConfirm.withTrips', { count: pending })
+          : trips.length > 0
+            ? t('passports.dialog.removeConfirm.completedOnly')
+            : t('passports.dialog.removeConfirm.message');
+
+      showDialog(t('passports.dialog.removeConfirm.title', { name }), message, [
+        { text: t('common.action.cancel'), style: 'cancel' },
+        {
+          text: t('passports.dialog.removeConfirm.confirm'),
+          style: 'destructive',
+          onPress: () => void remove(passport),
+        },
+      ]);
+    } catch (error) {
+      showDialog(t('passports.dialog.cannotComplete'), toPassportMessage(error));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function remove(passport: Passport) {
+    setBusyId(passport.id);
+    try {
+      const promoted = await removePassport(passport.id);
+
+      // A promoção automática não pode acontecer em silêncio: ninguém pediu
+      // por ela, e ela decide o pré-selecionado da próxima viagem.
+      if (promoted) {
+        showDialog(
+          t('passports.promoted.title'),
+          t('passports.promoted.notice', { country: getCountryName(promoted) }),
+        );
+      }
+    } catch (error) {
+      showDialog(t('passports.dialog.cannotComplete'), toPassportMessage(error));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function openActions(passport: Passport) {
     const name = getCountryName(passport.country_code);
 
-    // O principal não é removível. Em vez de oferecer a ação e falhar depois da
-    // confirmação, a própria explicação já indica o caminho de saída.
-    if (passport.is_primary) {
-      const isOnly = passports.length === 1;
-
-      showDialog(
-        name,
-        t(isOnly ? 'passports.dialog.onlyPrimary.message' : 'passports.dialog.primary.message'),
-        isOnly
-          ? [
-              {
-                text: t('passports.addPassport'),
-                onPress: () => router.push('/passport-picker'),
-              },
-              { text: t('common.action.close'), style: 'cancel' },
-            ]
-          : [{ text: t('common.action.close'), style: 'cancel' }],
-      );
+    // O último passaporte não sai: o app precisa de um no perfil. Em vez de
+    // oferecer a ação e falhar depois, a explicação já indica o caminho.
+    if (passports.length === 1) {
+      showDialog(name, t('passports.dialog.onlyPrimary.message'), [
+        { text: t('passports.addPassport'), onPress: () => router.push('/passport-picker') },
+        { text: t('common.action.close'), style: 'cancel' },
+      ]);
       return;
     }
 
     const buttons: AlertButton[] = [
-      {
-        text: t('passports.dialog.setPrimary'),
-        onPress: () => void run(passport.id, () => setPrimary(passport.id)),
-      },
+      ...(passport.is_primary
+        ? []
+        : [
+            {
+              text: t('passports.dialog.setPrimary'),
+              onPress: () => void run(passport.id, () => setPrimary(passport.id)),
+            },
+          ]),
       {
         text: t('passports.dialog.remove'),
         style: 'destructive',
-        onPress: () =>
-          showDialog(
-            t('passports.dialog.removeConfirm.title', { name }),
-            t('passports.dialog.removeConfirm.message'),
-            [
-              { text: t('common.action.cancel'), style: 'cancel' },
-              {
-                text: t('passports.dialog.removeConfirm.confirm'),
-                style: 'destructive',
-                onPress: () => void run(passport.id, () => removePassport(passport.id)),
-              },
-            ],
-          ),
+        onPress: () => void confirmRemoval(passport),
       },
       { text: t('common.action.cancel'), style: 'cancel' },
     ];

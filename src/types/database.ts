@@ -104,6 +104,8 @@ export type Database = {
           name: string;
           start_date: string | null;
           end_date: string | null;
+          passport_country_code: string | null;
+          passport_selected_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -113,6 +115,8 @@ export type Database = {
           name: string;
           start_date?: string | null;
           end_date?: string | null;
+          passport_country_code?: string | null;
+          passport_selected_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -122,6 +126,8 @@ export type Database = {
           name?: string;
           start_date?: string | null;
           end_date?: string | null;
+          passport_country_code?: string | null;
+          passport_selected_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -207,6 +213,7 @@ export type Database = {
           priority: RequirementPriority;
           category: RequirementCategory;
           completed: boolean;
+          superseded_at: string | null;
           template_id: string | null;
           group_id: string | null;
           visa_rule_id: string | null;
@@ -224,6 +231,7 @@ export type Database = {
           priority: RequirementPriority;
           category: RequirementCategory;
           completed?: boolean;
+          superseded_at?: string | null;
           template_id?: string | null;
           group_id?: string | null;
           visa_rule_id?: string | null;
@@ -241,6 +249,7 @@ export type Database = {
           priority?: RequirementPriority;
           category?: RequirementCategory;
           completed?: boolean;
+          superseded_at?: string | null;
           template_id?: string | null;
           group_id?: string | null;
           visa_rule_id?: string | null;
@@ -764,6 +773,27 @@ export type Database = {
       apply_requirement_diff: {
         Args: { p_remove_ids: string[]; p_inserts: Json };
         Returns: undefined;
+      };
+      apply_trip_passport_change: {
+        Args: {
+          p_trip_id: string;
+          p_expected_country_code: string | null;
+          p_passport_country_code: string;
+          p_today: string;
+          p_supersede_ids: string[];
+          p_restore_ids: string[];
+          p_updates: Json;
+          p_inserts: Json;
+        };
+        Returns: undefined;
+      };
+      delete_passport: {
+        Args: { p_passport_id: string };
+        Returns: string | null;
+      };
+      set_primary_passport: {
+        Args: { p_passport_id: string };
+        Returns: Database['public']['Tables']['passports']['Row'];
       };
     };
     Enums: {

@@ -1,0 +1,37 @@
+name: Banco
+
+# Workflow à parte, e não mais um job no `check.yml`, para não cobrar o tempo de
+# subir contêineres em todo commit de `src/`. A suíte testa schema, policies e
+# funções — só muda quando `supabase/` muda.
+on:
+  push:
+    branches: [master, development]
+    paths: ['supabase/**']
+  pull_request:
+    branches: [master, development]
+    paths: ['supabase/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    name: RLS, funções e índices
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          # Versão fixa, e a mesma usada no desenvolvimento. Os nomes de serviço
+          # aceitos pelo `-x` mudam entre versões da CLI, e `latest` derrubaria
+          # este job sozinho no dia de uma atualização.
+          version: 2.117.0
+
+      # Sobe só o Postgres e aplica as migrations do zero, na ordem. A suíte não
+      # usa REST, Studio, Storage nem edge runtime, e nada aqui toca o projeto
+      # remoto. Mesma lista do script `db:start` no package.json.
+      - run: supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - run: supabase test db

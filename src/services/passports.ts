@@ -35,35 +35,44 @@ export const passportsService = {
   },
 
   /**
-   * Marca um passaporte como principal. O índice único parcial no banco garante
-   * um único principal por usuário, por isso o anterior é limpo antes.
+   * Marca um passaporte como principal. Limpar o anterior e marcar o novo são
+   * duas escritas, e a função no banco as mantém numa transação — sem ela há um
+   * instante em que o usuário não tem principal nenhum.
    */
-  async setPrimary(userId: string, passportId: string): Promise<Passport> {
-    unwrap(
-      await supabase
-        .from('passports')
-        .update({ is_primary: false })
-        .eq('user_id', userId)
-        .eq('is_primary', true)
-        .select('id'),
-      'Falha ao limpar o passaporte principal',
-    );
-
+  async setPrimary(passportId: string): Promise<Passport> {
     return unwrapRequired(
-      await supabase
-        .from('passports')
-        .update({ is_primary: true })
-        .eq('id', passportId)
-        .select('*')
-        .single(),
+      await supabase.rpc('set_primary_passport', { p_passport_id: passportId }),
       'Falha ao definir o passaporte principal',
     );
   },
 
-  async remove(passportId: string): Promise<void> {
-    unwrap(
-      await supabase.from('passports').delete().eq('id', passportId).select('id'),
+  /**
+   * Remove um passaporte e, se ele era o principal, promove o mais antigo dos
+   * restantes na mesma transação. Devolve o país promovido, para a tela avisar,
+   * ou `null` quando não houve promoção. Nenhuma viagem é alterada.
+   */
+  async remove(passportId: string): Promise<string | null> {
+    return unwrap(
+      await supabase.rpc('delete_passport', { p_passport_id: passportId }),
       'Falha ao remover passaporte',
+    );
+  },
+
+  /**
+   * Viagens que usam este passaporte, com as datas para o status sair de
+   * `getTripStatus` — no cliente, pela data local, como no resto do app.
+   */
+  async listTripsUsingPassport(
+    userId: string,
+    countryCode: string,
+  ): Promise<{ start_date: string | null; end_date: string | null }[]> {
+    return unwrapRequired(
+      await supabase
+        .from('trips')
+        .select('start_date, end_date')
+        .eq('user_id', userId)
+        .eq('passport_country_code', countryCode.toUpperCase()),
+      'Falha ao consultar as viagens deste passaporte',
     );
   },
 

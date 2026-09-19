@@ -41,6 +41,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.edit.section.countries': 'PAÍSES',
   'trip.edit.section.cities': 'CIUDADES',
   'trip.edit.section.dates': 'FECHAS',
+  'trip.edit.section.passport': 'PASAPORTE',
   'passports.section.title': 'PASAPORTES',
   'trips.tips.sectionTitle': 'CONSEJO PARA TU PRÓXIMO VIAJE',
 
@@ -171,16 +172,11 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'passports.section.primaryTag': 'Principal',
   'passports.error.connection': 'Tu conexión falló. Inténtalo de nuevo.',
   'passports.error.loginRequired': 'Inicia sesión para agregar un pasaporte.',
-  'passports.error.onlyOne':
-    'Este es tu único pasaporte. Agrega otro y defínelo como principal para poder eliminar este.',
-  'passports.error.mustPromoteFirst':
-    'Este es tu pasaporte principal. Define otro como principal antes de eliminarlo.',
+  'passports.error.onlyOne': 'Este es tu único pasaporte. Agrega otro antes de eliminar este.',
 
   'passports.dialog.cannotComplete': 'No se pudo completar',
   'passports.dialog.onlyPrimary.message':
-    'Este es tu único pasaporte y está definido como principal. Para eliminarlo, agrega otro pasaporte y defínelo como principal.',
-  'passports.dialog.primary.message':
-    'Pasaporte principal. Para eliminarlo, define otro pasaporte como principal antes.',
+    'Este es tu único pasaporte. Para eliminarlo, agrega otro antes.',
   'passports.section.pendingRulesTag': 'Reglas en preparación',
   'passports.dialog.pendingRules.message':
     'Todavía no tenemos las reglas de entrada para este pasaporte. Tu lista sigue con los documentos y el paso de revisar los requisitos de cada destino.',
@@ -188,6 +184,19 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'passports.dialog.remove': 'Eliminar pasaporte',
   'passports.dialog.removeConfirm.title': '¿Eliminar {name}?',
   'passports.dialog.removeConfirm.message': 'Puedes agregarlo de nuevo cuando quieras.',
+  'passports.dialog.removeConfirm.withTrips': {
+    one: '{count} viaje usa este pasaporte. Sigue guardado, con su checklist intacta, y te pedirá elegir otro.',
+    other:
+      '{count} viajes usan este pasaporte. Siguen guardados, con sus checklists intactas, y te pedirán elegir otro.',
+  },
+  'passports.dialog.removeConfirm.completedOnly':
+    'Tus viajes concluidos siguen exactamente como están.',
+  'passports.promoted.title': 'Pasaporte principal actualizado',
+  'passports.promoted.notice': '{country} ahora es tu pasaporte principal.',
+  'trips.passport.review.title': 'Elige el pasaporte de este viaje',
+  'trips.passport.review.message':
+    'El pasaporte que usabas aquí salió de tu perfil. Elige otro para que los requisitos de entrada vuelvan a verificarse.',
+  'trips.passport.review.action': 'Elegir pasaporte',
   'passports.dialog.removeConfirm.confirm': 'Eliminar',
 
   'passports.picker.search.byCity': 'Buscar país o ciudad...',
@@ -416,6 +425,21 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.trips.menuOptions': 'Opciones del viaje',
   'trips.checklist.empty': 'Tu lista aparece aquí en cuanto esté lista.',
   'trips.checklist.itemCount': { one: '{count} elemento', other: '{count} elementos' },
+  'trips.checklist.superseded.title': 'YA NO APLICAN',
+  'trips.checklist.superseded.hint':
+    'Estos ítems venían del pasaporte anterior de este viaje. Se quedan aquí para que veas qué cambió.',
+  'trip.edit.passport.hint': 'El cambio se aplica al instante y revisa la checklist de este viaje.',
+  'trip.passport.change.title': '¿Cambiar el pasaporte del viaje?',
+  'trip.passport.change.message':
+    'Algunos ítems de tu checklist pueden cambiar, porque los requisitos de entrada dependen del pasaporte seleccionado. Vamos a revisar los ítems afectados y conservar tu progreso siempre que sea posible.',
+  'trip.passport.change.confirm': 'Cambiar y revisar checklist',
+  'trip.passport.changed.same': 'Pasaporte actualizado. Tu checklist sigue igual.',
+  'trip.passport.changed.superseded': {
+    one: 'Pasaporte actualizado. {count} ítem de la checklist ya no aplica.',
+    other: 'Pasaporte actualizado. {count} ítems de la checklist ya no aplican.',
+  },
+  'trip.passport.change.error': 'No pudimos actualizarlo ahora. Inténtalo de nuevo.',
+  'trip.passport.change.conflict': 'Este viaje cambió en otro lugar. Vamos a recargarlo.',
   'trips.checklist.refresh': 'Actualizar lista',
   'trips.checklist.unverifiedDestinations':
     'Para {countries}, revisa los requisitos de entrada en la fuente oficial: todavía no tenemos la regla verificada de esos destinos.',
@@ -443,10 +467,13 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trip.name.label': 'Nombre del viaje',
   'trip.countryStep.title': '¿A dónde vas?',
 
+  'trip.new.title.passport': '¿Con qué pasaporte vas a viajar?',
   'trip.new.title.countries': '¿A dónde vas?',
   'trip.new.title.cities': '¿Qué ciudades piensas visitar?',
   'trip.new.title.dates': '¿Cuándo viajas?',
   'trip.new.title.name': '¿Cómo quieres llamar a este viaje?',
+  'trip.new.subtitle.passport':
+    'Los requisitos de entrada cambian según el pasaporte. Puedes cambiarlo después.',
   'trip.new.subtitle.countries': 'Elige uno o más países de tu itinerario.',
   'trip.new.subtitle.cities':
     'Elige las ciudades que ya están en el plan. Puedes decidirlo después.',
@@ -466,6 +493,9 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   },
   'trip.new.name.placeholder': 'Mi viaje',
 
+  'trips.passport.label': 'Pasaporte: {country}',
+  'trip.review.passport.label': 'PASAPORTE',
+  'trip.review.passport.action': 'Cambiar pasaporte',
   'trip.review.dates.label': 'FECHAS',
   'trip.review.dates.action': 'Cambiar fechas',
   'trip.review.itinerary.label': 'ITINERARIO',

@@ -1,5 +1,6 @@
+import type { RequirementContentUpdate } from '@/features/trips/domain/requirement-matching';
 import { supabase } from '@/lib/supabase/client';
-import { unwrap, unwrapRequired } from '@/services/errors';
+import { DataAccessError, unwrap, unwrapRequired } from '@/services/errors';
 import type { TripRequirementWithGroup } from '@/services/trips';
 import type { Json } from '@/types/database';
 import type { TripRequirement, TripRequirementInsert } from '@/types/models';
@@ -74,4 +75,43 @@ export const tripRequirementsService = {
       'Tente atualizar a checklist novamente',
     );
   },
+
+  /**
+   * Troca o passaporte da viagem e aplica a diferença da checklist junto. Sem
+   * atalho quando nada muda na checklist: a viagem ainda precisa gravar o
+   * passaporte novo.
+   */
+  async applyPassportChange(input: PassportChangeInput): Promise<void> {
+    unwrap(
+      await supabase.rpc('apply_trip_passport_change', {
+        p_trip_id: input.tripId,
+        p_expected_country_code: input.expectedCountryCode,
+        p_passport_country_code: input.passportCountryCode,
+        p_today: input.today,
+        p_supersede_ids: [...input.supersedeIds],
+        p_restore_ids: [...input.restoreIds],
+        p_updates: input.updates as unknown as Json,
+        p_inserts: input.inserts as unknown as Json,
+      }),
+      'Tente atualizar a checklist novamente',
+    );
+  },
 };
+
+export type PassportChangeInput = {
+  tripId: string;
+  /** Passaporte que a tela leu; a função recusa se já mudou em outro lugar. */
+  expectedCountryCode: string | null;
+  passportCountryCode: string;
+  /** Data local do aparelho: `current_date` no banco é UTC. */
+  today: string;
+  supersedeIds: readonly string[];
+  restoreIds: readonly string[];
+  updates: readonly RequirementContentUpdate[];
+  inserts: readonly TripRequirementInsert[];
+};
+
+/** A viagem mudou de passaporte em outro lugar desde a leitura desta tela. */
+export function isPassportChangeConflict(error: unknown): boolean {
+  return error instanceof DataAccessError && error.code === 'TR409';
+}

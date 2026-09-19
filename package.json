@@ -60,7 +60,9 @@
     "site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-legal-site.mjs && prettier --write site",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/**/*.test.ts\"",
     "check": "expo lint && tsc --noEmit && prettier --check . && npm test",
-    "functions:check": "cd supabase/functions && deno check delete-account/index.ts && deno lint ."
+    "functions:check": "cd supabase/functions && deno check delete-account/index.ts && deno lint .",
+    "db:start": "npx supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
+    "db:test": "npx supabase test db"
   },
   "private": true
 }

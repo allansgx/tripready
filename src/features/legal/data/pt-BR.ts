@@ -5,7 +5,7 @@ import type { LegalDocument } from './types.ts';
 
 export const privacyPolicy: LegalDocument = {
   title: 'Política de Privacidade',
-  version: '1.0',
+  version: '1.1',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -39,7 +39,7 @@ export const privacyPolicy: LegalDocument = {
     {
       kind: 'list',
       items: [
-        '**O país do passaporte** que você usa para viajar, e qual deles é o principal quando você cadastra mais de um.',
+        '**O país do passaporte** que você usa para viajar, qual deles é o principal quando você cadastra mais de um, e qual deles você escolheu para cada viagem.',
         '**As suas viagens**: o nome que você dá a cada uma, as datas, os países e as cidades escolhidas.',
         '**A sua checklist**: os itens gerados para a viagem, os itens que você mesmo criar e quais deles você marcou como verificados.',
       ],
@@ -95,7 +95,7 @@ export const privacyPolicy: LegalDocument = {
         '**Quando você entra com Google ou Apple.** A autenticação acontece no navegador do seu aparelho ou na tela do próprio sistema, e o TripReady nunca tem acesso à sua senha desses serviços. Recebemos apenas o nome, o endereço de e-mail e, no caso do Google, a foto. Se você optar por ocultar seu e-mail ao entrar com a Apple, receberemos o endereço de redirecionamento que a Apple cria para você.',
         '**Quando você cria uma conta com e-mail e senha.** Nesse caso enviamos uma mensagem para o endereço informado, com um link de confirmação, para termos certeza de que o e-mail é mesmo seu. A conta é ativada quando você confirma.',
         '**Quando você usa o aplicativo.** É você quem escolhe o país do passaporte, cria as viagens e marca os itens da checklist.',
-        '**Quando o aplicativo monta a sua checklist.** Os itens são gerados a partir do passaporte principal, dos destinos e do período da viagem.',
+        '**Quando o aplicativo monta a sua checklist.** Os itens são gerados a partir do passaporte que você escolheu para aquela viagem, dos destinos e do período.',
       ],
     },
 
@@ -280,7 +280,7 @@ export const privacyPolicy: LegalDocument = {
 
 export const termsOfUse: LegalDocument = {
   title: 'Termos de Uso',
-  version: '1.0',
+  version: '1.1',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -291,7 +291,7 @@ export const termsOfUse: LegalDocument = {
     { kind: 'heading', text: '1. O que é o TripReady' },
     {
       kind: 'paragraph',
-      text: 'O TripReady é um aplicativo de organização de viagens. Ele reúne, em uma checklist, o que você precisa verificar antes de viajar, considerando o passaporte que você cadastrou, os destinos escolhidos e o período da viagem — e mostra, sempre que existir, o link para a fonte oficial de cada exigência.',
+      text: 'O TripReady é um aplicativo de organização de viagens. Ele reúne, em uma checklist, o que você precisa verificar antes de viajar, considerando o passaporte que você escolheu para aquela viagem, os destinos e o período — e mostra, sempre que existir, o link para a fonte oficial de cada exigência.',
     },
     {
       kind: 'paragraph',
@@ -315,7 +315,11 @@ export const termsOfUse: LegalDocument = {
     { kind: 'heading', text: '2. Como a checklist funciona' },
     {
       kind: 'paragraph',
-      text: 'Os itens da sua checklist são montados a partir de um catálogo de regras, cruzando o passaporte principal que você cadastrou, os países da viagem, o período e, em alguns casos, o fato de o destino pertencer a um grupo de países com regras comuns.',
+      text: 'Os itens da sua checklist são montados a partir de um catálogo de regras, cruzando o passaporte que você escolheu para a viagem, os países, o período e, em alguns casos, o fato de o destino pertencer a um grupo de países com regras comuns.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'Cada viagem tem o seu próprio passaporte. Ao trocá-lo, a checklist é revista: os itens que continuam valendo preservam o que você já verificou, e os que deixaram de valer ficam visíveis em uma seção à parte, em vez de desaparecer. Remover um passaporte do perfil não altera nenhuma viagem — as futuras e em andamento passam a pedir a escolha de outro, e as concluídas permanecem exatamente como estão.',
     },
     { kind: 'paragraph', text: 'Cada item tem uma prioridade:' },
     {
@@ -341,7 +345,7 @@ export const termsOfUse: LegalDocument = {
       kind: 'list',
       items: [
         '**conferir os requisitos oficiais aplicáveis à sua viagem** antes de viajar, usando os canais oficiais de cada país;',
-        'manter corretos os dados que alimentam a checklist, especialmente **o passaporte principal** — é ele que determina quais regras de entrada são aplicadas;',
+        'manter corretos os dados que alimentam a checklist, especialmente **o passaporte escolhido para cada viagem** — é ele que determina quais regras de entrada são aplicadas;',
         'considerar que existem situações pessoais que o aplicativo não conhece e que podem mudar completamente o que é exigido de você: dupla nacionalidade, país de residência, vistos ou recusas anteriores, motivo e duração da viagem, entre outras.',
       ],
     },

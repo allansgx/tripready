@@ -1,0 +1,53 @@
+-- =============================================================================
+-- TripReady — fecha o privilégio de tabela do papel `anon`
+--
+-- Achado pela suíte de testes de banco: `anon` tem privilégio em todas as
+-- tabelas de `public`, inclusive `trips`, `passports` e `trip_requirements`.
+--
+-- Não veio de nenhuma migration daqui. O Supabase deixa, antes da primeira
+-- delas, um `alter default privileges in schema public grant all on tables to
+-- postgres, anon, authenticated, service_role`, e toda tabela criada depois
+-- herda isso. O comentário de `20260905120200_table_grants.sql` — "nada é
+-- concedido ao role anon" — descreve o que aquela migration faz, não o estado
+-- em que o banco ficou.
+--
+-- Não havia vazamento: a RLS está ligada em todas as tabelas e nenhuma policy é
+-- `to anon`, então a leitura volta vazia e a escrita é barrada. O que faltava
+-- era a segunda camada, e ela importa porque `anon` é o papel de qualquer
+-- requisição **antes do login** — a chave publicável vai inlinada no bundle do
+-- app, então esse papel está ao alcance de quem instalar o TripReady.
+--
+-- O risco real é o modo de falhar. Hoje, uma migration que criasse tabela e
+-- esquecesse o `enable row level security` deixaria essa tabela legível e
+-- gravável por qualquer pessoa com a chave, em silêncio. Depois deste revoke, o
+-- mesmo esquecimento vira 42501 na primeira consulta.
+--
+-- É o mesmo raciocínio de `20260912120000_default_privileges_revoke.sql`, que
+-- trocou conveniência por falha ruidosa — mas só para `authenticated`. Isto
+-- fecha a outra porta.
+--
+-- -----------------------------------------------------------------------------
+-- Ressalva sobre o `alter default privileges` abaixo
+--
+-- Ele é por papel e só cancela a concessão feita **pelo mesmo papel**. A
+-- concessão a `anon` veio do bootstrap do Supabase, que pode ter rodado por
+-- outro papel — nesse caso esta linha registra uma entrada nova e inerte, e
+-- tabela futura volta a nascer aberta para `anon` no nível de privilégio.
+--
+-- O `revoke all on all tables` acima disso não tem essa ressalva: ele vale para
+-- todas as tabelas que existem hoje.
+--
+-- Para conferir depois do push, `anon` não deve aparecer nas linhas de
+-- `public`:
+--
+--   select defaclrole::regrole, defaclnamespace::regnamespace, defaclacl
+--   from pg_default_acl;
+--
+-- Como a garantia para tabelas futuras não pode depender disso, a regra passa a
+-- estar escrita no AGENTS.md: toda migration que cria tabela revoga de `anon`
+-- explicitamente, do mesmo jeito que concede a `authenticated`.
+-- =============================================================================
+
+revoke all on all tables in schema public from anon;
+
+alter default privileges in schema public revoke all on tables from anon;

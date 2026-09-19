@@ -21,10 +21,11 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { TextField } from '@/components/ui/text-field';
 import { getCountryName, type Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
-import { usePassports } from '@/features/passports/passports-context';
+import { PassportChoiceList } from '@/features/passports/passport-choice-list';
 import { CityStep } from '@/features/trips/components/city-step';
 import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import {
+  changeTripPassport,
   updateTripWithDestinations,
   type TripEditBaseline,
 } from '@/features/trips/data/trip-persistence';
@@ -36,9 +37,10 @@ import {
   MAX_TRIP_DURATION_DAYS,
   type TripLimitIssue,
 } from '@/features/trips/domain/trip-limits';
+import { getTripStatus } from '@/features/trips/domain/trip-status';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { t } from '@/i18n';
-import { tripsService } from '@/services';
+import { isPassportChangeConflict, tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 const LIMIT_MESSAGE_MAX: Partial<Record<TripLimitIssue, number>> = {
@@ -62,7 +64,6 @@ const NAME_MAX_LENGTH = 60;
 export default function EditTripScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const router = useRouter();
-  const { primary } = usePassports();
 
   const {
     draft,
@@ -72,6 +73,7 @@ export default function EditTripScreen() {
     addCity,
     changeName,
     setRange,
+    setPassport,
     hydrate,
     resolvedName,
   } = useTripDraft();
@@ -82,6 +84,14 @@ export default function EditTripScreen() {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [passportBusy, setPassportBusy] = useState(false);
+  /** Muda para reler a viagem quando ela foi alterada em outro lugar. */
+  const [reload, setReload] = useState(0);
+  /** Datas como estão gravadas: é por elas que o banco decide se a viagem acabou. */
+  const [savedRange, setSavedRange] = useState<{ start: string | null; end: string | null }>({
+    start: null,
+    end: null,
+  });
 
   useEffect(() => {
     if (!tripId) return;
@@ -100,8 +110,10 @@ export default function EditTripScreen() {
             cityName: city.city_name,
           })),
           range: { start: detail.start_date, end: detail.end_date },
+          passportCountryCode: detail.passport_country_code,
         });
 
+        setSavedRange({ start: detail.start_date, end: detail.end_date });
         setBaseline({
           countryCodes: (detail.trip_countries ?? []).map((country) => country.country_code),
           cities: detail.trip_cities ?? [],
@@ -118,7 +130,7 @@ export default function EditTripScreen() {
     return () => {
       active = false;
     };
-  }, [tripId, hydrate]);
+  }, [tripId, hydrate, reload]);
 
   const limits = checkTripLimits({
     countryCodes: draft.countryCodes,
@@ -153,6 +165,55 @@ export default function EditTripScreen() {
     ]);
   }, [isDirty, router]);
 
+  /**
+   * A troca vale na hora, e não no "Salvar": ela reescreve a checklist, e um
+   * botão que às vezes faz isso e às vezes não deixaria a pessoa sem saber o
+   * que acabou de acontecer.
+   */
+  function confirmPassportChange(countryCode: string) {
+    if (countryCode === draft.passportCountryCode || passportBusy) return;
+
+    showDialog(t('trip.passport.change.title'), t('trip.passport.change.message'), [
+      { text: t('common.action.cancel'), style: 'cancel' },
+      {
+        text: t('trip.passport.change.confirm'),
+        onPress: () => void applyPassportChange(countryCode),
+      },
+    ]);
+  }
+
+  async function applyPassportChange(countryCode: string) {
+    if (!tripId) return;
+
+    setPassportBusy(true);
+    setNotice(null);
+    try {
+      const outcome = await changeTripPassport({
+        tripId,
+        expectedCountryCode: draft.passportCountryCode,
+        passportCountryCode: countryCode,
+      });
+
+      setPassport(countryCode);
+      setNotice(
+        outcome.superseded > 0
+          ? t('trip.passport.changed.superseded', { count: outcome.superseded })
+          : t('trip.passport.changed.same'),
+      );
+    } catch (error) {
+      // A viagem mudou em outro lugar: reler é o que torna a mensagem
+      // verdadeira, e a diferença seria calculada sobre dado velho.
+      if (isPassportChangeConflict(error)) {
+        setNotice(t('trip.passport.change.conflict'));
+        setReload((current) => current + 1);
+      } else {
+        setNotice(t('trip.passport.change.error'));
+      }
+    } finally {
+      setPassportBusy(false);
+    }
+  }
+
   async function save() {
     if (!tripId || !baseline) return;
 
@@ -171,7 +232,7 @@ export default function EditTripScreen() {
         draft,
         resolvedName,
         baseline,
-        primary?.country_code ?? null,
+        draft.passportCountryCode,
       );
       setSaved(true);
       setTimeout(() => router.back(), 900);
@@ -313,6 +374,20 @@ export default function EditTripScreen() {
             </View>
           ) : null}
 
+          {/* Viagem concluída não troca de passaporte: ela é o registro do que
+              foi preparado, e a função no banco recusa de qualquer forma. */}
+          {getTripStatus({ start_date: savedRange.start, end_date: savedRange.end }) !==
+          'completed' ? (
+            <View style={styles.section}>
+              <SectionLabel>{t('trip.edit.section.passport')}</SectionLabel>
+              <PassportChoiceList
+                selectedCountryCode={draft.passportCountryCode}
+                onSelect={confirmPassportChange}
+              />
+              <Text style={styles.hint}>{t('trip.edit.passport.hint')}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.section}>
             <SectionLabel>{t('trip.edit.section.dates')}</SectionLabel>
             <DateRangePicker
@@ -339,7 +414,9 @@ export default function EditTripScreen() {
           label={t('trip.edit.save')}
           onPress={() => void save()}
           loading={busy}
-          disabled={!isDirty || saved || draft.countryCodes.length === 0 || !limits.isValid}
+          disabled={
+            !isDirty || saved || passportBusy || draft.countryCodes.length === 0 || !limits.isValid
+          }
         />
         {!isDirty && !saved ? (
           <Text style={styles.hint}>{t('trip.edit.hint.changeToSave')}</Text>

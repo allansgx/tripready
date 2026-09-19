@@ -1,14 +1,19 @@
 import { getCountryName } from '@/constants/countries';
 import type { SelectedCity } from '@/features/trips/components/city-step';
 import {
+  describePassportChange,
+  diffForPassportChange,
   diffTripRequirements,
   resolveTripRequirements,
   type ExistingRequirement,
+  type ExistingRequirementForPassport,
+  type PassportChangeOutcome,
   type ResolvedRequirement,
 } from '@/features/trips/domain/requirement-matching';
 import { todayISO } from '@/features/trips/domain/trip-status';
 import type { TripDraft } from '@/features/trips/hooks/use-trip-draft';
 import {
+  DataAccessError,
   requirementCatalogService,
   tripDestinationsService,
   tripRequirementsService,
@@ -50,35 +55,57 @@ export async function resolveChecklist(input: ChecklistInput): Promise<ResolvedR
 }
 
 /**
- * Recalcula as checklists depois de uma troca de passaporte principal, porque
- * as regras de visto dependem dele. Viagens concluídas ficam de fora.
+ * Troca o passaporte-base de uma viagem e acerta a checklist junto. Devolve o
+ * que mudou em números — quem escreve a frase é a tela.
+ *
+ * `expectedCountryCode` é o passaporte que a tela leu: a função no banco recusa
+ * a troca se ele já mudou em outro lugar, em vez de aplicar uma diferença
+ * calculada sobre dado velho.
  */
-export async function rebuildChecklistsForPassport(
-  userId: string,
-  passportCountryCode: string | null,
-): Promise<void> {
-  const trips = await tripsService.listForRebuild(userId, todayISO());
-
-  const removeIds: string[] = [];
-  const inserts: ResolvedRequirement[] = [];
-
-  for (const trip of trips) {
-    const desired = await resolveChecklist({
-      tripId: trip.id,
-      countryCodes: (trip.trip_countries ?? []).map((country) => country.country_code),
-      startDate: trip.start_date,
-      endDate: trip.end_date,
-      passportCountryCode,
-    });
-
-    const diff = diffTripRequirements(trip.trip_requirements ?? [], desired);
-
-    removeIds.push(...diff.toRemoveIds);
-    inserts.push(...diff.toInsert);
+export async function changeTripPassport(input: {
+  tripId: string;
+  expectedCountryCode: string | null;
+  passportCountryCode: string;
+}): Promise<PassportChangeOutcome> {
+  const detail = await tripsService.getDetail(input.tripId);
+  if (!detail) {
+    throw new DataAccessError('Tente abrir esta viagem novamente');
   }
 
-  // Uma escrita só: a troca de passaporte ou vale inteira, ou não vale.
-  await tripRequirementsService.applyDiff(removeIds, inserts);
+  const desired = await resolveChecklist({
+    tripId: input.tripId,
+    countryCodes: (detail.trip_countries ?? []).map((country) => country.country_code),
+    startDate: detail.start_date,
+    endDate: detail.end_date,
+    passportCountryCode: input.passportCountryCode,
+  });
+
+  const current: ExistingRequirementForPassport[] = (detail.trip_requirements ?? []).map(
+    (requirement) => ({
+      id: requirement.id,
+      template_id: requirement.template_id,
+      group_id: requirement.group_id,
+      country_code: requirement.country_code,
+      completed: requirement.completed,
+      visa_rule_id: requirement.visa_rule_id,
+      superseded_at: requirement.superseded_at,
+    }),
+  );
+
+  const diff = diffForPassportChange(current, desired);
+
+  await tripRequirementsService.applyPassportChange({
+    tripId: input.tripId,
+    expectedCountryCode: input.expectedCountryCode,
+    passportCountryCode: input.passportCountryCode,
+    today: todayISO(),
+    supersedeIds: diff.toSupersedeIds,
+    restoreIds: diff.toRestoreIds,
+    updates: diff.toUpdate,
+    inserts: diff.toInsert,
+  });
+
+  return describePassportChange(diff);
 }
 
 /** Cria a viagem e seus destinos; a checklist é montada na tela de preparação. */
@@ -86,12 +113,14 @@ export async function createTripWithDestinations(
   userId: string,
   draft: TripDraft,
   name: string,
+  passportCountryCode: string | null,
 ): Promise<Trip> {
   const trip = await tripsService.create({
     userId,
     name,
     startDate: draft.range.start,
     endDate: draft.range.end,
+    passportCountryCode,
   });
 
   // Países antes das cidades: a chave estrangeira composta de `trip_cities`

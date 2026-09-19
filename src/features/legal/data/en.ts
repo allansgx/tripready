@@ -11,8 +11,8 @@ import type { TranslatedLegalDocument } from './types.ts';
 
 export const privacyPolicy: TranslatedLegalDocument = {
   title: 'Privacy Policy',
-  version: '1.0',
-  sourceVersion: '1.0',
+  version: '1.1',
+  sourceVersion: '1.1',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -46,7 +46,7 @@ export const privacyPolicy: TranslatedLegalDocument = {
     {
       kind: 'list',
       items: [
-        '**The passport country** you use to travel, and which one is your main passport when you register more than one.',
+        '**The passport country** you use to travel, which one is your main passport when you register more than one, and which one you chose for each trip.',
         '**Your trips**: the name you give each one, the dates, the countries and the cities chosen.',
         '**Your checklist**: the items generated for the trip, the items you create yourself, and which of them you have marked as checked.',
       ],
@@ -102,7 +102,7 @@ export const privacyPolicy: TranslatedLegalDocument = {
         "**When you sign in with Google or Apple.** Authentication happens in your device's browser or in the system's own screen, and TripReady never has access to your password for these services. We only receive your name, email address, and, in Google's case, your photo. If you choose to hide your email when signing in with Apple, we receive the relay address Apple creates for you.",
         '**When you create an account with email and password.** In this case we send a message to the address provided, with a confirmation link, to make sure the email is really yours. The account is activated when you confirm it.',
         '**When you use the app.** You are the one who chooses the passport country, creates trips, and checks off checklist items.',
-        '**When the app builds your checklist.** The items are generated from your main passport, the destinations, and the trip period.',
+        '**When the app builds your checklist.** The items are generated from the passport you chose for that trip, the destinations, and the period.',
       ],
     },
 
@@ -287,8 +287,8 @@ export const privacyPolicy: TranslatedLegalDocument = {
 
 export const termsOfUse: TranslatedLegalDocument = {
   title: 'Terms of Use',
-  version: '1.0',
-  sourceVersion: '1.0',
+  version: '1.1',
+  sourceVersion: '1.1',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -299,7 +299,7 @@ export const termsOfUse: TranslatedLegalDocument = {
     { kind: 'heading', text: '1. What TripReady is' },
     {
       kind: 'paragraph',
-      text: 'TripReady is a trip organization app. It gathers, in a checklist, what you need to check before traveling, based on the passport you registered, the destinations chosen, and the trip period — and shows, whenever available, the link to the official source of each requirement.',
+      text: 'TripReady is a trip organization app. It gathers, in a checklist, what you need to check before traveling, based on the passport you chose for that trip, the destinations, and the period — and shows, whenever available, the link to the official source of each requirement.',
     },
     {
       kind: 'paragraph',
@@ -323,7 +323,11 @@ export const termsOfUse: TranslatedLegalDocument = {
     { kind: 'heading', text: '2. How the checklist works' },
     {
       kind: 'paragraph',
-      text: "Your checklist items are built from a catalog of rules, cross-referencing the main passport you registered, the trip's countries, the period, and, in some cases, whether the destination belongs to a group of countries with common rules.",
+      text: 'Your checklist items are built from a catalog of rules, cross-referencing the passport you chose for the trip, the countries, the period, and, in some cases, whether the destination belongs to a group of countries with common rules.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'Each trip has its own passport. When you change it, the checklist is reviewed: items that still apply keep what you had already checked, and items that no longer apply stay visible in a separate section instead of disappearing. Removing a passport from your profile does not change any trip — upcoming and ongoing ones start asking you to choose another, and completed ones stay exactly as they are.',
     },
     { kind: 'paragraph', text: 'Each item has a priority:' },
     {
@@ -349,7 +353,7 @@ export const termsOfUse: TranslatedLegalDocument = {
       kind: 'list',
       items: [
         "**check the official requirements that apply to your trip** before traveling, using each country's official channels;",
-        'keep accurate the data that feeds the checklist, especially **your main passport** — it is what determines which entry rules are applied;',
+        'keep accurate the data that feeds the checklist, especially **the passport chosen for each trip** — it is what determines which entry rules are applied;',
         'consider that there are personal circumstances the app does not know about that can completely change what is required of you: dual nationality, country of residence, previous visas or refusals, purpose and length of the trip, among others.',
       ],
     },
