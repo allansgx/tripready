@@ -11,8 +11,8 @@ import type { TranslatedLegalDocument } from './types.ts';
 
 export const privacyPolicy: TranslatedLegalDocument = {
   title: 'Política de Privacidad',
-  version: '1.0',
-  sourceVersion: '1.0',
+  version: '1.1',
+  sourceVersion: '1.1',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -46,7 +46,7 @@ export const privacyPolicy: TranslatedLegalDocument = {
     {
       kind: 'list',
       items: [
-        '**El país del pasaporte** que usas para viajar, y cuál de ellos es el principal cuando registras más de uno.',
+        '**El país del pasaporte** que usas para viajar, cuál de ellos es el principal cuando registras más de uno, y cuál elegiste para cada viaje.',
         '**Tus viajes**: el nombre que le das a cada uno, las fechas, los países y las ciudades elegidas.',
         '**Tu checklist**: los ítems generados para el viaje, los ítems que tú mismo creas y cuáles marcaste como verificados.',
       ],
@@ -102,7 +102,7 @@ export const privacyPolicy: TranslatedLegalDocument = {
         '**Cuando ingresas con Google o Apple.** La autenticación ocurre en el navegador de tu dispositivo o en la propia pantalla del sistema, y TripReady nunca tiene acceso a tu contraseña de esos servicios. Solo recibimos el nombre, el correo electrónico y, en el caso de Google, la foto. Si eliges ocultar tu correo al ingresar con Apple, recibimos la dirección de reenvío que Apple crea para ti.',
         '**Cuando creas una cuenta con correo y contraseña.** En ese caso enviamos un mensaje a la dirección indicada, con un enlace de confirmación, para asegurarnos de que el correo es realmente tuyo. La cuenta se activa cuando confirmas.',
         '**Cuando usas la aplicación.** Tú eliges el país del pasaporte, creas los viajes y marcas los ítems de la checklist.',
-        '**Cuando la aplicación arma tu checklist.** Los ítems se generan a partir del pasaporte principal, los destinos y el período del viaje.',
+        '**Cuando la aplicación arma tu checklist.** Los ítems se generan a partir del pasaporte que elegiste para ese viaje, los destinos y el período.',
       ],
     },
 
@@ -287,8 +287,8 @@ export const privacyPolicy: TranslatedLegalDocument = {
 
 export const termsOfUse: TranslatedLegalDocument = {
   title: 'Términos de Uso',
-  version: '1.0',
-  sourceVersion: '1.0',
+  version: '1.1',
+  sourceVersion: '1.1',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -299,7 +299,7 @@ export const termsOfUse: TranslatedLegalDocument = {
     { kind: 'heading', text: '1. Qué es TripReady' },
     {
       kind: 'paragraph',
-      text: 'TripReady es una aplicación de organización de viajes. Reúne, en una checklist, lo que necesitas verificar antes de viajar, considerando el pasaporte que registraste, los destinos elegidos y el período del viaje — y muestra, siempre que exista, el enlace a la fuente oficial de cada exigencia.',
+      text: 'TripReady es una aplicación de organización de viajes. Reúne, en una checklist, lo que necesitas verificar antes de viajar, considerando el pasaporte que elegiste para ese viaje, los destinos y el período — y muestra, siempre que exista, el enlace a la fuente oficial de cada exigencia.',
     },
     {
       kind: 'paragraph',
@@ -323,7 +323,11 @@ export const termsOfUse: TranslatedLegalDocument = {
     { kind: 'heading', text: '2. Cómo funciona la checklist' },
     {
       kind: 'paragraph',
-      text: 'Los ítems de tu checklist se arman a partir de un catálogo de reglas, cruzando el pasaporte principal que registraste, los países del viaje, el período y, en algunos casos, si el destino pertenece a un grupo de países con reglas comunes.',
+      text: 'Los ítems de tu checklist se arman a partir de un catálogo de reglas, cruzando el pasaporte que elegiste para el viaje, los países, el período y, en algunos casos, si el destino pertenece a un grupo de países con reglas comunes.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'Cada viaje tiene su propio pasaporte. Al cambiarlo, la checklist se revisa: los ítems que siguen aplicando conservan lo que ya habías verificado, y los que dejaron de aplicar quedan visibles en una sección aparte, en lugar de desaparecer. Quitar un pasaporte del perfil no altera ningún viaje — los próximos y en curso pasan a pedir que elijas otro, y los concluidos permanecen exactamente como están.',
     },
     { kind: 'paragraph', text: 'Cada ítem tiene una prioridad:' },
     {
@@ -349,7 +353,7 @@ export const termsOfUse: TranslatedLegalDocument = {
       kind: 'list',
       items: [
         '**verificar los requisitos oficiales aplicables a tu viaje** antes de viajar, usando los canales oficiales de cada país;',
-        'mantener correctos los datos que alimentan la checklist, especialmente **el pasaporte principal** — es el que determina qué reglas de entrada se aplican;',
+        'mantener correctos los datos que alimentan la checklist, especialmente **el pasaporte elegido para cada viaje** — es el que determina qué reglas de entrada se aplican;',
         'considerar que existen situaciones personales que la aplicación no conoce y que pueden cambiar por completo lo que se te exige: doble nacionalidad, país de residencia, visas o rechazos anteriores, motivo y duración del viaje, entre otras.',
       ],
     },

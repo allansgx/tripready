@@ -95,6 +95,20 @@ Funções: `security invoker` por padrão. `security definer` apenas quando a
 operação exigir privilégio que o usuário não tem e, nesse caso, sempre com
 `set search_path = ''` e `revoke execute ... from public, anon`.
 
+Operação que grava em mais de uma tabela ou linha relacionada vai para uma
+função, e não para várias chamadas do cliente: pelo PostgREST cada chamada é a
+sua própria transação. A regra de negócio continua em TypeScript, testável sem
+Supabase; a função só aplica uma decisão já tomada.
+
+A data de referência vem do cliente, nunca de `current_date`: o banco trabalha em
+UTC e o app na data local do aparelho (`todayISO`), e uma viagem terminando hoje
+seria concluída para um e em andamento para o outro.
+
+Uma validação de propriedade que a policy não possa assumir sem travar edição
+legítima mora no caminho de escrita, não na policy. Exemplo real: exigir no
+`with check` de `trips` que o passaporte exista impediria renomear justamente a
+viagem que o app está pedindo para a pessoa corrigir.
+
 Antes de `db push`, conferir que as duas listas batem:
 
 ```bash
@@ -118,7 +132,29 @@ Ordenação:
 2. Próximas, pela data de início
 3. Concluídas, pela data de término mais recente
 
-Nunca assumir que o passaporte do usuário é brasileiro. O passaporte usado deve ser determinado pelo passaporte principal cadastrado pelo usuário. Atualmente o catálogo de regras de visto possui dados para BR, mas a arquitetura deve suportar outros países.
+Nunca assumir que o passaporte do usuário é brasileiro. Atualmente o catálogo de
+regras de visto possui dados para BR, mas a arquitetura deve suportar outros
+países.
+
+**O passaporte-base é da viagem, não do perfil.** `trips.passport_country_code`
+guarda o país do passaporte escolhido na criação, e é ele que decide as regras de
+entrada daquela viagem. O passaporte principal do perfil é apenas o valor
+**pré-selecionado** na próxima viagem: promover outro principal não altera
+checklist nenhuma.
+
+Trocar o passaporte de uma viagem revisa a checklist na mesma transação
+(`apply_trip_passport_change`) e exige confirmação própria — nunca sai junto com
+o "Salvar" do formulário. Viagem concluída não troca de passaporte: ela é o
+registro do que foi preparado.
+
+Não há chave estrangeira entre `trips` e `passports`, e isso é deliberado: com
+FK, apagar a linha referenciada obriga a escrever em todas as linhas que a
+referenciam, e nenhum `on delete` sabe poupar as viagens concluídas. O vínculo
+sai da comparação entre o código gravado na viagem e os passaportes que o perfil
+tem agora (`linkState`), o que depende de `passports` continuar com
+`unique (user_id, country_code)` — se essa constraint cair, o modelo precisa de
+um id. Recadastrar um passaporte do mesmo país religa as viagens sozinho, sem
+nenhuma escrita de reparo.
 
 ### Passaportes
 
@@ -127,10 +163,22 @@ nunca é filtrada pela cobertura de regras** — guardar o país real é o que m
 a viagem doméstica correta, e é o que deixa a checklist melhorar sozinha quando
 as regras daquele país chegarem.
 
-Sem passaporte principal o motor não tem como decidir nada: a viagem deixa de ser
+Sem passaporte o motor não tem como decidir nada: a viagem deixa de ser
 doméstica, o próprio país do viajante passa a receber item de fronteira e nenhum
-item de visto é gerado. Por isso o app exige um passaporte antes de entrar, e por
-isso não existe "seguir sem informar".
+item de visto é gerado. Por isso o app exige um passaporte antes de entrar, exige
+a escolha de um na criação da viagem, e por isso não existe "seguir sem
+informar". A coluna nasceu anulável e o estado sem passaporte existe no domínio
+só para que relaxar essa regra um dia seja mudança de tela, e não de schema.
+
+**Remover um passaporte do perfil não escreve em `trips`.** As viagens futuras e
+em andamento passam a pedir a escolha de outro, por derivação
+(`needsEntryRulesReview`); as concluídas não mudam em nada e continuam explicadas
+pelo código gravado nelas. O único passaporte que não sai é o último. Remover o
+principal é permitido: `delete_passport` promove o mais antigo dos restantes na
+mesma transação, e a promoção é anunciada — ninguém pediu por ela.
+
+A viagem guarda o **código do país** do passaporte usado, e mais nada. Nunca
+número, validade, foto ou biometria.
 
 O que a cobertura governa é **o que o app diz**, nunca quem entra.
 `supported_passport_countries` lista os passaportes que já passaram no critério
@@ -164,6 +212,20 @@ Prioridades: `required`, `recommended`, `informational`.
 - `informational` não contribui para o progresso.
 
 Manter essa lógica centralizada e reutilizável.
+
+`superseded_at` é um eixo à parte de `completed`: marca o item que deixou de se
+aplicar por troca do passaporte-base. Ele sai do progresso, do próximo passo e
+dos lembretes (`activeRequirements`), mas **continua visível** numa seção
+própria — um item nunca some calado, e nunca segue se apresentando como
+exigência vigente. O item que volta a valer é restaurado com a marcação que
+tinha, em vez de recriado.
+
+Dois requisitos são o mesmo quando coincidem em
+`template_id`, `group_id` e `country_code` — a mesma chave do índice único. O
+texto exibido nunca entra na comparação: `getCountryName` resolve o nome do país
+no idioma ativo, então comparar título faria uma troca de idioma reescrever a
+checklist. `visa_rule_id` também fica fora da chave: quando ele muda com a chave
+igual, o item é atualizado, nunca recriado.
 
 ## Idiomas
 
