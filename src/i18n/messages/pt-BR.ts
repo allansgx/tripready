@@ -175,16 +175,11 @@ export const messages = {
   'passports.section.primaryTag': 'Principal',
   'passports.error.connection': 'Sua conexão oscilou. Tente de novo.',
   'passports.error.loginRequired': 'Faça login para adicionar um passaporte.',
-  'passports.error.onlyOne':
-    'Este é o seu único passaporte. Adicione outro e defina-o como principal para poder remover este.',
-  'passports.error.mustPromoteFirst':
-    'Este é o seu passaporte principal. Defina outro como principal antes de removê-lo.',
+  'passports.error.onlyOne': 'Este é o seu único passaporte. Adicione outro antes de remover este.',
 
   'passports.dialog.cannotComplete': 'Não foi possível concluir',
   'passports.dialog.onlyPrimary.message':
-    'Este é o seu único passaporte e está definido como principal. Para removê-lo, adicione outro passaporte e defina-o como principal.',
-  'passports.dialog.primary.message':
-    'Passaporte principal. Para removê-lo, defina outro passaporte como principal antes.',
+    'Este é o seu único passaporte. Para removê-lo, adicione outro antes.',
   'passports.section.pendingRulesTag': 'Regras em preparação',
   'passports.dialog.pendingRules.message':
     'Ainda não temos as regras de entrada para este passaporte. Sua checklist segue com os documentos e o passo de conferir as exigências de cada destino.',
@@ -192,6 +187,19 @@ export const messages = {
   'passports.dialog.remove': 'Remover passaporte',
   'passports.dialog.removeConfirm.title': 'Remover {name}?',
   'passports.dialog.removeConfirm.message': 'Você pode adicioná-lo de novo quando quiser.',
+  'passports.dialog.removeConfirm.withTrips': {
+    one: '{count} viagem usa este passaporte. Ela continua salva, com a checklist intacta, e vai pedir a escolha de outro.',
+    other:
+      '{count} viagens usam este passaporte. Elas continuam salvas, com as checklists intactas, e vão pedir a escolha de outro.',
+  },
+  'passports.dialog.removeConfirm.completedOnly':
+    'Suas viagens concluídas continuam exatamente como estão.',
+  'passports.promoted.title': 'Passaporte principal atualizado',
+  'passports.promoted.notice': '{country} agora é o seu passaporte principal.',
+  'trips.passport.review.title': 'Escolha o passaporte desta viagem',
+  'trips.passport.review.message':
+    'O passaporte que você usava aqui saiu do seu perfil. Escolha outro para as exigências de entrada voltarem a ser conferidas.',
+  'trips.passport.review.action': 'Escolher passaporte',
   'passports.dialog.removeConfirm.confirm': 'Remover',
 
   'passports.picker.search.byCity': 'Buscar país ou cidade...',

@@ -58,6 +58,24 @@ export const passportsService = {
     );
   },
 
+  /**
+   * Viagens que usam este passaporte, com as datas para o status sair de
+   * `getTripStatus` — no cliente, pela data local, como no resto do app.
+   */
+  async listTripsUsingPassport(
+    userId: string,
+    countryCode: string,
+  ): Promise<{ start_date: string | null; end_date: string | null }[]> {
+    return unwrapRequired(
+      await supabase
+        .from('trips')
+        .select('start_date, end_date')
+        .eq('user_id', userId)
+        .eq('passport_country_code', countryCode.toUpperCase()),
+      'Falha ao consultar as viagens deste passaporte',
+    );
+  },
+
   /** Passaportes cujas regras já cobrem o critério mínimo. Não restringe a escolha: só decide o que a interface informa. */
   async listSupportedCountryCodes(): Promise<string[]> {
     if (!supportedCodes) {

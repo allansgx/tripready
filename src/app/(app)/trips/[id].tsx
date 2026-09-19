@@ -34,6 +34,7 @@ import {
   type Celebration,
 } from '@/features/trips/components/celebration-overlay';
 import { FlagRow } from '@/features/trips/components/flag-row';
+import { usePassports } from '@/features/passports/passports-context';
 import { catalogCache } from '@/features/trips/data/catalog-cache';
 import {
   CATEGORY_ICONS,
@@ -51,6 +52,7 @@ import {
 } from '@/features/trips/domain/requirement-matching';
 import { formatTripDates, summarizeTripSeasons } from '@/features/trips/domain/trip-format';
 import { computeTripProgress, type TripProgress } from '@/features/trips/domain/trip-progress';
+import { needsEntryRulesReview } from '@/features/trips/domain/trip-passport';
 import { getTripStatus } from '@/features/trips/domain/trip-status';
 import { destinationsWithoutVerifiedRule } from '@/features/trips/domain/visa-coverage';
 import { getLocale, t } from '@/i18n';
@@ -130,6 +132,7 @@ export default function TripChecklistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const { passports } = usePassports();
 
   // `router.canGoBack()` enxerga a árvore inteira e podia levar para outra aba.
   function goBackToTrips() {
@@ -389,6 +392,17 @@ export default function TripChecklistScreen() {
     [requirements],
   );
 
+  // A viagem perdeu o passaporte que a explicava, e não está concluída: sem
+  // escolher outro, nenhuma regra de entrada volta a ser conferida.
+  const needsPassportReview = needsEntryRulesReview(
+    {
+      passport_country_code: passportCountryCode,
+      start_date: range.start,
+      end_date: range.end,
+    },
+    passports,
+  );
+
   // O que a troca de passaporte tirou de vigência. Continua na tela, fora das
   // contagens: o item não pode sumir sem explicação nem seguir se apresentando
   // como exigência.
@@ -600,6 +614,17 @@ export default function TripChecklistScreen() {
         </View>
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+
+        {needsPassportReview ? (
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewTitle}>{t('trips.passport.review.title')}</Text>
+            <Text style={styles.reviewText}>{t('trips.passport.review.message')}</Text>
+            <Button
+              label={t('trips.passport.review.action')}
+              onPress={() => router.push({ pathname: '/trip-edit', params: { tripId: id } })}
+            />
+          </View>
+        ) : null}
 
         {unverified.length > 0 ? (
           <View style={styles.coverageNote}>
@@ -824,6 +849,14 @@ const styles = StyleSheet.create({
   },
   headerTexts: { flex: 1, gap: spacing.xs },
   passport: { ...typography.caption, color: colors.textSecondary },
+  reviewCard: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+  },
+  reviewTitle: { ...typography.bodyStrong, color: colors.text },
+  reviewText: { ...typography.caption, color: colors.textSecondary },
   supersededHint: {
     ...typography.caption,
     color: colors.textSecondary,

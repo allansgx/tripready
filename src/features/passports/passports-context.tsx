@@ -45,7 +45,8 @@ type PassportsContextValue = {
   primaryHasPendingRules: boolean;
   addPassport: (countryCode: string) => Promise<Passport>;
   setPrimary: (passportId: string) => Promise<void>;
-  removePassport: (passportId: string) => Promise<void>;
+  /** Devolve o país promovido a principal, quando a remoção provocou uma. */
+  removePassport: (passportId: string) => Promise<string | null>;
   refresh: () => Promise<void>;
 };
 
@@ -56,7 +57,7 @@ const NO_PASSPORTS: Passport[] = [];
 
 /**
  * Fonte única dos passaportes: o primeiro nasce principal, existe no máximo um
- * principal e ele não pode ser removido enquanto houver outros.
+ * principal, e o último não pode ser removido.
  */
 export function PassportsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -161,22 +162,20 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
         await refresh();
       },
 
-      /** O principal nunca é removido: é preciso promover outro antes. */
+      /**
+       * O principal pode sair: com o passaporte escolhido por viagem, ele é só
+       * o valor pré-selecionado ao criar a próxima, e a função no banco promove
+       * outro na mesma transação. O que não sai é o último — o app precisa de
+       * um passaporte no perfil.
+       */
       async removePassport(passportId) {
-        const target = passports.find((passport) => passport.id === passportId);
-
-        if (target?.is_primary) {
-          throw new PassportRuleError(
-            t(
-              passports.length === 1
-                ? 'passports.error.onlyOne'
-                : 'passports.error.mustPromoteFirst',
-            ),
-          );
+        if (passports.length === 1) {
+          throw new PassportRuleError(t('passports.error.onlyOne'));
         }
 
-        await passportsService.remove(passportId);
+        const promoted = await passportsService.remove(passportId);
         await refresh();
+        return promoted;
       },
 
       refresh,

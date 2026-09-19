@@ -171,16 +171,11 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'passports.section.primaryTag': 'Primary',
   'passports.error.connection': 'Your connection dropped. Try again.',
   'passports.error.loginRequired': 'Sign in to add a passport.',
-  'passports.error.onlyOne':
-    'This is your only passport. Add another and set it as primary before you can remove this one.',
-  'passports.error.mustPromoteFirst':
-    'This is your primary passport. Set another as primary before removing it.',
+  'passports.error.onlyOne': 'This is your only passport. Add another one before removing this.',
 
   'passports.dialog.cannotComplete': 'Could not complete',
   'passports.dialog.onlyPrimary.message':
-    'This is your only passport and it is set as primary. To remove it, add another passport and set it as primary.',
-  'passports.dialog.primary.message':
-    'Primary passport. To remove it, set another passport as primary first.',
+    'This is your only passport. To remove it, add another one first.',
   'passports.section.pendingRulesTag': 'Rules in preparation',
   'passports.dialog.pendingRules.message':
     'We do not have the entry rules for this passport yet. Your checklist still brings the documents and the step to check each destination requirements.',
@@ -188,6 +183,18 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'passports.dialog.remove': 'Remove passport',
   'passports.dialog.removeConfirm.title': 'Remove {name}?',
   'passports.dialog.removeConfirm.message': 'You can add it again whenever you want.',
+  'passports.dialog.removeConfirm.withTrips': {
+    one: '{count} trip uses this passport. It stays saved, with its checklist intact, and will ask you to choose another one.',
+    other:
+      '{count} trips use this passport. They stay saved, with their checklists intact, and will ask you to choose another one.',
+  },
+  'passports.dialog.removeConfirm.completedOnly': 'Your completed trips stay exactly as they are.',
+  'passports.promoted.title': 'Primary passport updated',
+  'passports.promoted.notice': '{country} is now your primary passport.',
+  'trips.passport.review.title': 'Choose this trip’s passport',
+  'trips.passport.review.message':
+    'The passport you were using here left your profile. Choose another one so entry requirements are checked again.',
+  'trips.passport.review.action': 'Choose passport',
   'passports.dialog.removeConfirm.confirm': 'Remove',
 
   'passports.picker.search.byCity': 'Search country or city...',
