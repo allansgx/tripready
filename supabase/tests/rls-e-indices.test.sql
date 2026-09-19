@@ -71,14 +71,16 @@ set local role anon;
 -- porque `postgres` também não veria erro nenhum.
 select is(current_user, 'anon', 'o teste está mesmo rodando como anon');
 
--- Lista vazia, e não erro de privilégio: o que barra `anon` aqui é a RLS, já
--- que nenhuma policy é `to anon`. O privilégio de tabela ele tem, herdado do
--- `alter default privileges ... to anon` que o próprio Supabase deixa no banco
--- antes da primeira migration — nenhuma migration do projeto o revoga. O dado
--- está protegido, mas por uma camada só.
-select is_empty(
+-- Erro de privilégio, e não lista vazia: desde
+-- `20260919120000_anon_table_privileges.sql` a policy nem chega a ser avaliada,
+-- porque `anon` perdeu o privilégio de tabela. São as duas camadas que o
+-- AGENTS.md pede, e é o que faz uma tabela criada sem RLS falhar alto em vez de
+-- nascer aberta.
+select throws_ok(
   $$ select id from public.trips $$,
-  'anon não lê viagem nenhuma'
+  '42501',
+  null,
+  'anon não alcança a tabela de viagens'
 );
 
 set local role postgres;

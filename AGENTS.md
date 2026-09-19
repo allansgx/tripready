@@ -78,14 +78,19 @@ sem aviso.
 
 Toda migration que cria tabela precisa, no mesmo arquivo:
 
-1. `enable row level security` — sem isso a tabela nasce legível e gravável,
-   porque `20260905120200_table_grants.sql` deixou um `alter default privileges`
-   concedendo tudo a `authenticated` em cada tabela nova do schema.
+1. `enable row level security` — sem isso a tabela fica exposta, e de um jeito
+   silencioso: é a ausência de privilégio que faz o esquecimento aparecer como
+   403 em vez de virar dado aberto.
 2. Policies explícitas por operação, sempre `to authenticated`, filtrando pelo
    dono (`auth.uid()` ou `is_trip_owner`).
 3. `grant` só do que a tabela precisa e `revoke` do que ela não deve aceitar —
    tabela de catálogo é somente leitura para o cliente.
-4. Nada para `anon`: o app não tem dado público.
+4. `revoke all ... from anon`, explícito. Não basta não conceder: o Supabase
+   deixa um `alter default privileges ... to anon` no banco antes da primeira
+   migration, e `20260919120000_anon_table_privileges.sql` fechou as tabelas que
+   existiam, mas não garante as futuras — `alter default privileges` só cancela
+   a concessão feita pelo mesmo papel. `anon` é o papel de qualquer requisição
+   antes do login, e a chave publicável vai no bundle do app.
 5. Se a tabela guarda texto que o usuário lê, a tradução entra no mesmo
    arquivo — para os três idiomas.
 
