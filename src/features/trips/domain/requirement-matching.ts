@@ -476,6 +476,140 @@ export function diffTripRequirements(
   };
 }
 
+/** Item já gravado, com o que a troca de passaporte precisa saber dele. */
+export type ExistingRequirementForPassport = ExistingRequirement & {
+  visa_rule_id: string | null;
+  superseded_at: string | null;
+};
+
+/**
+ * Conteúdo a refrescar num item que continua valendo. Sem `title`: o título vem
+ * do mesmo template e só mudaria pelo idioma em que o nome do país foi
+ * resolvido — idioma não pode virar escrita no banco.
+ */
+export type RequirementContentUpdate = {
+  id: string;
+  visa_rule_id: string | null;
+  description: string | null;
+  source_name: string | null;
+  source_url: string | null;
+};
+
+export type PassportChangeDiff = {
+  toInsert: ResolvedRequirement[];
+  toRestoreIds: string[];
+  toUpdate: RequirementContentUpdate[];
+  toSupersedeIds: string[];
+};
+
+/** O que ainda vale na checklist: item superado sai de toda contagem. */
+export function activeRequirements<T extends { superseded_at: string | null }>(
+  requirements: readonly T[],
+): T[] {
+  return requirements.filter((requirement) => requirement.superseded_at === null);
+}
+
+/**
+ * A regra de visto é a única parte do item que depende do passaporte, e é fato,
+ * não texto: comparar título ou descrição faria a troca de idioma virar
+ * reescrita da checklist.
+ */
+function needsContentUpdate(
+  current: ExistingRequirementForPassport,
+  desired: ResolvedRequirement,
+): boolean {
+  return current.visa_rule_id !== desired.visa_rule_id;
+}
+
+function contentUpdate(id: string, desired: ResolvedRequirement): RequirementContentUpdate {
+  return {
+    id,
+    visa_rule_id: desired.visa_rule_id,
+    description: desired.description,
+    source_name: desired.source_name,
+    source_url: desired.source_url,
+  };
+}
+
+/**
+ * Itens superados de mesma origem podem coexistir — o índice único só cobre os
+ * vigentes. Vence o mais recente, com o id desempatando: sem isso o resultado
+ * dependeria da ordem em que as linhas vieram do banco.
+ */
+function preferred(
+  a: ExistingRequirementForPassport,
+  b: ExistingRequirementForPassport,
+): ExistingRequirementForPassport {
+  const byDate = (a.superseded_at ?? '').localeCompare(b.superseded_at ?? '');
+  if (byDate !== 0) return byDate > 0 ? a : b;
+  return a.id.localeCompare(b.id) <= 0 ? a : b;
+}
+
+/**
+ * O que muda na checklist quando a viagem troca de passaporte. Item que deixou
+ * de valer é superado, nunca apagado; item superado que voltou a valer é
+ * restaurado com o progresso que tinha; item criado à mão nunca é tocado.
+ */
+export function diffForPassportChange(
+  current: readonly ExistingRequirementForPassport[],
+  desired: readonly ResolvedRequirement[],
+): PassportChangeDiff {
+  const fromCatalog = current.filter((item) => item.template_id !== null);
+
+  const active = new Map<string, ExistingRequirementForPassport>();
+  const superseded = new Map<string, ExistingRequirementForPassport>();
+
+  for (const item of fromCatalog) {
+    const bucket = item.superseded_at === null ? active : superseded;
+    const key = originKey(item);
+    const rival = bucket.get(key);
+    bucket.set(key, rival ? preferred(item, rival) : item);
+  }
+
+  const toInsert: ResolvedRequirement[] = [];
+  const toRestoreIds: string[] = [];
+  const toUpdate: RequirementContentUpdate[] = [];
+  const desiredKeys = new Set<string>();
+
+  for (const item of desired) {
+    const key = originKey(item);
+    desiredKeys.add(key);
+
+    // O vigente tem preferência sobre o superado da mesma origem.
+    const existing = active.get(key) ?? superseded.get(key);
+    if (!existing) {
+      toInsert.push(item);
+      continue;
+    }
+
+    if (existing.superseded_at !== null) toRestoreIds.push(existing.id);
+    if (needsContentUpdate(existing, item)) toUpdate.push(contentUpdate(existing.id, item));
+  }
+
+  const toSupersedeIds = fromCatalog
+    .filter((item) => item.superseded_at === null && !desiredKeys.has(originKey(item)))
+    .map((item) => item.id);
+
+  return { toInsert, toRestoreIds, toUpdate, toSupersedeIds };
+}
+
+/** O que a troca produziu, em números — a tela decide como dizer. */
+export type PassportChangeOutcome = {
+  added: number;
+  restored: number;
+  refreshed: number;
+  superseded: number;
+};
+
+export function describePassportChange(diff: PassportChangeDiff): PassportChangeOutcome {
+  return {
+    added: diff.toInsert.length,
+    restored: diff.toRestoreIds.length,
+    refreshed: diff.toUpdate.length,
+    superseded: diff.toSupersedeIds.length,
+  };
+}
+
 export type ChecklistSectionKind = 'trip' | 'group' | 'country';
 
 export type ChecklistSection<T> = {

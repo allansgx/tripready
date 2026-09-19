@@ -832,13 +832,26 @@ export type PassportChangeDiff = {
 };
 
 export function diffForPassportChange(
-  current: readonly ExistingRequirementWithContent[],
+  current: readonly ExistingRequirementForPassport[],
   desired: readonly ResolvedRequirement[],
 ): PassportChangeDiff;
 ```
 
-`ExistingRequirement` cresce com `superseded_at`, `visa_rule_id`, `source_url`,
-`title`, `description` — tudo já disponível em `trip_requirements`.
+`ExistingRequirement` cresce com `superseded_at` e `visa_rule_id`, os dois já
+disponíveis em `trip_requirements`.
+
+**A comparação é por `visa_rule_id`, nunca por texto.** `getCountryName` resolve
+o nome do país no **idioma ativo**, então o `title` gravado em
+`trip_requirements` carrega o idioma do momento da geração. Comparar título ou
+descrição faria uma simples troca de idioma marcar a checklist inteira como
+alterada e reescrevê-la — e faria uma decisão de domínio depender de string
+traduzida, que o AGENTS.md proíbe. A regra de visto é a única parte do item que
+depende do passaporte, e é fato, não texto.
+
+Por isso `RequirementContentUpdate` também **não carrega `title`**: o título vem
+do mesmo template e só mudaria de idioma. Ele leva `visa_rule_id`,
+`description`, `source_name` e `source_url` — tudo o que vem da regra, e tudo em
+pt-BR, porque `loadForTrip` lê as colunas base do catálogo, não as traduções.
 
 | Situação                                                          | Balde                                             |
 | ----------------------------------------------------------------- | ------------------------------------------------- |
@@ -914,8 +927,8 @@ nenhum trigger, nenhuma policy.**
 
 | Arquivo                                             | Mudança                                                                               |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `features/trips/domain/requirement-matching.ts`     | `diffForPassportChange`, tipos novos                                                  |
-| `features/trips/domain/trip-passport.ts` **(novo)** | `linkState`, `needsEntryRulesReview`, `PassportChangeOutcome`                         |
+| `features/trips/domain/requirement-matching.ts`     | `diffForPassportChange`, `activeRequirements`, `describePassportChange`, tipos novos  |
+| `features/trips/domain/trip-passport.ts` **(novo)** | `linkState`, `needsEntryRulesReview`                                                  |
 | `features/trips/domain/trip-summary.ts`             | filtra superados                                                                      |
 | `features/trips/domain/visa-coverage.ts`            | recebe o passaporte **da viagem** (a assinatura já é parametrizada — muda quem chama) |
 | `features/notifications/domain/trip-reminders.ts`   | filtra superados                                                                      |

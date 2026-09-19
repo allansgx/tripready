@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  activeRequirements,
+  describePassportChange,
   describeRequirementScope,
+  diffForPassportChange,
   diffTripRequirements,
   groupRequirementsByCategory,
   groupRequirementsByScope,
@@ -16,6 +19,8 @@ import {
   tripSeasons,
   type CatalogGroup,
   type CatalogTemplate,
+  type ExistingRequirementForPassport,
+  type ResolvedRequirement,
   type TripContext,
   type VisaRule,
 } from '../domain/requirement-matching.ts';
@@ -1194,4 +1199,351 @@ test('checklist inteira verificada não tem próxima seção a abrir', () => {
   );
 
   assert.equal(nextPendingCategory(sections, 'documents'), null);
+});
+
+/**
+ * Troca de passaporte da viagem. O que separa esta diferença da edição de
+ * destinos é que aqui nada é apagado: o item que deixou de valer é superado, e
+ * o que volta a valer é reaproveitado com o progresso que tinha.
+ */
+
+/** Grava os itens resolvidos como se já estivessem na viagem. */
+function stored(
+  items: readonly ResolvedRequirement[],
+  overrides: Partial<ExistingRequirementForPassport> = {},
+): ExistingRequirementForPassport[] {
+  return items.map((item, index) => ({
+    id: `req-${index}`,
+    template_id: item.template_id,
+    group_id: item.group_id,
+    country_code: item.country_code,
+    visa_rule_id: item.visa_rule_id,
+    completed: false,
+    superseded_at: null,
+    ...overrides,
+  }));
+}
+
+test('troca de passaporte com regra diferente supera o item antigo e insere o novo', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        id: 'br-cn',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_required',
+      }),
+      visaRule({
+        id: 'pt-cn',
+        passportCountryCode: 'PT',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_free',
+      }),
+    ],
+  };
+
+  const antes = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'BR' }));
+  const depois = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'PT' }));
+
+  const diff = diffForPassportChange(stored(antes), depois);
+
+  assert.deepEqual(
+    diff.toInsert.map((item) => item.template_id),
+    ['visa-free'],
+  );
+  assert.deepEqual(diff.toSupersedeIds, ['req-0']);
+  assert.deepEqual(diff.toRestoreIds, []);
+});
+
+test('troca para uma regra de mesmo tipo preserva o item e refresca a origem', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        id: 'br-fr',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'FR',
+        requirementType: 'visa_free',
+        sourceUrl: 'https://br.exemplo.gov/fr',
+      }),
+      visaRule({
+        id: 'pt-fr',
+        passportCountryCode: 'PT',
+        destinationCountryCode: 'FR',
+        requirementType: 'visa_free',
+        sourceUrl: 'https://pt.exemplo.gov/fr',
+        notes: 'Livre circulação na União Europeia.',
+      }),
+    ],
+  };
+
+  const antes = resolve(catalog, trip({ countryCodes: ['FR'], passportCountryCode: 'BR' }));
+  const depois = resolve(catalog, trip({ countryCodes: ['FR'], passportCountryCode: 'PT' }));
+
+  const diff = diffForPassportChange(stored(antes), depois);
+
+  assert.deepEqual(diff.toInsert, []);
+  assert.deepEqual(diff.toSupersedeIds, []);
+  // A fonte oficial do passaporte anterior não pode ficar no item.
+  assert.deepEqual(diff.toUpdate, [
+    {
+      id: 'req-0',
+      visa_rule_id: 'pt-fr',
+      description: 'Livre circulação na União Europeia.',
+      source_name: 'Órgão oficial',
+      source_url: 'https://pt.exemplo.gov/fr',
+    },
+  ]);
+});
+
+test('item já verificado que deixou de valer é superado, nunca removido', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        id: 'br-cn',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_required',
+      }),
+    ],
+  };
+
+  const antes = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'BR' }));
+  const depois = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'PT' }));
+
+  const diff = diffForPassportChange(stored(antes, { completed: true }), depois);
+
+  assert.deepEqual(diff.toSupersedeIds, ['req-0']);
+  assert.deepEqual(diff.toInsert, []);
+});
+
+test('item superado que volta a valer é restaurado, e não inserido de novo', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        id: 'br-cn',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_required',
+      }),
+    ],
+  };
+
+  const desired = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'BR' }));
+  const current = stored(desired, { completed: true, superseded_at: '2026-09-10T12:00:00Z' });
+
+  const diff = diffForPassportChange(current, desired);
+
+  assert.deepEqual(diff.toRestoreIds, ['req-0']);
+  assert.deepEqual(diff.toInsert, []);
+  assert.deepEqual(diff.toSupersedeIds, []);
+  assert.deepEqual(diff.toUpdate, []);
+});
+
+test('entre superados da mesma origem volta o mais recente, sem depender da ordem', () => {
+  const catalog = { templates: [template({ id: 'passport' })] };
+  const desired = resolve(catalog, trip({ countryCodes: ['AR'] }));
+
+  const antigo = {
+    ...stored(desired)[0],
+    id: 'req-antigo',
+    superseded_at: '2026-01-01T00:00:00Z',
+  };
+  const recente = {
+    ...stored(desired)[0],
+    id: 'req-recente',
+    superseded_at: '2026-08-01T00:00:00Z',
+  };
+
+  assert.deepEqual(diffForPassportChange([antigo, recente], desired).toRestoreIds, ['req-recente']);
+  assert.deepEqual(diffForPassportChange([recente, antigo], desired).toRestoreIds, ['req-recente']);
+});
+
+test('item criado à mão não entra em nenhum balde da troca', () => {
+  const catalog = { templates: [template({ id: 'passport' })] };
+  const desired = resolve(catalog, trip({ countryCodes: ['AR'] }));
+
+  const current: ExistingRequirementForPassport[] = [
+    ...stored(desired),
+    {
+      id: 'manual',
+      template_id: null,
+      group_id: null,
+      country_code: null,
+      visa_rule_id: null,
+      completed: false,
+      superseded_at: null,
+    },
+  ];
+
+  const diff = diffForPassportChange(current, desired);
+
+  assert.deepEqual(diff.toInsert, []);
+  assert.deepEqual(diff.toSupersedeIds, []);
+  assert.deepEqual(diff.toUpdate, []);
+});
+
+test('passaporte sem regras perde o item de visto e mantém os genéricos', () => {
+  const catalog = {
+    templates: [template({ id: 'passport', title: 'Passaporte válido' }), ...visaTemplates],
+    visaRules: [
+      visaRule({
+        id: 'br-cn',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_required',
+      }),
+    ],
+  };
+
+  const antes = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'BR' }));
+  // Nenhuma regra cadastrada para AO: o silêncio não vira isenção, e o
+  // requisito genérico continua na checklist.
+  const depois = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'AO' }));
+
+  const diff = diffForPassportChange(stored(antes), depois);
+
+  assert.deepEqual(
+    depois.map((item) => item.template_id),
+    ['passport'],
+  );
+  assert.deepEqual(diff.toSupersedeIds, ['req-1']);
+  assert.deepEqual(diff.toInsert, []);
+});
+
+test('a viagem que vira doméstica supera o item de fronteira e ganha o doméstico', () => {
+  const catalog = { templates: kindTemplates };
+
+  const antes = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'PT' }));
+  const depois = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }));
+
+  const diff = diffForPassportChange(stored(antes), depois);
+
+  assert.deepEqual(
+    diff.toInsert.map((item) => item.template_id),
+    ['id-card'],
+  );
+  // 'passport' é o item internacional; 'luggage' vale para as duas naturezas.
+  assert.deepEqual(diff.toSupersedeIds, ['req-0']);
+});
+
+test('a viagem que deixa de ser doméstica faz o caminho inverso', () => {
+  const catalog = { templates: kindTemplates };
+
+  const antes = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'BR' }));
+  const depois = resolve(catalog, trip({ countryCodes: ['BR'], passportCountryCode: 'PT' }));
+
+  const diff = diffForPassportChange(stored(antes), depois);
+
+  assert.deepEqual(
+    diff.toInsert.map((item) => item.template_id),
+    ['passport'],
+  );
+  assert.deepEqual(diff.toSupersedeIds, ['req-0']);
+});
+
+test('viagem sem passaporte fica só com o que não depende dele', () => {
+  const catalog = {
+    templates: [template({ id: 'luggage', title: 'Montar a bagagem' }), ...visaTemplates],
+    visaRules: [
+      visaRule({
+        id: 'br-cn',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_required',
+      }),
+    ],
+  };
+
+  const items = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: null }));
+
+  assert.deepEqual(
+    items.map((item) => item.template_id),
+    ['luggage'],
+  );
+});
+
+test('aplicar a mesma troca duas vezes não produz nada na segunda', () => {
+  const catalog = {
+    templates: visaTemplates,
+    visaRules: [
+      visaRule({
+        id: 'pt-cn',
+        passportCountryCode: 'PT',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_free',
+      }),
+    ],
+  };
+
+  const desired = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'PT' }));
+  const diff = diffForPassportChange(stored(desired), desired);
+
+  assert.deepEqual(diff, {
+    toInsert: [],
+    toRestoreIds: [],
+    toUpdate: [],
+    toSupersedeIds: [],
+  });
+});
+
+test('a ordem em que os itens chegam do banco não muda a diferença', () => {
+  const catalog = {
+    templates: [template({ id: 'passport' }), template({ id: 'luggage' }), ...visaTemplates],
+    visaRules: [
+      visaRule({
+        id: 'br-cn',
+        passportCountryCode: 'BR',
+        destinationCountryCode: 'CN',
+        requirementType: 'visa_required',
+      }),
+    ],
+  };
+
+  const antes = stored(resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'BR' })));
+  const depois = resolve(catalog, trip({ countryCodes: ['CN'], passportCountryCode: 'AO' }));
+
+  const direto = diffForPassportChange(antes, depois);
+  const invertido = diffForPassportChange([...antes].reverse(), depois);
+
+  assert.deepEqual([...invertido.toSupersedeIds].sort(), [...direto.toSupersedeIds].sort());
+  assert.deepEqual(invertido.toInsert, direto.toInsert);
+  assert.deepEqual(invertido.toUpdate, direto.toUpdate);
+});
+
+test('o resultado da troca é contado sem nenhuma frase', () => {
+  const outcome = describePassportChange({
+    toInsert: [{} as ResolvedRequirement, {} as ResolvedRequirement],
+    toRestoreIds: ['a'],
+    toUpdate: [],
+    toSupersedeIds: ['b', 'c', 'd'],
+  });
+
+  assert.deepEqual(outcome, { added: 2, restored: 1, refreshed: 0, superseded: 3 });
+});
+
+test('item superado fica fora do progresso e do próximo passo', () => {
+  const items = [
+    {
+      priority: 'required' as const,
+      completed: false,
+      created_at: '2026-01-01',
+      superseded_at: '2026-09-10T12:00:00Z',
+    },
+    {
+      priority: 'recommended' as const,
+      completed: false,
+      created_at: '2026-01-02',
+      superseded_at: null,
+    },
+  ];
+
+  const active = activeRequirements(items);
+
+  assert.equal(computeTripProgress(active).total, 1);
+  assert.equal(computeTripProgress(active).requiredTotal, 0);
+  assert.equal(selectNextRequirement(active)?.created_at, '2026-01-02');
 });
