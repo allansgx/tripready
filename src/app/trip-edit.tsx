@@ -21,7 +21,6 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { TextField } from '@/components/ui/text-field';
 import { getCountryName, type Country } from '@/constants/countries';
 import { CountryPickerList } from '@/features/passports/country-picker-list';
-import { usePassports } from '@/features/passports/passports-context';
 import { CityStep } from '@/features/trips/components/city-step';
 import { DateRangeSummary } from '@/features/trips/components/date-range-summary';
 import {
@@ -62,7 +61,6 @@ const NAME_MAX_LENGTH = 60;
 export default function EditTripScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const router = useRouter();
-  const { primary } = usePassports();
 
   const {
     draft,
@@ -172,7 +170,7 @@ export default function EditTripScreen() {
         draft,
         resolvedName,
         baseline,
-        primary?.country_code ?? null,
+        draft.passportCountryCode,
       );
       setSaved(true);
       setTimeout(() => router.back(), 900);

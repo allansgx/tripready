@@ -19,7 +19,6 @@ import { showDialog } from '@/components/ui/dialog';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { getCountryName } from '@/constants/countries';
 import { ReminderOptInCard } from '@/features/notifications/components/reminder-opt-in-card';
-import { usePassports } from '@/features/passports/passports-context';
 import {
   canAskForReminders,
   markRemindersAsked,
@@ -43,6 +42,7 @@ import {
   priorityLabel,
 } from '@/features/trips/data/checklist-catalog';
 import {
+  activeRequirements,
   groupRequirementsByCategory,
   isSectionComplete,
   nextPendingCategory,
@@ -130,7 +130,6 @@ export default function TripChecklistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
-  const { primary } = usePassports();
 
   // `router.canGoBack()` enxerga a árvore inteira e podia levar para outra aba.
   function goBackToTrips() {
@@ -152,6 +151,7 @@ export default function TripChecklistScreen() {
   const [countries, setCountries] = useState<TripCountry[]>([]);
   const [cities, setCities] = useState<TripCity[]>([]);
   const [requirements, setRequirements] = useState<TripRequirementWithGroup[]>([]);
+  const [passportCountryCode, setPassportCountryCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<ReadonlySet<RequirementCategory>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
@@ -221,7 +221,7 @@ export default function TripChecklistScreen() {
         return;
       }
 
-      const count = await scheduleReminderPreview(reminderTrip, requirements);
+      const count = await scheduleReminderPreview(reminderTrip, activeRequirements(requirements));
       setNotice(
         count === 0 ? t('trips.reminders.none') : t('trips.reminders.scheduled', { count }),
       );
@@ -266,6 +266,7 @@ export default function TripChecklistScreen() {
       setRange({ start: detail.start_date, end: detail.end_date });
       setCountries(detail.trip_countries ?? []);
       setCities(detail.trip_cities ?? []);
+      setPassportCountryCode(detail.passport_country_code);
 
       const resolved = await resolveDisplayText(detail.trip_requirements ?? []);
       setRequirements(resolved);
@@ -293,7 +294,14 @@ export default function TripChecklistScreen() {
     }, [load]),
   );
 
-  const progress = useMemo(() => computeTripProgress(requirements), [requirements]);
+  // Item superado continua carregado — a checklist mostra o que deixou de valer
+  // numa seção própria —, mas não conta em lugar nenhum. O filtro é refeito em
+  // cada derivação em vez de virar um memo compartilhado: o React Compiler não
+  // consegue preservar a memoização de um array que atravessa várias chamadas.
+  const progress = useMemo(
+    () => computeTripProgress(activeRequirements(requirements)),
+    [requirements],
+  );
 
   // A comemoração dispara só na virada, nunca ao reabrir uma viagem pronta.
   const previousRef = useRef<{ ready: boolean; complete: boolean } | null>(null);
@@ -346,7 +354,7 @@ export default function TripChecklistScreen() {
     setOptInBusy(true);
     try {
       if (await requestReminderPermission()) {
-        await syncTripReminders(reminderTrip, requirements);
+        await syncTripReminders(reminderTrip, activeRequirements(requirements));
       }
     } catch {
       // Nada a dizer: o app funciona igual sem lembrete.
@@ -376,7 +384,7 @@ export default function TripChecklistScreen() {
   );
 
   const sections = useMemo(
-    () => groupRequirementsByCategory(requirements, CHECKLIST_CATEGORIES),
+    () => groupRequirementsByCategory(activeRequirements(requirements), CHECKLIST_CATEGORIES),
     [requirements],
   );
 
@@ -387,10 +395,10 @@ export default function TripChecklistScreen() {
     () =>
       destinationsWithoutVerifiedRule(
         countries.map((country) => country.country_code),
-        requirements,
-        primary?.country_code ?? null,
+        activeRequirements(requirements),
+        passportCountryCode,
       ).map((code) => getCountryName(code)),
-    [countries, requirements, primary],
+    [countries, requirements, passportCountryCode],
   );
 
   function toggleSection(category: RequirementCategory) {
@@ -456,14 +464,14 @@ export default function TripChecklistScreen() {
     setRequirements(updated);
     setNotice(null);
 
-    if (next) void advanceAfterCompleting(requirement.category, updated);
+    if (next) void advanceAfterCompleting(requirement.category, activeRequirements(updated));
 
     try {
       await tripRequirementsService.setCompleted(requirement.id, next);
 
       // Aqui, e não só ao voltar para a lista: marcar o último obrigatório
       // cancela o lembrete de pendência no ato.
-      void syncTripReminders(reminderTrip, updated).catch(() => {});
+      void syncTripReminders(reminderTrip, activeRequirements(updated)).catch(() => {});
     } catch {
       setRequirements((current) =>
         current.map((item) =>
@@ -527,6 +535,13 @@ export default function TripChecklistScreen() {
               </Text>
             ) : null}
             <Text style={styles.dates}>{dates}</Text>
+            {/* Informação, não ação: é o que explica esta checklist, inclusive
+                numa viagem concluída cujo passaporte já saiu do perfil. */}
+            {passportCountryCode ? (
+              <Text style={styles.passport}>
+                {t('trips.passport.label', { country: getCountryName(passportCountryCode) })}
+              </Text>
+            ) : null}
           </View>
 
           <Pressable
@@ -777,6 +792,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   headerTexts: { flex: 1, gap: spacing.xs },
+  passport: { ...typography.caption, color: colors.textSecondary },
   title: { ...typography.screenTitle, color: colors.text },
   cities: { ...typography.caption, color: colors.textSecondary },
   dates: { ...typography.caption, color: colors.textSecondary },

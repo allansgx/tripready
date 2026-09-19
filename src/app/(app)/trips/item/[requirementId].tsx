@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { CountryFlag } from '@/components/ui/country-flag';
 import { SectionLabel } from '@/components/ui/section-label';
 import { getCountryName } from '@/constants/countries';
-import { usePassports } from '@/features/passports/passports-context';
 import { catalogCache } from '@/features/trips/data/catalog-cache';
 import {
   CATEGORY_ICONS,
@@ -22,13 +21,14 @@ import {
   describeRequirementScope,
   resolveRequirementText,
 } from '@/features/trips/domain/requirement-matching';
+import { todayISO } from '@/features/trips/domain/trip-status';
 import { getLocale, t } from '@/i18n';
 import {
   affiliateClicksService,
   requirementCatalogService,
   requirementOffersService,
-  tripDestinationsService,
   tripRequirementsService,
+  tripsService,
   type TripRequirementWithGroup,
 } from '@/services';
 import {
@@ -93,7 +93,6 @@ export default function RequirementDetailScreen() {
   }>();
   const router = useRouter();
   const navigation = useNavigation();
-  const { primary } = usePassports();
 
   const [requirement, setRequirement] = useState<TripRequirementWithGroup | null>(null);
   const [offers, setOffers] = useState<RequirementOffer[]>([]);
@@ -139,11 +138,17 @@ export default function RequirementDetailScreen() {
       if (!item.template_id) return;
 
       try {
-        const countries = await tripDestinationsService.listCountries(item.trip_id);
+        const trip = await tripsService.getWithDestinations(item.trip_id);
+        if (!trip) return;
+
         const list = await requirementOffersService.listForTemplate(item.template_id, {
-          destinationCountryCodes: countries.map((country) => country.country_code),
-          passportCountryCode: primary?.country_code ?? null,
-          today: new Date().toISOString().slice(0, 10),
+          destinationCountryCodes: (trip.trip_countries ?? []).map(
+            (country) => country.country_code,
+          ),
+          // O passaporte da viagem, e não a preferência do perfil: a sugestão
+          // segue a mesma regra que gerou o item.
+          passportCountryCode: trip.passport_country_code,
+          today: todayISO(),
         });
         if (active) setOffers(list);
       } catch {
@@ -156,7 +161,7 @@ export default function RequirementDetailScreen() {
     return () => {
       active = false;
     };
-  }, [requirementId, primary?.country_code]);
+  }, [requirementId]);
 
   // Marcar encerra a visita e volta; desmarcar fica, porque quem desmarca está
   // reabrindo o item para reler. A volta só acontece se a escrita der certo.

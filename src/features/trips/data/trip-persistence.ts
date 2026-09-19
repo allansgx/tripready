@@ -108,38 +108,6 @@ export async function changeTripPassport(input: {
   return describePassportChange(diff);
 }
 
-/**
- * Recalcula as checklists depois de uma troca de passaporte principal, porque
- * as regras de visto dependem dele. Viagens concluídas ficam de fora.
- */
-export async function rebuildChecklistsForPassport(
-  userId: string,
-  passportCountryCode: string | null,
-): Promise<void> {
-  const trips = await tripsService.listForRebuild(userId, todayISO());
-
-  const removeIds: string[] = [];
-  const inserts: ResolvedRequirement[] = [];
-
-  for (const trip of trips) {
-    const desired = await resolveChecklist({
-      tripId: trip.id,
-      countryCodes: (trip.trip_countries ?? []).map((country) => country.country_code),
-      startDate: trip.start_date,
-      endDate: trip.end_date,
-      passportCountryCode,
-    });
-
-    const diff = diffTripRequirements(trip.trip_requirements ?? [], desired);
-
-    removeIds.push(...diff.toRemoveIds);
-    inserts.push(...diff.toInsert);
-  }
-
-  // Uma escrita só: a troca de passaporte ou vale inteira, ou não vale.
-  await tripRequirementsService.applyDiff(removeIds, inserts);
-}
-
 /** Cria a viagem e seus destinos; a checklist é montada na tela de preparação. */
 export async function createTripWithDestinations(
   userId: string,

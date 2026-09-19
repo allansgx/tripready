@@ -469,6 +469,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   },
   'trip.new.name.placeholder': 'Mi viaje',
 
+  'trips.passport.label': 'Pasaporte: {country}',
   'trip.review.passport.label': 'PASAPORTE',
   'trip.review.passport.action': 'Cambiar pasaporte',
   'trip.review.dates.label': 'FECHAS',

@@ -24,6 +24,7 @@ export type TripRequirementBrief = {
   template_id: string | null;
   visa_rule_id: string | null;
   country_code: string | null;
+  superseded_at: string | null;
 };
 
 /** Viagem com o mínimo necessário para montar o card da listagem. */
@@ -42,21 +43,6 @@ export type TripDetail = Trip & {
   trip_countries: TripCountry[];
   trip_cities: TripCity[];
   trip_requirements: TripRequirementWithGroup[];
-};
-
-/**
- * O mínimo para recalcular a checklist de uma viagem: os países, as datas e a
- * origem dos itens que já existem.
- */
-export type TripForRebuild = Pick<Trip, 'id' | 'start_date' | 'end_date'> & {
-  trip_countries: { country_code: string }[];
-  trip_requirements: {
-    id: string;
-    template_id: string | null;
-    group_id: string | null;
-    country_code: string | null;
-    completed: boolean;
-  }[];
 };
 
 /** Espaço para paginação futura sem mudar as chamadas existentes. */
@@ -83,7 +69,7 @@ export const tripsService = {
     let query = supabase
       .from('trips')
       .select(
-        '*, trip_countries(country_code), trip_requirements(id, title, description, priority, completed, created_at, template_id, visa_rule_id, country_code)',
+        '*, trip_countries(country_code), trip_requirements(id, title, description, priority, completed, created_at, template_id, visa_rule_id, country_code, superseded_at)',
       )
       .eq('user_id', userId)
       .order('start_date', { ascending: true, nullsFirst: false });
@@ -95,25 +81,6 @@ export const tripsService = {
 
     const rows = unwrapRequired(await query, 'Tente carregar suas viagens novamente');
     return rows as unknown as TripWithRelations[];
-  },
-
-  /**
-   * Viagens que ainda podem ter a checklist recalculada. Concluídas ficam de
-   * fora: são o registro do que a pessoa de fato preparou.
-   */
-  async listForRebuild(userId: string, today: string): Promise<TripForRebuild[]> {
-    const rows = unwrapRequired(
-      await supabase
-        .from('trips')
-        .select(
-          'id, start_date, end_date, trip_countries(country_code), trip_requirements(id, template_id, group_id, country_code, completed)',
-        )
-        .eq('user_id', userId)
-        .or(`end_date.is.null,end_date.gte.${today}`),
-      'Tente atualizar suas checklists novamente',
-    );
-
-    return rows as unknown as TripForRebuild[];
   },
 
   async getDetail(tripId: string): Promise<TripDetail | null> {

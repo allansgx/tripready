@@ -9,7 +9,6 @@ import {
 } from 'react';
 
 import { useAuth } from '@/features/auth/auth-context';
-import { rebuildChecklistsForPassport } from '@/features/trips/data/trip-persistence';
 import { t } from '@/i18n';
 import { passportsService } from '@/services';
 import type { Passport } from '@/types/models';
@@ -153,20 +152,13 @@ export function PassportsProvider({ children }: { children: ReactNode }) {
       },
 
       /**
-       * Promove um passaporte e recalcula as checklists. O recálculo é melhor
-       * esforço: falhando, a troca continua valendo e a próxima edição acerta.
+       * Promove um passaporte. Nenhuma viagem é tocada: o principal é só o
+       * valor pré-selecionado ao criar a próxima, e cada viagem guarda o
+       * passaporte com que foi montada.
        */
       async setPrimary(passportId) {
-        if (!userId) return;
-
-        const promoted = await passportsService.setPrimary(passportId);
+        await passportsService.setPrimary(passportId);
         await refresh();
-
-        try {
-          await rebuildChecklistsForPassport(userId, promoted.country_code);
-        } catch {
-          // Sem ação: a próxima edição de cada viagem refaz a checklist.
-        }
       },
 
       /** O principal nunca é removido: é preciso promover outro antes. */

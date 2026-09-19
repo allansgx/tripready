@@ -469,6 +469,7 @@ export const messages = {
   },
   'trip.new.name.placeholder': 'Minha viagem',
 
+  'trips.passport.label': 'Passaporte: {country}',
   'trip.review.passport.label': 'PASSAPORTE',
   'trip.review.passport.action': 'Alterar passaporte',
   'trip.review.dates.label': 'DATAS',
