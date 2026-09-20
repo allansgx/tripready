@@ -272,7 +272,9 @@ export default function NewTripScreen() {
                   // O nome sugerido já vem escrito no campo: tocar seleciona
                   // tudo, para trocá-lo custar uma digitada e não uma apagada.
                   selectTextOnFocus
-                  onSubmitEditing={() => void createTrip()}
+                  // Sem `onSubmitEditing` de propósito: o "done" só fecha o
+                  // teclado. Esta etapa é a conferência, e quem nomeia a viagem
+                  // costuma querer reler o resumo antes de criar.
                 />
 
                 {/*
