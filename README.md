@@ -40,19 +40,33 @@ functions:check`)
    npx supabase db push
    ```
 
-4. Publique a Edge Function da exclusão de conta:
+4. Publique as Edge Functions:
 
    ```bash
    npx supabase functions deploy delete-account
+   npx supabase functions deploy request-password-reset
    ```
 
-   Sem ela o botão **Excluir conta** não funciona. A chave de serviço que a
-   função usa é injetada pelo runtime do Supabase e nunca chega ao aplicativo.
+   Sem a primeira o botão **Excluir conta** não funciona; sem a segunda, a
+   recuperação de senha não filtra contas só-Google/Apple (ver seção
+   "Autenticação" do [AGENTS.md](AGENTS.md)). A chave de serviço que as duas
+   usam é injetada pelo runtime do Supabase e nunca chega ao aplicativo.
 
-5. Em **Supabase → Authentication → Providers**, habilite Google e Apple com os
+5. Configure o envio de e-mail em **Supabase → Authentication → Emails**:
+
+   - **SMTP customizado**, apontando para o [Resend](https://resend.com) —
+     sem isso, os e-mails de confirmação de cadastro e de recuperação de
+     senha saem pelo remetente de teste do Supabase, com limites bem menores.
+   - **Confirm signup** habilitado (`enable_confirmations`), para exigir a
+     confirmação de e-mail antes do primeiro login por e-mail/senha.
+   - Os templates "Confirm signup" e "Reset password" precisam exibir
+     `{{ .Token }}` (o código de 6 dígitos) — o app usa código, não link, pelo
+     comportamento do Expo Go (ver [AGENTS.md](AGENTS.md)).
+
+6. Em **Supabase → Authentication → Providers**, habilite Google e Apple com os
    respectivos client id/secret.
 
-6. Em **Supabase → Authentication → URL Configuration → Redirect URLs**,
+7. Em **Supabase → Authentication → URL Configuration → Redirect URLs**,
    adicione:
 
    - `tripready://auth/callback` (development/production build)
@@ -64,12 +78,14 @@ functions:check`)
    Se a URL de retorno não estiver nessa lista, o Supabase ignora o
    `redirect_to` e manda o navegador para a **Site URL** (que por padrão é
    `http://localhost:3000`) — é exatamente o sintoma de "o login termina em
-   localhost e não volta para o app".
+   localhost e não volta para o app". Essa lista só vale para o login por
+   Google/Apple: os e-mails de confirmação e recuperação usam código, não
+   link, e não passam por nenhuma dessas URLs.
 
    Nada precisa mudar no Google Cloud Console: o Google só enxerga o callback
    do Supabase (`https://<ref>.supabase.co/auth/v1/callback`).
 
-7. Rode o app:
+8. Rode o app:
 
    ```bash
    npx expo start

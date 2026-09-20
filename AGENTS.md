@@ -125,6 +125,55 @@ diff \
 Os padrões são ancorados em `^` de propósito: sem isso, a mesma frase escrita no
 comentário de uma migration entra na contagem e o resultado mente.
 
+## Autenticação
+
+- Segredo nunca vai para o app: `EXPO_PUBLIC_*` é, por definição, público. A
+  Service Role Key só existe no runtime de Edge Function, nunca no bundle nem
+  no `.env` do app.
+- A recuperação de senha nunca revela se a conta existe: a resposta e o tempo
+  de resposta são os mesmos para conta elegível, conta sem login por e-mail e
+  e-mail que não existe.
+- Conta com senha e conta OAuth são distinguidas pelas `identities` do
+  usuário, nunca por presunção a partir do formato do e-mail.
+- Rate limiting é do servidor — o nativo do Supabase (GoTrue) é sempre a
+  primeira opção. O cliente só espelha o valor para dar feedback (contagem
+  regressiva, botão desabilitado); ele nunca é quem decide o limite.
+- Texto de e-mail é a exceção deliberada à regra do `t()` (seção "Idiomas"):
+  mora nos templates do painel do Supabase, não no dicionário do app.
+- `config.toml` não governa o projeto remoto sozinho — os dois precisam ser
+  mantidos em par manualmente. Uma mudança feita só no painel (rate limit,
+  `max_frequency`, `enable_confirmations`) deixa o arquivo local desatualizado
+  até alguém lembrar de espelhar.
+- Uma checagem de identidade feita a partir de uma Edge Function com Service
+  Role nunca deve passar por um endpoint que também arma o envio de e-mail —
+  `admin.generateLink` faz isso mesmo sem enviar nada, porque grava o mesmo
+  timestamp de cooldown que o envio real depende de ler. Isso já quebrou a
+  recuperação de senha em produção: a própria checagem rearmava o cooldown
+  antes do envio de verdade, que então falhava sempre com 429. Para checar
+  identidade sem esse efeito colateral, usar `GET /admin/users?filter=` (acha
+  o id) seguido de `admin.getUserById` (traz as `identities`) — nenhum dos
+  dois toca o cooldown de envio.
+
+**Decisões registradas, com data e motivo — não são lei natural, são parâmetros
+que podem mudar:**
+
+- Confirmação de cadastro e recuperação de senha usam código de 6 dígitos por
+  e-mail, não link (19/09/2026) — o Expo Go não abre de forma confiável o deep
+  link de um e-mail de confirmação durante o desenvolvimento.
+- A recuperação de senha passa por uma Edge Function própria
+  (`request-password-reset`), em vez de chamar `resetPasswordForEmail` direto
+  do app (19/09/2026) — o `/recover` nativo do Supabase manda e-mail para
+  qualquer conta com aquele endereço, sem olhar o provedor; uma conta só-Google
+  ganharia senha por ali. Decisão de produto, não limitação técnica descoberta
+  depois. A função só chama o `resetPasswordForEmail` nativo quando a conta
+  tem identidade de e-mail — o envio em si continua pelo SMTP e pelo template
+  já configurados no painel do Supabase, nada passa pela API do Resend
+  diretamente.
+- Rate limit e expiração do código: `otp_length = 6`, `otp_expiry = 600s`,
+  `max_frequency = 1m`, `email_sent = 10/h`, `token_verifications = 15` — são
+  parâmetros, revisar se o volume real de uso mudar.
+- Idioma dos e-mails: só pt-BR por enquanto.
+
 ## Regras de negócio
 
 ### Viagens
