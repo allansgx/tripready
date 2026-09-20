@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,7 +29,9 @@ import {
 } from '@/features/trips/domain/trip-summary';
 import { getLocale, t } from '@/i18n';
 import { requirementCatalogService, tripsService, type TripWithRelations } from '@/services';
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
+
+const BRAND_LOGO = require('@/assets/images/splash-icon.png');
 
 /**
  * Título e descrição no idioma ativo, resolvidos por cima do que já veio
@@ -202,9 +204,7 @@ export default function HomeScreen() {
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name="airplane" size={30} color={colors.primary} />
-      </View>
+      <Image source={BRAND_LOGO} style={styles.emptyLogo} resizeMode="contain" />
       <Text style={styles.emptyTitle}>{t('trips.home.emptyTitle')}</Text>
       <Text style={styles.emptyText}>{t('trips.home.emptyText')}</Text>
       <View style={styles.emptyAction}>
@@ -243,13 +243,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  emptyIcon: {
+  emptyLogo: {
     width: 72,
     height: 72,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   emptyTitle: {

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,8 @@ import { getRedirectDiagnostics } from '@/features/auth/auth-redirect';
 import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
 import { t } from '@/i18n';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+
+const BRAND_LOGO = require('@/assets/images/splash-icon.png');
 
 export default function LoginScreen() {
   const { signInWithGoogle, signInWithApple, isSigningIn, error } = useAuth();
@@ -35,9 +37,7 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <View style={styles.logo}>
-            <Ionicons name="airplane" size={34} color={colors.contrastText} />
-          </View>
+          <Image source={BRAND_LOGO} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>TripReady</Text>
           <Text style={styles.subtitle}>{t('auth.login.tagline')}</Text>
         </View>
@@ -123,10 +123,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 72,
     height: 72,
-    borderRadius: 22,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
     ...typography.screenTitle,

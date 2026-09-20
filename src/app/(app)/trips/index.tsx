@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +26,8 @@ import {
 import { t } from '@/i18n';
 import { tripsService } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
+
+const BRAND_LOGO = require('@/assets/images/splash-icon.png');
 
 /**
  * A lista de viagens: uma só, na ordem de `buildTripSummaries`, com filtros
@@ -163,9 +173,7 @@ function FilterEmptyState({
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name="airplane" size={30} color={colors.primary} />
-      </View>
+      <Image source={BRAND_LOGO} style={styles.emptyLogo} resizeMode="contain" />
       <Text style={styles.emptyTitle}>{t('trips.list.emptyTitle')}</Text>
       <Text style={styles.emptyText}>{t('trips.list.emptyText')}</Text>
       <View style={styles.emptyAction}>
@@ -217,13 +225,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     paddingHorizontal: spacing.lg,
   },
-  emptyIcon: {
+  emptyLogo: {
     width: 72,
     height: 72,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   emptyTitle: {
