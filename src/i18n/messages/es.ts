@@ -14,6 +14,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'common.action.clear': 'Borrar',
   'common.action.change': 'Cambiar',
   'common.action.retry': 'Intentar de nuevo',
+  'common.action.gotIt': 'Entendido',
   'common.search.placeholder': 'Buscar...',
 
   'a11y.avatar.profilePhoto': 'Foto de perfil',
@@ -421,6 +422,10 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trips.list.loadRetryButton': 'Cargar viajes',
   'trips.list.emptyTitle': 'Aún no tienes ningún viaje',
   'trips.list.emptyText': 'Crea tu primer viaje para descubrir qué verificar antes de embarcar.',
+
+  'trips.limit.title': 'Límite de viajes alcanzado',
+  'trips.limit.message':
+    'Ya tienes {max} viajes guardados. Para crear uno nuevo, elimina un viaje que ya no necesites seguir. Estamos trabajando para ampliar este límite.',
 
   'trips.filterEmpty.ongoing.text': 'Cuando tu viaje empiece, aparecerá aquí.',
   'trips.filterEmpty.ongoing.action': 'Ver las próximas',

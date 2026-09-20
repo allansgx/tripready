@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import { unwrap, unwrapRequired } from '@/services/errors';
+import { DataAccessError, unwrap, unwrapRequired } from '@/services/errors';
 import type {
   RequirementPriority,
   Trip,
@@ -44,6 +44,16 @@ export type TripDetail = Trip & {
   trip_cities: TripCity[];
   trip_requirements: TripRequirementWithGroup[];
 };
+
+/** Recusa de RLS no PostgREST. */
+const ROW_LEVEL_SECURITY_VIOLATION = '42501';
+
+const TRIP_LIMIT_REACHED = 'trip_limit_reached';
+
+/** A recusa que a tela veste com a frase do teto, no idioma ativo. */
+export function isTripLimitReachedError(error: unknown): boolean {
+  return error instanceof DataAccessError && error.code === TRIP_LIMIT_REACHED;
+}
 
 /** Espaço para paginação futura sem mudar as chamadas existentes. */
 export type ListOptions = {
@@ -118,21 +128,29 @@ export const tripsService = {
   }): Promise<Trip> {
     const passportCountryCode = input.passportCountryCode ?? null;
 
-    return unwrapRequired(
-      await supabase
-        .from('trips')
-        .insert({
-          user_id: input.userId,
-          name: input.name,
-          start_date: input.startDate ?? null,
-          end_date: input.endDate ?? null,
-          passport_country_code: passportCountryCode,
-          passport_selected_at: passportCountryCode ? new Date().toISOString() : null,
-        })
-        .select('*')
-        .single(),
-      'Tente criar a viagem novamente',
-    );
+    const result = await supabase
+      .from('trips')
+      .insert({
+        user_id: input.userId,
+        name: input.name,
+        start_date: input.startDate ?? null,
+        end_date: input.endDate ?? null,
+        passport_country_code: passportCountryCode,
+        passport_selected_at: passportCountryCode ? new Date().toISOString() : null,
+      })
+      .select('*')
+      .single();
+
+    // O `with check` de `trips` tem duas condições e o app sempre grava o
+    // próprio `user_id`: a recusa que sobra é o teto de viagens da conta.
+    if (result.error?.code === ROW_LEVEL_SECURITY_VIOLATION) {
+      throw new DataAccessError('Exclua uma viagem para criar outra', {
+        code: TRIP_LIMIT_REACHED,
+        cause: result.error,
+      });
+    }
+
+    return unwrapRequired(result, 'Tente criar a viagem novamente');
   },
 
   async update(

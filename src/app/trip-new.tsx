@@ -31,10 +31,12 @@ import {
   checkTripLimits,
   MAX_TRIP_COUNTRIES,
   MAX_TRIP_DURATION_DAYS,
+  MAX_TRIPS_PER_USER,
   type TripLimitIssue,
 } from '@/features/trips/domain/trip-limits';
 import { useTripDraft } from '@/features/trips/hooks/use-trip-draft';
 import { t, type MessageKey } from '@/i18n';
+import { isTripLimitReachedError } from '@/services';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
 const LIMIT_MESSAGE_MAX: Partial<Record<TripLimitIssue, number>> = {
@@ -158,8 +160,14 @@ export default function NewTripScreen() {
         passportCountryCode,
       );
       router.replace({ pathname: '/trip-preparing', params: { tripId: trip.id } });
-    } catch {
-      setNotice(t('trip.new.error.createRetry'));
+    } catch (error) {
+      // O teto da conta é recusado pela policy: aqui ele chega a quem entrou
+      // com a lista de viagens ainda carregando.
+      setNotice(
+        isTripLimitReachedError(error)
+          ? t('trips.limit.message', { max: MAX_TRIPS_PER_USER })
+          : t('trip.new.error.createRetry'),
+      );
       setBusy(false);
     }
   }

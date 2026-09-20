@@ -20,8 +20,10 @@ import { NextTripHero } from '@/features/trips/components/next-trip-hero';
 import type { FieldPointer } from '@/features/trips/components/season-field';
 import { SeasonalBackdrop } from '@/features/trips/components/seasonal-backdrop';
 import { TravelTipsCarousel } from '@/features/trips/components/travel-tips-carousel';
+import { showTripLimitDialog } from '@/features/trips/components/trip-limit-dialog';
 import { catalogCache } from '@/features/trips/data/catalog-cache';
 import { resolveRequirementText, tripSeasons } from '@/features/trips/domain/requirement-matching';
+import { hasReachedTripLimit } from '@/features/trips/domain/trip-limits';
 import {
   buildTripSummaries,
   splitTripSections,
@@ -73,6 +75,9 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const [nextTrip, setNextTrip] = useState<TripSummary | null>(null);
+  // O vazio daqui é "nenhuma viagem ativa", e não "nenhuma viagem": dez
+  // concluídas chegam nesta tela com o botão de criar.
+  const [tripCount, setTripCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [needsRetry, setNeedsRetry] = useState(false);
 
@@ -95,6 +100,7 @@ export default function HomeScreen() {
     setNeedsRetry(false);
     try {
       const rows = await tripsService.listWithRelations(user.id);
+      setTripCount(rows.length);
       const resolved = await resolveDisplayText(rows);
       // `buildTripSummaries` já ordena por relevância.
       const { active } = splitTripSections(buildTripSummaries(resolved));
@@ -115,6 +121,14 @@ export default function HomeScreen() {
       void load();
     }, [load]),
   );
+
+  function createTrip() {
+    if (hasReachedTripLimit(tripCount)) {
+      showTripLimitDialog();
+      return;
+    }
+    router.push('/trip-new');
+  }
 
   // As estações saem dos destinos: dezembro é inverno em Viena e verão no Rio.
   const seasons = useMemo(
@@ -193,7 +207,7 @@ export default function HomeScreen() {
               }
             />
           ) : (
-            <EmptyState onCreate={() => router.push('/trip-new')} />
+            <EmptyState onCreate={createTrip} />
           )}
         </ScrollView>
       </SafeAreaView>

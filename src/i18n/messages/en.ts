@@ -14,6 +14,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'common.action.clear': 'Clear',
   'common.action.change': 'Change',
   'common.action.retry': 'Try again',
+  'common.action.gotIt': 'Got it',
   'common.search.placeholder': 'Search...',
 
   'a11y.avatar.profilePhoto': 'Profile photo',
@@ -413,6 +414,10 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'trips.list.loadRetryButton': 'Load trips',
   'trips.list.emptyTitle': "You don't have any trips yet",
   'trips.list.emptyText': 'Create your first trip to find out what to check before boarding.',
+
+  'trips.limit.title': 'Trip limit reached',
+  'trips.limit.message':
+    'You already have {max} trips saved. To create a new one, delete a trip you no longer need to follow. We are working to raise this limit.',
 
   'trips.filterEmpty.ongoing.text': 'Once your trip starts, it shows up here.',
   'trips.filterEmpty.ongoing.action': 'View upcoming',

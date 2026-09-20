@@ -9,7 +9,7 @@ export type { OfferContext } from '@/services/requirement-offers';
 export { tripDestinationsService } from '@/services/trip-destinations';
 export { isPassportChangeConflict, tripRequirementsService } from '@/services/trip-requirements';
 export type { PassportChangeInput } from '@/services/trip-requirements';
-export { tripsService } from '@/services/trips';
+export { isTripLimitReachedError, tripsService } from '@/services/trips';
 export type {
   TripDetail,
   TripRequirementWithGroup,

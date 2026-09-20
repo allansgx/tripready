@@ -17,6 +17,8 @@ import { useAuth } from '@/features/auth/auth-context';
 import { syncAllTripReminders } from '@/features/notifications/data/reminder-scheduler';
 import { TripCard } from '@/features/trips/components/trip-card';
 import { TripFilterBar } from '@/features/trips/components/trip-filter-bar';
+import { showTripLimitDialog } from '@/features/trips/components/trip-limit-dialog';
+import { hasReachedTripLimit } from '@/features/trips/domain/trip-limits';
 import {
   buildTripSummaries,
   filterTripSummaries,
@@ -65,9 +67,18 @@ export default function TripsScreen() {
     }, [load]),
   );
 
-  const createTrip = () => router.push('/trip-new');
   const visible = filterTripSummaries(summaries, filter);
   const isReady = !isLoading && !needsRetry;
+
+  // Lista ainda não carregada não barra ninguém: sem contagem, quem recusa é a
+  // policy, e a tela de criação traduz a recusa.
+  function createTrip() {
+    if (hasReachedTripLimit(isReady ? summaries.length : null)) {
+      showTripLimitDialog();
+      return;
+    }
+    router.push('/trip-new');
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>

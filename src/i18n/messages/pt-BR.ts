@@ -18,6 +18,7 @@ export const messages = {
   'common.action.clear': 'Limpar',
   'common.action.change': 'Alterar',
   'common.action.retry': 'Tentar de novo',
+  'common.action.gotIt': 'Entendi',
   'common.search.placeholder': 'Buscar...',
 
   'a11y.avatar.profilePhoto': 'Foto do perfil',
@@ -422,6 +423,10 @@ export const messages = {
   'trips.list.emptyTitle': 'Você ainda não tem nenhuma viagem',
   'trips.list.emptyText':
     'Crie sua primeira viagem para descobrir o que precisa verificar antes de embarcar.',
+
+  'trips.limit.title': 'Limite de viagens atingido',
+  'trips.limit.message':
+    'Você já tem {max} viagens guardadas. Para criar uma nova, exclua uma que já não precisa acompanhar. Estamos trabalhando para ampliar esse limite.',
 
   'trips.filterEmpty.ongoing.text': 'Quando sua viagem começar, ela aparece aqui.',
   'trips.filterEmpty.ongoing.action': 'Ver as futuras',

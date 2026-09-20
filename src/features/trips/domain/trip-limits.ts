@@ -54,3 +54,18 @@ export function checkTripLimits(trip: TripLimitInput): TripLimitResult {
 export function canAddCountry(countryCodes: readonly string[], code: string): boolean {
   return countryCodes.includes(code) || countryCodes.length < MAX_TRIP_COUNTRIES;
 }
+
+/**
+ * Teto de viagens por conta. O mesmo número está na função `can_create_trip`
+ * (migration `20260920120000_trips_account_limit.sql`): as duas margens
+ * decidem sozinhas.
+ */
+export const MAX_TRIPS_PER_USER = 10;
+
+/**
+ * Se a conta já não cabe mais uma viagem. Contagem desconhecida não barra
+ * nada — quem recusa nesse caso é a policy, e a tela traduz a recusa.
+ */
+export function hasReachedTripLimit(tripCount: number | null): boolean {
+  return tripCount !== null && tripCount >= MAX_TRIPS_PER_USER;
+}

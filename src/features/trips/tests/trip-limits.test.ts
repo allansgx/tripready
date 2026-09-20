@@ -4,8 +4,10 @@ import test from 'node:test';
 import {
   canAddCountry,
   checkTripLimits,
+  hasReachedTripLimit,
   MAX_TRIP_COUNTRIES,
   MAX_TRIP_DURATION_DAYS,
+  MAX_TRIPS_PER_USER,
 } from '../domain/trip-limits.ts';
 
 /** Códigos de dois caracteres, quantos o teste pedir. */
@@ -145,4 +147,20 @@ test('o país já escolhido pode sair mesmo no teto', () => {
 test('os limites são os do produto', () => {
   assert.equal(MAX_TRIP_COUNTRIES, 20);
   assert.equal(MAX_TRIP_DURATION_DAYS, 180);
+  assert.equal(MAX_TRIPS_PER_USER, 10);
+});
+
+test('a conta abaixo do teto cria outra viagem', () => {
+  assert.equal(hasReachedTripLimit(0), false);
+  assert.equal(hasReachedTripLimit(MAX_TRIPS_PER_USER - 1), false);
+});
+
+test('a conta no teto não cria outra viagem', () => {
+  assert.equal(hasReachedTripLimit(MAX_TRIPS_PER_USER), true);
+  assert.equal(hasReachedTripLimit(MAX_TRIPS_PER_USER + 1), true);
+});
+
+test('contagem desconhecida não barra a criação', () => {
+  // Quem recusa nesse caso é a policy; a lista ainda carregando não decide.
+  assert.equal(hasReachedTripLimit(null), false);
 });
