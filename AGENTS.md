@@ -257,6 +257,39 @@ condições:
 Nada disso se deduz de `select distinct passport_country_code from visa_rules`: a
 primeira regra coletada de um país não é promessa de suporte.
 
+### Regras de visto
+
+Uma classificação errada aqui não é bug de tela: é um viajante que chega ao
+aeroporto sem o visto que precisava. Por isso **na dúvida, não cadastra** — o
+destino sem regra continua coberto pelo requisito genérico de exigências de
+entrada, que já manda consultar a fonte oficial.
+
+Fonte primária é o **órgão de imigração ou a chancelaria do país de destino**,
+apontando para a página específica de requisitos de entrada, nunca para a home.
+O Portal Consular do MRE é corroborativo: serve para detectar divergência, não
+para fundamentar a linha. Blog, agência de viagem, comparador de visto,
+Wikipédia, mapa de "visa requirements" de terceiros e resposta de modelo de
+linguagem sem conferência humana não fundamentam nada. **Divergência entre a
+fonte do destino e o MRE bloqueia a linha** — não vira escolha silenciosa.
+
+`verified_at` é a data em que **uma pessoa abriu a página oficial e leu a
+informação**. Não é a data da migration nem a data em que o dado apareceu em
+outro lugar. É a coluna que responde "o quanto este dado é recente", e ela só
+vale se for verdadeira.
+
+Ausência de um país numa lista de exigência é evidência de isenção, mas precisa
+ser **lida na fonte**, nunca inferida de resumo de busca. Pertencer a um bloco
+(MERCOSUL, Comunidade Andina) também não determina resultado: explica no máximo
+qual documento é aceito.
+
+**Exigência que vale independentemente do visto não é regra de visto.**
+`visa_rules` responde "este passaporte precisa de visto para este destino". Um
+formulário de chegada, um seguro obrigatório ou um certificado de vacinação é
+cobrado mesmo de quem é isento — então mora em `requirement_template` com escopo
+de país, ligado ao destino por `requirement_template_countries`, como qualquer
+outra exigência de entrada específica. Cada um desses precisa de fonte oficial
+própria e das três traduções no mesmo arquivo de migration.
+
 ### Checklist
 
 Prioridades: `required`, `recommended`, `informational`.

@@ -29,6 +29,11 @@ oficial.
 
 ## 2. Fontes
 
+> As regras desta seção e da §1 são agora **regra do projeto** e a versão que
+> manda está em "Regras de negócio → Regras de visto", no `AGENTS.md`. O que
+> segue aqui é a forma longa, com o raciocínio, mantida porque o resto deste
+> documento se refere a ela o tempo todo. Ao mudar uma, mudar a outra.
+
 **Primária, obrigatória:** o órgão oficial de imigração ou a chancelaria **do
 país de destino**. É quem define a regra e quem responde por ela. É esta que vai
 em `source_url`, apontando para a **página específica de requisitos de entrada**
@@ -70,11 +75,10 @@ Regras de preenchimento:
   explícita, deixe vazio — nunca estime.
 - `valid_until` só quando a regra tem fim previsto.
 
-> Nota sobre `conditional`: o tipo já existe em `visa_rules`, mas **ainda não há
-> template** que o transforme em item de checklist (decisão registrada na seção
-> 7.2 do plano). Uma regra `conditional` fica cadastrada e silenciosa até esse
-> template ser criado — o destino segue coberto pelo requisito genérico. Se a
-> coleta produzir muitos `conditional`, vale criar o template antes do seed.
+> Nota sobre `conditional`: o tipo tem template desde
+> `20260906130500_visa_conditional_template.sql`, então uma regra `conditional`
+> vira item de checklist normalmente. Antes disso ela ficava cadastrada e
+> silenciosa, com o destino coberto só pelo requisito genérico.
 
 ## 4. Planilha
 
@@ -214,11 +218,10 @@ passaporte, e isso entrou em `notes` porque é informação útil ao viajante.
 
 ### 4.5 O que exige decisão antes do seed
 
-1. **O Canadá é `conditional`, e `conditional` ainda não tem template.** A regra
-   entraria no banco e ficaria silenciosa — o destino seguiria coberto apenas
-   pelo requisito genérico. Como é um destino relevante e o caso é legítimo,
-   vale criar o template `visa-conditional` antes deste seed. É uma linha a
-   mais na migration da Etapa 4, sem código.
+1. ~~**O Canadá é `conditional`, e `conditional` ainda não tem template.**~~
+   **Resolvido:** o template existe desde
+   `20260906130500_visa_conditional_template.sql`, então a regra do Canadá não
+   fica mais silenciosa no banco.
 2. **China tem prazo.** A política vigente termina em **31/12/2026**, então a
    linha nasce com `valid_until = 2026-12-31`. Depois dessa data o motor deixa
    de aplicá-la, e o destino volta a ser coberto pelo requisito genérico — que

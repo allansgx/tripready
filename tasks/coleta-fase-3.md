@@ -6,7 +6,9 @@ concluído e removido), na mesma forma da
 se marca a confiança. **Este arquivo não é migration.** Nenhuma linha vai para o
 banco antes de uma pessoa abrir a página oficial e confirmar.
 
-As regras da coleta de vistos valem inteiras aqui, em especial estas três:
+As regras da coleta de vistos valem inteiras aqui — elas estão em "Regras de
+negócio → Regras de visto", no `AGENTS.md`, e na forma longa na
+[coleta de vistos](coleta-vistos-br.md). Em especial estas três:
 
 - `verified_at` é a data em que **uma pessoa** leu a fonte. As tabelas abaixo
   saem de uma primeira passada feita em **2026-09-12** por consulta às páginas
@@ -253,8 +255,14 @@ Fica registrado como sugestão, **não aplicado**.
 
 ## 4. 7.8 — Marrocos
 
-**Continua pendente, e pelos mesmos motivos técnicos da coleta anterior.** Nesta
-passada foram tentadas quatro portas:
+> **Resolvido depois desta passada, na coleta de vistos.** O Marrocos entrou
+> como `visa_free` pela Embaixada do Brasil em Rabat, e a linha `MA` está na
+> migration aplicada — com o desvio de fonte anotado lá (o MRE é corroborativo,
+> não primário). O que segue abaixo fica só como registro das portas que não
+> abriram; **a validade de passaporte do Marrocos**, na tabela da seção 2,
+> continua pendente, porque é outra pergunta.
+
+Nesta passada foram tentadas quatro portas:
 
 | Tentativa                                                   | Resultado                                                                        |
 | ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -352,8 +360,7 @@ e https://hr.china-embassy.gov.cn/eng/qzfw/Visa/202511/t20251104_11746850.htm
 
 1. **Abrir o PDF do six-month club da CBP** e responder se o Brasil está isento.
    É a pendência mais barata e um dos destinos mais buscados.
-2. **Resolver o Marrocos** pelo portal de elegibilidade, e fechar o escopo do
-   MVP em `visa_rules`.
+2. ~~Resolver o Marrocos~~ — **feito na coleta de vistos**, ver seção 4.
 3. **Fechar a tabela da seção 2**, marcando `verified_at` linha a linha. São 10
    destinos pendentes e 16 em confiança média.
 4. **Só então** decidir sobre as colunas da seção 1.1 — com a tabela na mão, e
