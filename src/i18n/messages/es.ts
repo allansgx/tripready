@@ -20,6 +20,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.textField.showPassword': 'Mostrar contraseña',
   'a11y.textField.hidePassword': 'Ocultar contraseña',
   'a11y.accordion.sectionProgress': '{title}, {done} de {total} verificados',
+  'a11y.codeField.label': 'Código de verificación',
 
   'date.picker.previousYear': 'Año anterior',
   'date.picker.nextYear': 'Año siguiente',
@@ -67,7 +68,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'auth.error.invalidEmailFormat': 'Correo electrónico inválido.',
   'auth.error.invalidPassword': 'Ingresa una contraseña válida.',
   'auth.error.rateLimited': 'Demasiados intentos seguidos. Espera unos minutos.',
-  'auth.error.tooManyRequests': 'Por seguridad, espera 60 segundos antes de intentar de nuevo.',
+  'auth.error.tooManyRequests': 'Por seguridad, espera un poco antes de intentar de nuevo.',
   'auth.error.currentPasswordRequired': 'Ingresa tu contraseña actual.',
   'auth.error.currentPasswordInvalid': 'La contraseña actual no coincide.',
   'auth.error.samePassword': 'La nueva contraseña debe ser diferente de la actual.',
@@ -76,6 +77,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'auth.error.callbackFailed': 'Error de autenticación: {code}',
   'auth.error.missingAuthUrl': 'Supabase no devolvió la URL de autenticación.',
   'auth.error.missingAppleToken': 'Apple no devolvió el identity token.',
+  'auth.error.invalidOrExpiredCode': 'Código incorrecto o expirado. Solicita uno nuevo.',
 
   'auth.password.rule.length': 'Al menos {min} caracteres',
   'auth.password.rule.uppercase': 'Letra mayúscula',
@@ -124,20 +126,39 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'auth.signUp.error.missingName': 'Ingresa tu nombre.',
   'auth.signUp.error.invalidPassword': 'La contraseña todavía no cumple todos los requisitos.',
   'auth.signUp.error.passwordMismatch': 'Las contraseñas no coinciden.',
-  'auth.signUp.confirmEmail.title': 'Confirma tu correo electrónico',
-  'auth.signUp.confirmEmail.subtitle':
-    'Enviamos un enlace de confirmación a {email}. Abre el enlace y vuelve para iniciar sesión.',
-  'auth.signUp.confirmEmail.backToLogin': 'Volver al inicio de sesión',
   'auth.signUp.field.confirmPassword.label': 'Confirmar contraseña',
   'auth.signUp.field.confirmPassword.placeholder': 'Repite la contraseña',
   'auth.signUp.submit': 'Crear cuenta',
 
+  'auth.confirmEmail.title': 'Verifica tu correo electrónico',
+  'auth.confirmEmail.subtitle':
+    'Enviamos un código de {length} dígitos a {email}. Ingrésalo abajo para confirmar tu cuenta.',
+  'auth.confirmEmail.error.incomplete': 'Ingresa el código completo.',
+  'auth.confirmEmail.confirm': 'Confirmar',
+  'auth.confirmEmail.resendQuestion': '¿No recibiste el código?',
+  'auth.confirmEmail.resend': 'Reenviar',
+  'auth.confirmEmail.resendCountdown': 'Reenviar en {seconds}s',
+  'auth.confirmEmail.resendSuccess': 'Enviamos un nuevo código.',
+
   'auth.forgotPassword.title': 'Recuperar contraseña',
-  'auth.forgotPassword.subtitle': 'Te enviaremos un enlace para que vuelvas a acceder a la cuenta.',
+  'auth.forgotPassword.subtitle': 'Te enviaremos un código para que vuelvas a acceder a la cuenta.',
   'auth.forgotPassword.error.empty': 'Ingresa el correo de la cuenta.',
-  'auth.forgotPassword.success':
-    'Si existe una cuenta con ese correo, el enlace de recuperación ya está en camino. El enlace abre la app con la sesión iniciada.',
-  'auth.forgotPassword.submit': 'Enviar enlace de recuperación',
+  'auth.forgotPassword.submit': 'Enviar código',
+  'auth.forgotPassword.cooldown': 'Espera {seconds}s para enviar de nuevo',
+
+  'auth.resetPassword.code.title': 'Código de seguridad',
+  'auth.resetPassword.code.subtitle':
+    'Enviamos un código de {length} dígitos a {email}. Ingrésalo para continuar con el restablecimiento.',
+  'auth.resetPassword.code.error.incomplete': 'Ingresa el código completo.',
+  'auth.resetPassword.code.verify': 'Verificar',
+  'auth.resetPassword.code.resendQuestion': '¿No recibiste el código?',
+  'auth.resetPassword.code.resend': 'Reenviar',
+  'auth.resetPassword.code.resendCountdown': 'Reenviar en {seconds}s',
+  'auth.resetPassword.code.resendSuccess': 'Enviamos un nuevo código.',
+  'auth.resetPassword.newPassword.title': 'Nueva contraseña',
+  'auth.resetPassword.newPassword.subtitle':
+    'Crea una contraseña segura con al menos {min} caracteres.',
+  'auth.resetPassword.newPassword.submit': 'Restablecer contraseña',
 
   'auth.changePassword.title': 'Cambiar contraseña',
   'auth.changePassword.error.missingCurrent': 'Ingresa tu contraseña actual.',

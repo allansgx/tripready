@@ -19,6 +19,13 @@ type AuthContextValue = {
   isLoading: boolean;
   /** `true` durante um login em andamento. */
   isSigningIn: boolean;
+  /**
+   * `true` a partir do momento em que o código de recuperação cria sessão, até
+   * a senha nova ser definida. Enquanto isso, nenhum grupo protegido pode
+   * assumir essa sessão — é o que impede o app de pular direto para dentro
+   * antes da pessoa trocar a senha.
+   */
+  isRecovering: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
@@ -45,7 +52,19 @@ type AuthContextValue = {
     password: string,
     name: string,
   ) => Promise<'signed-in' | 'confirm-email'>;
-  sendPasswordReset: (email: string) => Promise<void>;
+  /** Cria a sessão a partir do código de 6 dígitos. **Lança** o erro. */
+  confirmSignUpCode: (email: string, code: string) => Promise<void>;
+  /** Pede um novo código de confirmação. **Lança** o erro. */
+  resendSignUpCode: (email: string) => Promise<void>;
+  /** Pede a recuperação — sempre silenciosa, nunca lança por e-mail inexistente. */
+  requestPasswordReset: (email: string) => Promise<void>;
+  /** Cria a sessão de recuperação a partir do código. **Lança** o erro. */
+  verifyRecoveryCode: (email: string, code: string) => Promise<void>;
+  /**
+   * Define a senha nova com a sessão de recuperação ativa, e encerra
+   * `isRecovering` — só depois disso os grupos protegidos voltam a valer.
+   */
+  setNewPasswordAfterRecovery: (password: string) => Promise<void>;
   /** Grava o nome de exibição. **Lança** o erro — a tela mostra a mensagem inline. */
   updateDisplayName: (name: string) => Promise<void>;
   /**
@@ -61,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Sessão persistida + eventos de login/logout/refresh vindos do Supabase.
@@ -76,7 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) setIsLoading(false);
       });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // O código de recuperação cria sessão antes da senha nova existir — sem
+      // marcar isso, o guard de `(app)` a trata como login normal e libera o
+      // app inteiro no meio do fluxo.
+      if (event === 'PASSWORD_RECOVERY') setIsRecovering(true);
       setSession(nextSession);
     });
 
@@ -136,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       isLoading,
       isSigningIn,
+      isRecovering,
       error,
       signInWithGoogle: () => run(() => authService.signInWithGoogle()),
       signInWithApple: () => run(() => authService.signInWithApple()),
@@ -145,7 +170,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signUpWithEmail: (email, password, name) =>
         authService.signUpWithEmail(email, password, name),
-      sendPasswordReset: (email) => authService.sendPasswordReset(email),
+      confirmSignUpCode: async (email, code) => {
+        setError(null);
+        await authService.confirmSignUpCode(email, code);
+      },
+      resendSignUpCode: (email) => authService.resendSignUpCode(email),
+      requestPasswordReset: (email) => authService.requestPasswordReset(email),
+      verifyRecoveryCode: async (email, code) => {
+        setError(null);
+        await authService.verifyRecoveryCode(email, code);
+      },
+      setNewPasswordAfterRecovery: async (password) => {
+        await authService.setNewPasswordAfterRecovery(password);
+        setIsRecovering(false);
+      },
       signOut: async () => {
         setError(null);
         try {
@@ -163,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       changePassword: (currentPassword, newPassword) =>
         authService.changePassword(currentPassword, newPassword),
     };
-  }, [session, isLoading, isSigningIn, error]);
+  }, [session, isLoading, isSigningIn, isRecovering, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

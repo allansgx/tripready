@@ -151,14 +151,14 @@ export const authService = {
 
   async signInWithEmail(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: normalizeEmail(email),
       password,
     });
     if (error) throw error;
     return data.session;
   },
 
-  /** `'confirm-email'` quando o Supabase enviou o link e ainda não há sessão. */
+  /** `'confirm-email'` quando o Supabase enviou o código e ainda não há sessão. */
   async signUpWithEmail(
     email: string,
     password: string,
@@ -205,10 +205,54 @@ export const authService = {
     await supabase.auth.signOut({ scope: 'local' });
   },
 
-  async sendPasswordReset(email: string) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: authRedirectUri,
+  /** Cria a sessão a partir do código de 6 dígitos enviado por e-mail. */
+  async confirmSignUpCode(email: string, code: string) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizeEmail(email),
+      token: code,
+      type: 'signup',
     });
+    if (error) throw error;
+    return data.session;
+  },
+
+  async resendSignUpCode(email: string) {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: normalizeEmail(email),
+    });
+    if (error) throw error;
+  },
+
+  /**
+   * Passa pela Edge Function, nunca por `resetPasswordForEmail` direto — é ela
+   * quem decide se a conta é elegível (tem identidade de e-mail) antes de
+   * disparar o envio nativo. A resposta chega sempre igual, elegível ou não.
+   */
+  async requestPasswordReset(email: string) {
+    const { error } = await supabase.functions.invoke('request-password-reset', {
+      body: { email: normalizeEmail(email) },
+    });
+    if (error) throw error;
+  },
+
+  /** Cria a sessão de recuperação a partir do código de 6 dígitos. */
+  async verifyRecoveryCode(email: string, code: string) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizeEmail(email),
+      token: code,
+      type: 'recovery',
+    });
+    if (error) throw error;
+    return data.session;
+  },
+
+  /**
+   * Só chamável com a sessão de recuperação ativa — não pede a senha atual,
+   * ao contrário de `changePassword`.
+   */
+  async setNewPasswordAfterRecovery(password: string) {
+    const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
   },
 

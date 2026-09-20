@@ -20,6 +20,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'a11y.textField.showPassword': 'Show password',
   'a11y.textField.hidePassword': 'Hide password',
   'a11y.accordion.sectionProgress': '{title}, {done} of {total} checked',
+  'a11y.codeField.label': 'Verification code',
 
   'date.picker.previousYear': 'Previous year',
   'date.picker.nextYear': 'Next year',
@@ -67,7 +68,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'auth.error.invalidEmailFormat': 'Invalid email.',
   'auth.error.invalidPassword': 'Enter a valid password.',
   'auth.error.rateLimited': 'Too many attempts. Wait a few minutes.',
-  'auth.error.tooManyRequests': 'For security, wait 60 seconds before trying again.',
+  'auth.error.tooManyRequests': 'For security, wait a bit before trying again.',
   'auth.error.currentPasswordRequired': 'Enter your current password.',
   'auth.error.currentPasswordInvalid': 'Current password does not match.',
   'auth.error.samePassword': 'The new password must be different from the current one.',
@@ -75,6 +76,7 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'auth.error.callbackFailed': 'Authentication failed: {code}',
   'auth.error.missingAuthUrl': 'Supabase did not return the authentication URL.',
   'auth.error.missingAppleToken': 'Apple did not return the identity token.',
+  'auth.error.invalidOrExpiredCode': 'Incorrect or expired code. Request a new one.',
 
   'auth.password.rule.length': 'At least {min} characters',
   'auth.password.rule.uppercase': 'Uppercase letter',
@@ -123,20 +125,39 @@ export const messages: Readonly<Record<MessageKey, Message>> = {
   'auth.signUp.error.missingName': 'Enter your name.',
   'auth.signUp.error.invalidPassword': 'The password still does not meet all the requirements.',
   'auth.signUp.error.passwordMismatch': 'Passwords do not match.',
-  'auth.signUp.confirmEmail.title': 'Confirm your email',
-  'auth.signUp.confirmEmail.subtitle':
-    'We sent a confirmation link to {email}. Open the link and come back to sign in.',
-  'auth.signUp.confirmEmail.backToLogin': 'Back to sign in',
   'auth.signUp.field.confirmPassword.label': 'Confirm password',
   'auth.signUp.field.confirmPassword.placeholder': 'Repeat the password',
   'auth.signUp.submit': 'Create account',
 
+  'auth.confirmEmail.title': 'Verify your email',
+  'auth.confirmEmail.subtitle':
+    'We sent a {length}-digit code to {email}. Enter it below to confirm your account.',
+  'auth.confirmEmail.error.incomplete': 'Enter the full code.',
+  'auth.confirmEmail.confirm': 'Confirm',
+  'auth.confirmEmail.resendQuestion': "Didn't receive the code?",
+  'auth.confirmEmail.resend': 'Resend',
+  'auth.confirmEmail.resendCountdown': 'Resend in {seconds}s',
+  'auth.confirmEmail.resendSuccess': 'We sent a new code.',
+
   'auth.forgotPassword.title': 'Reset password',
-  'auth.forgotPassword.subtitle': "We'll send a link so you can access your account again.",
+  'auth.forgotPassword.subtitle': "We'll send a code so you can access your account again.",
   'auth.forgotPassword.error.empty': 'Enter the account email.',
-  'auth.forgotPassword.success':
-    'If an account exists with this email, the reset link is already on its way. The link opens the app with your session started.',
-  'auth.forgotPassword.submit': 'Send reset link',
+  'auth.forgotPassword.submit': 'Send code',
+  'auth.forgotPassword.cooldown': 'Wait {seconds}s to send again',
+
+  'auth.resetPassword.code.title': 'Security code',
+  'auth.resetPassword.code.subtitle':
+    'We sent a {length}-digit code to {email}. Enter it to continue the reset.',
+  'auth.resetPassword.code.error.incomplete': 'Enter the full code.',
+  'auth.resetPassword.code.verify': 'Verify',
+  'auth.resetPassword.code.resendQuestion': "Didn't receive the code?",
+  'auth.resetPassword.code.resend': 'Resend',
+  'auth.resetPassword.code.resendCountdown': 'Resend in {seconds}s',
+  'auth.resetPassword.code.resendSuccess': 'We sent a new code.',
+  'auth.resetPassword.newPassword.title': 'New password',
+  'auth.resetPassword.newPassword.subtitle':
+    'Create a strong password with at least {min} characters.',
+  'auth.resetPassword.newPassword.submit': 'Reset password',
 
   'auth.changePassword.title': 'Change password',
   'auth.changePassword.error.missingCurrent': 'Enter your current password.',

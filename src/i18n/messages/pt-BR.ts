@@ -24,6 +24,7 @@ export const messages = {
   'a11y.textField.showPassword': 'Mostrar senha',
   'a11y.textField.hidePassword': 'Ocultar senha',
   'a11y.accordion.sectionProgress': '{title}, {done} de {total} verificados',
+  'a11y.codeField.label': 'Código de verificação',
 
   'date.picker.previousYear': 'Ano anterior',
   'date.picker.nextYear': 'Próximo ano',
@@ -72,7 +73,7 @@ export const messages = {
   'auth.error.invalidEmailFormat': 'E-mail inválido.',
   'auth.error.invalidPassword': 'Informe uma senha válida.',
   'auth.error.rateLimited': 'Muitas tentativas seguidas. Aguarde alguns minutos.',
-  'auth.error.tooManyRequests': 'Por segurança, aguarde 60 segundos antes de tentar de novo.',
+  'auth.error.tooManyRequests': 'Por segurança, aguarde um pouco antes de tentar de novo.',
   'auth.error.currentPasswordRequired': 'Informe sua senha atual.',
   'auth.error.currentPasswordInvalid': 'A senha atual não confere.',
   'auth.error.samePassword': 'A nova senha precisa ser diferente da atual.',
@@ -80,6 +81,7 @@ export const messages = {
   'auth.error.callbackFailed': 'Falha na autenticação: {code}',
   'auth.error.missingAuthUrl': 'O Supabase não retornou a URL de autenticação.',
   'auth.error.missingAppleToken': 'A Apple não retornou o identity token.',
+  'auth.error.invalidOrExpiredCode': 'Código incorreto ou expirado. Peça um novo.',
 
   'auth.password.rule.length': 'Pelo menos {min} caracteres',
   'auth.password.rule.uppercase': 'Letra maiúscula',
@@ -128,20 +130,39 @@ export const messages = {
   'auth.signUp.error.missingName': 'Informe seu nome.',
   'auth.signUp.error.invalidPassword': 'A senha ainda não cumpre todos os requisitos.',
   'auth.signUp.error.passwordMismatch': 'As senhas não coincidem.',
-  'auth.signUp.confirmEmail.title': 'Confirme seu e-mail',
-  'auth.signUp.confirmEmail.subtitle':
-    'Enviamos um link de confirmação para {email}. Abra o link e volte para entrar.',
-  'auth.signUp.confirmEmail.backToLogin': 'Voltar para o login',
   'auth.signUp.field.confirmPassword.label': 'Confirmar senha',
   'auth.signUp.field.confirmPassword.placeholder': 'Repita a senha',
   'auth.signUp.submit': 'Criar conta',
 
+  'auth.confirmEmail.title': 'Verifique seu e-mail',
+  'auth.confirmEmail.subtitle':
+    'Enviamos um código de {length} dígitos para {email}. Insira-o abaixo para confirmar sua conta.',
+  'auth.confirmEmail.error.incomplete': 'Digite o código completo.',
+  'auth.confirmEmail.confirm': 'Confirmar',
+  'auth.confirmEmail.resendQuestion': 'Não recebeu o código?',
+  'auth.confirmEmail.resend': 'Reenviar',
+  'auth.confirmEmail.resendCountdown': 'Reenviar em {seconds}s',
+  'auth.confirmEmail.resendSuccess': 'Enviamos um novo código.',
+
   'auth.forgotPassword.title': 'Recuperar senha',
-  'auth.forgotPassword.subtitle': 'Enviaremos um link para você voltar a acessar a conta.',
+  'auth.forgotPassword.subtitle': 'Enviaremos um código para você voltar a acessar a conta.',
   'auth.forgotPassword.error.empty': 'Informe o e-mail da conta.',
-  'auth.forgotPassword.success':
-    'Se existir uma conta com esse e-mail, o link de recuperação já está a caminho. O link abre o app com a sessão iniciada.',
-  'auth.forgotPassword.submit': 'Enviar link de recuperação',
+  'auth.forgotPassword.submit': 'Enviar código',
+  'auth.forgotPassword.cooldown': 'Aguarde {seconds}s para enviar de novo',
+
+  'auth.resetPassword.code.title': 'Código de segurança',
+  'auth.resetPassword.code.subtitle':
+    'Enviamos um código de {length} dígitos para {email}. Insira-o para prosseguir com a redefinição.',
+  'auth.resetPassword.code.error.incomplete': 'Digite o código completo.',
+  'auth.resetPassword.code.verify': 'Verificar',
+  'auth.resetPassword.code.resendQuestion': 'Não recebeu o código?',
+  'auth.resetPassword.code.resend': 'Reenviar',
+  'auth.resetPassword.code.resendCountdown': 'Reenviar em {seconds}s',
+  'auth.resetPassword.code.resendSuccess': 'Enviamos um novo código.',
+  'auth.resetPassword.newPassword.title': 'Nova senha',
+  'auth.resetPassword.newPassword.subtitle':
+    'Crie uma senha segura com pelo menos {min} caracteres.',
+  'auth.resetPassword.newPassword.submit': 'Redefinir senha',
 
   'auth.changePassword.title': 'Alterar senha',
   'auth.changePassword.error.missingCurrent': 'Informe sua senha atual.',

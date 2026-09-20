@@ -30,8 +30,7 @@ const MESSAGE_KEYS: Record<string, MessageKey> = {
   'Unable to validate email address: invalid format': 'auth.error.invalidEmailFormat',
   'Signup requires a valid password': 'auth.error.invalidPassword',
   'Email rate limit exceeded': 'auth.error.rateLimited',
-  'For security purposes, you can only request this after 60 seconds.':
-    'auth.error.tooManyRequests',
+  'Token has expired or is invalid': 'auth.error.invalidOrExpiredCode',
 };
 
 /**
@@ -46,6 +45,20 @@ const CODE_MESSAGE_KEYS: Record<string, MessageKey> = {
 
 /** A recusa do GoTrue lista os caracteres exigidos e muda com a política. */
 const PASSWORD_REJECTION_PREFIX = 'Password should';
+// O número de segundos varia a cada resposta ("after 58 seconds.", "after 45
+// seconds."...) — comparar a mensagem inteira nunca dava match, e o aviso
+// caía sempre na mensagem genérica.
+const RATE_LIMIT_PREFIX = 'For security purposes, you can only request this after';
+
+/**
+ * `true` quando o login falhou por falta de confirmação. A tela de login usa
+ * isto para reenviar o código e levar direto à tela de confirmação, em vez de
+ * só mostrar a mensagem — sem isso, quem fecha o app antes de confirmar não
+ * tem como voltar a esse fluxo.
+ */
+export function isEmailNotConfirmedError(error: unknown): boolean {
+  return error instanceof Error && error.message === 'Email not confirmed';
+}
 
 export function toAuthMessage(error: unknown): string {
   if (error instanceof AuthUiError) {
@@ -66,6 +79,10 @@ export function toAuthMessage(error: unknown): string {
 
   if (error.message.startsWith(PASSWORD_REJECTION_PREFIX)) {
     return t('auth.error.passwordRejected');
+  }
+
+  if (error.message.startsWith(RATE_LIMIT_PREFIX)) {
+    return t('auth.error.tooManyRequests');
   }
 
   return t('auth.error.unexpected');

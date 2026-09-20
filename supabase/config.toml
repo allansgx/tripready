@@ -196,8 +196,10 @@ password_requirements = "lower_upper_letters_digits_symbols"
 # rp_origins = ["http://127.0.0.1:3000"]
 
 [auth.rate_limit]
-# Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Espelho do painel remoto (tasks/plano-email-resend.md §8.4). Dimensionado
+# pelo teto do Resend free (100/dia, 3.000/mês) — revisar antes de qualquer
+# lançamento com volume maior.
+email_sent = 10
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -206,8 +208,9 @@ anonymous_users = 30
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
 sign_in_sign_ups = 30
-# Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
-token_verifications = 30
+# Espelho do painel remoto. Apertado de 30 para 15 porque é a única trava
+# contra força bruta do OTP de 6 dígitos (tasks/plano-email-resend.md §8.4).
+token_verifications = 15
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
 web3 = 30
 
@@ -224,15 +227,18 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# Espelho do painel remoto — ligado na Fase 6 (tasks/plano-email-resend.md).
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
-# Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1s"
+# Espelho do painel remoto — é a janela de 60s por usuário do §5.1
+# (tasks/plano-email-resend.md), confirmada na Fase 0.
+max_frequency = "1m"
 # Number of characters used in the email OTP.
 otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# Espelho do painel remoto. Reduzido de 3600 para encurtar a janela de força
+# bruta do OTP de 6 dígitos (tasks/plano-email-resend.md §7.4).
+otp_expiry = 600
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -392,6 +398,14 @@ deno_version = 2
 [functions.delete-account]
 enabled = true
 verify_jwt = true
+
+# Recuperação de senha com filtro de conta só-OAuth (tasks/plano-email-resend.md
+# §3, §5.4). `verify_jwt = false` de propósito: quem chama ainda não tem
+# sessão — é justamente para recuperar o acesso. A função nunca revela nada ao
+# cliente; a resposta é sempre a mesma, elegível ou não.
+[functions.request-password-reset]
+enabled = true
+verify_jwt = false
 
 [analytics]
 enabled = true

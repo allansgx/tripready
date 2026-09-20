@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { toAuthMessage } from '@/features/auth/auth-errors';
 import { normalizeEmail, validateEmail, type EmailIssue } from '@/features/auth/email';
 import { isPasswordValid, MIN_PASSWORD_LENGTH } from '@/features/auth/password';
 import { PasswordField } from '@/features/auth/password-field';
+import { markSignupCodeSent } from '@/features/auth/signup-code-cooldown';
 import { LegalConsentNotice } from '@/features/legal/components/legal-consent-notice';
 import { t } from '@/i18n';
 import { spacing } from '@/theme/tokens';
@@ -35,11 +36,14 @@ export default function SignUpScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  // No iOS, o autofill dispara onBlur colado ao onChangeText, antes do
+  // re-render: a closure do onBlur ainda veria o `email` do render anterior.
+  const emailRef = useRef(email);
 
   /** O aviso sai ao mexer no campo e volta no blur, nunca durante a digitação. */
   function changeEmail(value: string) {
     setEmail(value);
+    emailRef.current = value;
     if (emailError) setEmailError(null);
   }
 
@@ -74,28 +78,14 @@ export default function SignUpScreen() {
       // 'signed-in': confirmação de e-mail desligada, a sessão já veio pronta e
       // o layout raiz troca para o grupo (app) sozinho.
       if (result === 'confirm-email') {
-        setSentTo(normalizeEmail(email));
+        await markSignupCodeSent();
+        router.push({ pathname: '/confirm-email', params: { email: normalizeEmail(email) } });
       }
     } catch (err) {
       setError(toAuthMessage(err));
     } finally {
       setBusy(false);
     }
-  }
-
-  if (sentTo) {
-    return (
-      <FormLayout>
-        <ScreenHeader
-          title={t('auth.signUp.confirmEmail.title')}
-          subtitle={t('auth.signUp.confirmEmail.subtitle', { email: sentTo })}
-        />
-        <Button
-          label={t('auth.signUp.confirmEmail.backToLogin')}
-          onPress={() => router.replace('/email-login')}
-        />
-      </FormLayout>
-    );
   }
 
   return (
@@ -117,7 +107,7 @@ export default function SignUpScreen() {
           label={t('common.field.email.label')}
           value={email}
           onChangeText={changeEmail}
-          onBlur={() => setEmailError(emailIssueMessage(validateEmail(email)))}
+          onBlur={() => setEmailError(emailIssueMessage(validateEmail(emailRef.current)))}
           error={emailError}
           placeholder={t('common.field.email.placeholder')}
           keyboardType="email-address"

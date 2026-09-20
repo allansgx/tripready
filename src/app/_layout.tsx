@@ -94,7 +94,7 @@ function Readying() {
  * tela piscando nem como burlar por deep link.
  */
 function AppContent() {
-  const { session } = useAuth();
+  const { session, isRecovering } = useAuth();
   const { hasPassport, hasLoadError: passportsFailed, refresh: refreshPassports } = usePassports();
 
   // React Navigation embrulha cada tela em `StaticContainer`, que ignora
@@ -124,7 +124,7 @@ function AppContent() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}>
-      <Stack.Protected guard={!!session && hasPassport}>
+      <Stack.Protected guard={!!session && hasPassport && !isRecovering}>
         <Stack.Screen name="(app)" />
         {/* `modal` usa o card nativo do iOS (o pai fica visível atrás, cantos
             arredondados) e entrega altura definida ao conteúdo. `formSheet`
@@ -170,7 +170,7 @@ function AppContent() {
         />
       </Stack.Protected>
 
-      <Stack.Protected guard={!!session && !hasPassport}>
+      <Stack.Protected guard={!!session && !hasPassport && !isRecovering}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>
 
@@ -180,6 +180,11 @@ function AppContent() {
 
       {/* Fora dos grupos protegidos: o retorno do OAuth chega antes da sessão. */}
       <Stack.Screen name="auth/callback" options={{ animation: 'fade' }} />
+
+      {/* Também fora: o código de recuperação cria sessão antes da senha nova
+          existir. Sem isso aqui, os guards acima já teriam levado a pessoa
+          para dentro do app assim que a sessão aparecesse. */}
+      <Stack.Screen name="auth/new-password" />
 
       {/* Também fora: os documentos legais são alcançados com e sem sessão. */}
       <Stack.Screen name="legal/privacidade" />

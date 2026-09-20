@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -8,7 +8,9 @@ import { FormMessage } from '@/components/ui/form-message';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/features/auth/auth-context';
-import { toAuthMessage } from '@/features/auth/auth-errors';
+import { isEmailNotConfirmedError, toAuthMessage } from '@/features/auth/auth-errors';
+import { normalizeEmail } from '@/features/auth/email';
+import { markSignupCodeSent } from '@/features/auth/signup-code-cooldown';
 import { t } from '@/i18n';
 import { colors, spacing, typography } from '@/theme/tokens';
 
@@ -17,7 +19,8 @@ import { colors, spacing, typography } from '@/theme/tokens';
  * Expo Go. Não substitui Google/Apple, que seguem intactos na tela de login.
  */
 export default function EmailLoginScreen() {
-  const { signInWithEmail } = useAuth();
+  const { signInWithEmail, resendSignUpCode } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -36,6 +39,20 @@ export default function EmailLoginScreen() {
       // raiz libera o grupo (app) e a tela sai de cena sozinha.
       await signInWithEmail(email, password);
     } catch (err) {
+      // Sem isso, quem fecha o app antes de confirmar fica sem caminho de
+      // volta ao código — a única saída seria se cadastrar de novo.
+      if (isEmailNotConfirmedError(err)) {
+        const normalized = normalizeEmail(email);
+        try {
+          await resendSignUpCode(normalized);
+          await markSignupCodeSent();
+        } catch {
+          // Um código recente ainda pode estar valendo (janela de 60s); a
+          // tela de código também oferece reenviar.
+        }
+        router.push({ pathname: '/confirm-email', params: { email: normalized } });
+        return;
+      }
       setError(toAuthMessage(err));
     } finally {
       setBusy(false);
