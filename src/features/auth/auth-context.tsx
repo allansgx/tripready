@@ -1,6 +1,7 @@
 import type { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 
 import { toAuthMessage } from '@/features/auth/auth-errors';
 import {
@@ -87,14 +88,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (active) setSession(data.session);
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+    void (async () => {
+      const restored = await authService.getSession().catch(() => null);
+
+      // A sessão guardada é só o que o aparelho lembra. Sem confirmar com o
+      // servidor, uma conta excluída em outro lugar segue entrando: as consultas
+      // voltam vazias como as de quem acabou de chegar, e o app manda para o
+      // onboarding em vez do login.
+      if (restored && !(await authService.isSessionAlive())) {
+        await authService.signOutLocal();
+        if (active) setSession(null);
+      } else if (active) {
+        setSession(restored);
+      }
+
+      if (active) setIsLoading(false);
+    })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
       // O código de recuperação cria sessão antes da senha nova existir — sem
@@ -109,6 +118,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.subscription.unsubscribe();
     };
   }, []);
+
+  // Voltar ao primeiro plano é a outra porta de entrada: sem esta conferência,
+  // a sessão de uma conta já excluída dura até o token expirar.
+  const hasSession = session !== null;
+  useEffect(() => {
+    if (!hasSession) return;
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      void (async () => {
+        if (await authService.isSessionAlive()) return;
+        await authService.signOutLocal();
+      })();
+    });
+
+    return () => subscription.remove();
+  }, [hasSession]);
 
   // O idioma escolhido acompanha a conta, e só serve a um aparelho que ainda
   // não tem escolha própria. Em paralelo com os passaportes, que já são

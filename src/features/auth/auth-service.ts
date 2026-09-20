@@ -1,4 +1,4 @@
-import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
+import { FunctionsFetchError, FunctionsHttpError, isAuthApiError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { getQueryParams } from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
@@ -286,5 +286,18 @@ export const authService = {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     return data.session;
+  },
+
+  /**
+   * O servidor ainda reconhece a sessão guardada no aparelho? `getSession` só
+   * lê o armazenamento local, e o token assinado continua sendo aceito até
+   * expirar — uma conta excluída em outro aparelho entraria no app e só falharia
+   * depois, na primeira escrita.
+   *
+   * Falha de rede responde `true`: ninguém é desconectado por estar offline.
+   */
+  async isSessionAlive(): Promise<boolean> {
+    const { error } = await supabase.auth.getUser();
+    return !error || !isAuthApiError(error);
   },
 };
