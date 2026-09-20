@@ -11,8 +11,8 @@ import type { TranslatedLegalDocument } from './types.ts';
 
 export const privacyPolicy: TranslatedLegalDocument = {
   title: 'Política de Privacidad',
-  version: '1.1',
-  sourceVersion: '1.1',
+  version: '1.2',
+  sourceVersion: '1.2',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -148,7 +148,7 @@ export const privacyPolicy: TranslatedLegalDocument = {
     { kind: 'heading', text: '6. Dónde se almacenan los datos' },
     {
       kind: 'paragraph',
-      text: 'La información de tu cuenta y de tus viajes se guarda en servidores operados por **Supabase**, ubicados en **Estados Unidos**. Esto significa que hay una transferencia internacional de tus datos personales.',
+      text: 'La información de tu cuenta y de tus viajes se guarda en servidores operados por **Supabase**, ubicados en **Estados Unidos**. El envío de los correos de TripReady pasa por **Resend**, que también procesa esos datos en Estados Unidos. Esto significa que hay una transferencia internacional de tus datos personales.',
     },
     {
       kind: 'paragraph',
@@ -167,7 +167,8 @@ export const privacyPolicy: TranslatedLegalDocument = {
     {
       kind: 'list',
       items: [
-        '**Supabase** — almacena la información y gestiona la autenticación, actuando como encargado del tratamiento en nombre de TripReady. También es el servicio que envía los mensajes de confirmación de registro y de restablecimiento de contraseña.',
+        '**Supabase** — almacena la información y gestiona la autenticación, actuando como encargado del tratamiento en nombre de TripReady.',
+        '**Resend** — envía los mensajes de confirmación de registro y de restablecimiento de contraseña en nombre de TripReady, siempre a partir de una acción que tú mismo iniciaste en la aplicación.',
         '**Google** y **Apple** — solo cuando eliges ingresar por ellos. En ese caso, el proveedor sabe que te autenticaste en TripReady porque fuiste tú quien lo autorizó. Cuando la aplicación muestra tu foto de Google, se carga directamente desde los servidores de Google.',
         '**App Store y Google Play** — distribuyen la aplicación, según las políticas de cada tienda.',
       ],

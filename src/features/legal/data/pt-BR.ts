@@ -5,7 +5,7 @@ import type { LegalDocument } from './types.ts';
 
 export const privacyPolicy: LegalDocument = {
   title: 'Política de Privacidade',
-  version: '1.1',
+  version: '1.2',
   effectiveDate: LEGAL_IDENTITY.effectiveDate,
   blocks: [
     {
@@ -141,7 +141,7 @@ export const privacyPolicy: LegalDocument = {
     { kind: 'heading', text: '6. Onde os dados ficam armazenados' },
     {
       kind: 'paragraph',
-      text: 'As informações da sua conta e das suas viagens ficam em servidores operados pelo **Supabase**, localizados nos **Estados Unidos**. Isso significa que há transferência internacional dos seus dados pessoais.',
+      text: 'As informações da sua conta e das suas viagens ficam em servidores operados pelo **Supabase**, localizados nos **Estados Unidos**. O envio dos e-mails do TripReady passa pelo **Resend**, que também processa esses dados nos Estados Unidos. Isso significa que há transferência internacional dos seus dados pessoais.',
     },
     {
       kind: 'paragraph',
@@ -160,7 +160,8 @@ export const privacyPolicy: LegalDocument = {
     {
       kind: 'list',
       items: [
-        '**Supabase** — armazena as informações e cuida da autenticação, atuando como operador em nome do TripReady. É também o serviço que envia as mensagens de confirmação de cadastro e de redefinição de senha.',
+        '**Supabase** — armazena as informações e cuida da autenticação, atuando como operador em nome do TripReady.',
+        '**Resend** — envia as mensagens de confirmação de cadastro e de redefinição de senha em nome do TripReady, sempre a partir de uma ação que você mesmo iniciou no aplicativo.',
         '**Google** e **Apple** — apenas quando você escolhe entrar por eles. Nesse caso, o provedor sabe que você autenticou no TripReady porque foi você quem autorizou. Quando o aplicativo exibe a sua foto do Google, ela é carregada diretamente dos servidores do Google.',
         '**App Store e Google Play** — distribuem o aplicativo, segundo as políticas de cada loja.',
       ],
