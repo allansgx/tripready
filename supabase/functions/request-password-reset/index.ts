@@ -1,14 +1,14 @@
 // =============================================================================
 // TripReady — recuperação de senha, com filtro de conta só-OAuth
 //
-// Decisão registrada em tasks/plano-email-resend.md (§3, §5.4): o `/recover`
+// Decisão registrada na seção "Autenticação" do AGENTS.md: o `/recover`
 // nativo do Supabase manda o código de recuperação para qualquer conta com
 // aquele e-mail, sem olhar o provedor. Uma conta só-Google ou só-Apple
 // ganharia senha por esse caminho — comportamento que o produto decidiu não
 // aceitar.
 //
 // O que esta função faz, e a ordem importa para não abrir um oráculo de
-// enumeração (§5.3):
+// enumeração:
 //
 //   1. `GET /admin/users?filter=` — identifica o usuário pelo e-mail para
 //      checar as identidades, sem mandar nada. Deliberadamente NÃO usa
@@ -17,7 +17,7 @@
 //      `recovery_sent_at` — ou seja, a própria checagem rearmava o cooldown
 //      que o passo 2 checa logo em seguida, e o envio real nunca passava
 //      (sempre 429 "only request this after N seconds"). Bug real, encontrado
-//      em produção ao testar o reenvio (tasks/plano-email-resend.md).
+//      em produção ao testar o reenvio.
 //   2. Só quando existe identidade `email`, chama o `resetPasswordForEmail`
 //      público — que dispara o envio nativo, pelo SMTP já configurado, com o
 //      template "Reset password" do painel do Supabase.
@@ -25,8 +25,8 @@
 //      por baixo (`MIN_RESPONSE_MS`) para os três casos — elegível, inelegível
 //      e inexistente — não se distinguirem por latência.
 //
-// Risco conhecido, registrado no plano (risco #13 e nota em §4.2): esta função
-// não herda o rate limit nativo do Supabase por IP (`sign_in_sign_ups`), que só
+// Risco conhecido, em aberto (item 2.2 de tasks/plano-email-resend.md): esta
+// função não herda o rate limit nativo por IP (`sign_in_sign_ups`), que só
 // vale para os endpoints do próprio GoTrue. Só o envio de fato (passo 2)
 // continua protegido pela janela de 60s por usuário. Enquanto não houver
 // limite próprio na frente desta função, ela é a única porta de recuperação
@@ -43,9 +43,8 @@ const CORS_HEADERS = {
 };
 
 // Piso de resposta, para os três caminhos (elegível, inelegível, inexistente)
-// não se distinguirem por tempo. [H] Valor de partida, não medido contra o
-// projeto real — ajustar depois de medir a latência do passo 2 em produção
-// (é o teste S3 do plano).
+// não se distinguirem por tempo. Valor de partida, nunca medido contra o
+// projeto real — item 2.1 de tasks/plano-email-resend.md.
 const MIN_RESPONSE_MS = 800;
 
 const GENERIC_RESPONSE = { status: 'ok' };
